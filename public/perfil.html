@@ -8,7 +8,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
-        
+
         .header {
             background: #0A1F44;
             color: white;
@@ -26,9 +26,10 @@
         .logo span { color: #FFD600; }
         .btn-back { background: #FFD600; color: #0A1F44; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-logout { background: #C62828; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
-        
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+        /* PROFILE CARD */
         .profile-header {
             background: white;
             border-radius: 16px;
@@ -36,126 +37,207 @@
             margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 25px;
+            gap: 20px;
             flex-wrap: wrap;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-top: 4px solid #0A1F44;
         }
+        .avatar-wrap { position: relative; }
         .avatar {
-            width: 80px;
-            height: 80px;
+            width: 85px;
+            height: 85px;
             background: #0A1F44;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
             color: #FFD600;
+            overflow: hidden;
+            flex-shrink: 0;
         }
-        .profile-info h2 { color: #0A1F44; margin-bottom: 5px; }
-        .profile-info p { color: #666; margin: 5px 0; }
-        .badge-verified { background: #4CAF50; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-block; }
-        
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-upload {
+            position: absolute;
+            bottom: 0; right: 0;
+            background: #FFD600;
+            color: #0A1F44;
+            border-radius: 50%;
+            width: 26px; height: 26px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+            border: 2px solid white;
+        }
+        #avatarInput { display: none; }
+
+        .profile-info { flex: 1; min-width: 200px; }
+        .profile-info h2 { color: #0A1F44; margin-bottom: 6px; font-size: 1.3rem; }
+        .profile-info p { color: #666; margin: 4px 0; font-size: 0.9rem; }
+        .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
+        .badge-verified  { background: #4CAF50; color: white; }
+        .badge-seller    { background: #FFD600; color: #0A1F44; }
+        .badge-buyer     { background: #2196F3; color: white; }
+        .badge-pro       { background: #9C27B0; color: white; }
+        .badge-premium   { background: linear-gradient(135deg,#FFD600,#FF9800); color: #0A1F44; }
+        .badge-pending   { background: #FF9800; color: white; }
+        .badge-active    { background: #4CAF50; color: white; }
+        .badge-sold      { background: #607D8B; color: white; }
+        .badge-accepted  { background: #4CAF50; color: white; }
+        .badge-rejected  { background: #f44336; color: white; }
+        .badge-info      { background: #2196F3; color: white; }
+
+        .profile-actions { margin-left: auto; display: flex; flex-direction: column; gap: 8px; }
+        .btn-primary {
+            background: #0A1F44; color: white; border: none;
+            padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-primary:hover { background: #0d2a5c; }
+
+        /* STATS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px;
             margin-bottom: 25px;
         }
         .stat-card {
             background: white;
-            padding: 18px;
+            padding: 16px;
             border-radius: 12px;
             text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
-        .stat-card i { font-size: 1.5rem; color: #0A1F44; }
-        .stat-card .number { font-size: 1.3rem; font-weight: bold; color: #0A1F44; }
-        
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin: 25px 0 15px;
+        .stat-card i { font-size: 1.4rem; color: #0A1F44; margin-bottom: 6px; display: block; }
+        .stat-card .number { font-size: 1.4rem; font-weight: bold; color: #0A1F44; }
+        .stat-card .label { font-size: 0.75rem; color: #888; margin-top: 3px; }
+
+        /* VERIFICATION BANNER */
+        .verif-banner {
+            background: linear-gradient(135deg, #1565C0, #1976D2);
+            color: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .verif-banner.pending { background: linear-gradient(135deg, #E65100, #F57C00); }
+        .verif-banner.approved { background: linear-gradient(135deg, #1B5E20, #2E7D32); }
+        .btn-verif {
+            background: white; color: #1565C0; border: none;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem;
+        }
+
+        /* SECTION */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
             gap: 10px;
+            color: #0A1F44;
         }
-        .btn-primary {
-            background: #0A1F44;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .table-container {
+
+        /* TABLES */
+        .table-wrap {
             background: white;
             border-radius: 12px;
             overflow-x: auto;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
         }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; }
-        
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; }
-        .badge-pending { background: #FF9800; color: white; }
-        .badge-accepted { background: #4CAF50; color: white; }
-        .badge-active { background: #4CAF50; color: white; }
-        .badge-sold { background: #FF9800; color: white; }
-        
-        .btn-icon { background: none; border: none; cursor: pointer; color: #f44336; }
-        .btn-boost { background: #FF9800; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
-        .btn-sold { background: #4CAF50; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
-        .btn-edit { color: #2196F3; background: none; border: none; cursor: pointer; }
-        
-        .empty-state { text-align: center; padding: 40px; color: #999; }
-        
+        th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 0.875rem; }
+        th { background: #f8f9fa; font-weight: 600; color: #444; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .04em; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafafa; }
+
+        .empty-state { text-align: center; padding: 36px; color: #bbb; font-size: 0.9rem; }
+
+        /* BOTONES DE ACCIÓN */
+        .btn-sm { padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: none; font-weight: 500; }
+        .btn-boost  { background: #FF9800; color: white; }
+        .btn-sold   { background: #4CAF50; color: white; }
+        .btn-del    { background: #ffebee; color: #f44336; border: 1px solid #ffcdd2; }
+        .btn-edit   { background: #e3f2fd; color: #1976D2; border: 1px solid #bbdefb; }
+        .btn-accept { background: #4CAF50; color: white; }
+        .btn-reject { background: #f44336; color: white; }
+        .btn-counter{ background: #FF9800; color: white; }
+        .btn-cancel { background: #ffebee; color: #f44336; border: 1px solid #ffcdd2; }
+        .btn-fav-del{ background: none; border: none; color: #f44336; cursor: pointer; font-size: 1rem; }
+
+        /* AD CARDS (mobile) */
+        .ad-card {
+            background: white;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: none;
+        }
+        .ad-card h4 { font-size: 0.95rem; color: #0A1F44; margin-bottom: 6px; }
+        .ad-card-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 6px; }
+
+        /* MODAL */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
-        .modal-content {
+        .modal.open { display: flex; }
+        .modal-box {
             background: white;
             border-radius: 16px;
             max-width: 500px;
-            width: 90%;
-            padding: 25px;
+            width: 92%;
+            padding: 24px;
+            max-height: 88vh;
+            overflow-y: auto;
         }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .modal-header h3 { font-size: 1.1rem; color: #0A1F44; }
+        .close-btn { cursor: pointer; font-size: 1.4rem; color: #999; background: none; border: none; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.85rem; color: #444; }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px;
+            font-family: inherit; font-size: 0.9rem; outline: none;
         }
-        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0A1F44; }
+        .btn-full { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 1rem; font-weight: 600; }
+
+        /* TOAST */
         .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 1100;
-            animation: fadeIn 0.3s;
+            position: fixed; bottom: 20px; right: 20px;
+            background: #4CAF50; color: white;
+            padding: 12px 20px; border-radius: 8px; z-index: 2000;
+            animation: slideIn 0.3s;
         }
         .toast.error { background: #f44336; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
-        
-        @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .profile-header { flex-direction: column; text-align: center; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+
+        /* BOOSTED INDICATOR */
+        .fire { color: #FF9800; }
+
+        @media (max-width: 600px) {
+            .profile-header { flex-direction: column; }
+            .profile-actions { flex-direction: row; margin-left: 0; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
@@ -164,240 +246,574 @@
 <div class="header">
     <div class="logo" onclick="window.location.href='/'">EL <span>FAROL</span></div>
     <div>
-        <button class="btn-back" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i> Volver</button>
+        <button class="btn-back" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i> Inicio</button>
         <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
     </div>
 </div>
 
 <div class="container">
+
+    <!-- PROFILE CARD -->
     <div class="profile-header">
-        <div class="avatar"><i class="fas fa-user"></i></div>
+        <div class="avatar-wrap">
+            <div class="avatar" id="avatarDisplay"><i class="fas fa-user"></i></div>
+            <label class="avatar-upload" for="avatarInput" title="Cambiar foto"><i class="fas fa-camera"></i></label>
+            <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(this)">
+        </div>
         <div class="profile-info">
             <h2 id="userName">Cargando...</h2>
-            <p><i class="fas fa-envelope"></i> <span id="userEmail">-</span></p>
-            <p><i class="fas fa-phone"></i> <span id="userPhone">-</span></p>
-            <div id="userBadges"></div>
+            <p><i class="fas fa-envelope" style="width:16px;color:#0A1F44"></i> <span id="userEmail">—</span></p>
+            <p><i class="fas fa-phone" style="width:16px;color:#0A1F44"></i> <span id="userPhone">—</span></p>
+            <p id="ratingDisplay" style="display:none"><i class="fas fa-star" style="width:16px;color:#FFD600"></i> <span id="userRating">0.0</span> (<span id="userRatingCount">0</span> reseñas)</p>
+            <div class="badges" id="userBadges"></div>
         </div>
-        <div id="postAdBtnContainer" style="margin-left: auto;"></div>
+        <div class="profile-actions" id="profileActions"></div>
     </div>
 
+    <!-- VERIFICATION BANNER -->
+    <div id="verifBanner" style="display:none"></div>
+
+    <!-- STATS -->
     <div class="stats-grid" id="statsGrid"></div>
 
-    <div id="buyerSection">
-        <div class="section-title"><i class="fas fa-hand-holding-usd"></i> Mis Ofertas</div>
-        <div class="table-container"><table><thead><tr><th>Producto</th><th>Oferta</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="offersList"></tbody></table></div>
-        
-        <div class="section-title"><i class="fas fa-heart"></i> Mis Favoritos</div>
-        <div class="table-container"><table><thead><tr><th>Producto</th><th>Precio</th><th>Vendedor</th><th>Ubicación</th><th>Acciones</th></tr></thead><tbody id="favoritesList"></tbody></table></div>
-    </div>
+    <!-- ══════════════════════════════════════
+         SECCIÓN VENDEDOR
+    ══════════════════════════════════════ -->
+    <div id="sellerSection" style="display:none;">
 
-    <div id="sellerSection" style="display: none;">
+        <!-- MIS ANUNCIOS -->
         <div class="section-title">
             <span><i class="fas fa-ad"></i> Mis Anuncios</span>
-            <button class="btn-primary" onclick="showPostAdModal()" style="padding: 6px 15px; font-size: 0.8rem;"><i class="fas fa-plus"></i> Nuevo</button>
+            <button class="btn-primary" onclick="openPostModal()"><i class="fas fa-plus"></i> Nuevo anuncio</button>
         </div>
-        <div class="table-container"><tr><thead><tr><th>Título</th><th>Precio</th><th>Ubicación</th><th>Vistas</th><th>Estado</th><th>Destacado</th><th>Acciones</th></tr></thead><tbody id="myAdsList"></tbody></table></div>
-        
-        <div class="section-title"><i class="fas fa-hand-holding-usd"></i> Ofertas Recibidas</div>
-        <div class="table-container"><table><thead><tr><th>Producto</th><th>Comprador</th><th>Oferta</th><th>Mensaje</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="offersReceivedList"></tbody></table></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Precio</th>
+                        <th>Sector</th>
+                        <th>Vistas</th>
+                        <th>Estado</th>
+                        <th>Destacado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="myAdsList"></tbody>
+            </table>
+        </div>
+
+        <!-- OFERTAS RECIBIDAS -->
+        <div class="section-title"><span><i class="fas fa-hand-holding-usd"></i> Ofertas Recibidas</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Comprador</th>
+                        <th>Oferta</th>
+                        <th>Mensaje</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="offersReceivedList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECCIÓN COMPRADOR
+    ══════════════════════════════════════ -->
+    <div id="buyerSection" style="display:none;">
+
+        <!-- MIS OFERTAS -->
+        <div class="section-title"><span><i class="fas fa-tags"></i> Mis Ofertas</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Producto</th><th>Mi oferta</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="offersList"></tbody>
+            </table>
+        </div>
+
+        <!-- FAVORITOS -->
+        <div class="section-title"><span><i class="fas fa-heart"></i> Mis Favoritos</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Producto</th><th>Precio</th><th>Vendedor</th><th>Sector</th><th></th></tr>
+                </thead>
+                <tbody id="favoritesList"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<!-- MODAL: PUBLICAR ANUNCIO -->
+<div class="modal" id="postModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle" style="color:#0A1F44"></i> Publicar Anuncio</h3>
+            <button class="close-btn" onclick="closePostModal()">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="adTitle" placeholder="Ej: iPhone 13 Pro 256GB">
+        </div>
+        <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="adDesc" rows="3" placeholder="Describe tu producto..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Precio (RD$) *</label>
+            <input type="number" id="adPrice" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label>Categoría</label>
+            <select id="adCategory">
+                <option>Vehículos</option>
+                <option>Inmuebles</option>
+                <option>Empleos</option>
+                <option>Electrónica</option>
+                <option>Hogar y Muebles</option>
+                <option>Ropa y Accesorios</option>
+                <option>Servicios</option>
+                <option>Deportes</option>
+                <option>Mascotas</option>
+                <option>Otros</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Sector *</label>
+            <select id="adSector"></select>
+        </div>
+        <div class="form-group">
+            <label>Imágenes (hasta 10)</label>
+            <input type="file" id="adImages" multiple accept="image/*">
+        </div>
+        <button class="btn-full btn-primary" onclick="createAd()" style="margin-top:8px;">
+            <i class="fas fa-paper-plane"></i> Publicar anuncio
+        </button>
     </div>
 </div>
 
-<div id="postAdModal" class="modal">
-    <div class="modal-content">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <h3>Publicar anuncio</h3>
-            <span onclick="closePostAdModal()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+<!-- MODAL: EDITAR ANUNCIO -->
+<div class="modal" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit" style="color:#0A1F44"></i> Editar Anuncio</h3>
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
         </div>
-        <div id="postAdBody"></div>
+        <input type="hidden" id="editAdId">
+        <div class="form-group">
+            <label>Título</label>
+            <input type="text" id="editTitle">
+        </div>
+        <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="editDesc" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Precio (RD$)</label>
+            <input type="number" id="editPrice">
+        </div>
+        <button class="btn-full" style="background:#0A1F44;color:white;" onclick="saveEdit()">
+            <i class="fas fa-save"></i> Guardar cambios
+        </button>
+    </div>
+</div>
+
+<!-- MODAL: CONTRAOFERTA -->
+<div class="modal" id="counterModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-exchange-alt" style="color:#FF9800"></i> Hacer Contraoferta</h3>
+            <button class="close-btn" onclick="closeCounterModal()">&times;</button>
+        </div>
+        <input type="hidden" id="counterOfferId">
+        <div class="form-group">
+            <label>Tu contraoferta (RD$)</label>
+            <input type="number" id="counterPrice" placeholder="Ej: 5000">
+        </div>
+        <div class="form-group">
+            <label>Mensaje</label>
+            <textarea id="counterMessage" rows="2" placeholder="Explica tu contraoferta..."></textarea>
+        </div>
+        <button class="btn-full" style="background:#FF9800;color:white;" onclick="sendCounter()">
+            <i class="fas fa-paper-plane"></i> Enviar contraoferta
+        </button>
     </div>
 </div>
 
 <script>
-    let token = localStorage.getItem('token');
-    let currentUser = null;
-    if (!token) window.location.href = '/';
-    
-    function showToast(msg, isErr) {
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isErr ? ' error' : '');
-        toast.innerHTML = `<i class="fas ${isErr ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-    
-    async function loadProfile() {
+let token = localStorage.getItem('token');
+let currentUser = null;
+
+if (!token) window.location.href = '/';
+
+// ── TOAST ──
+function toast(msg, isErr = false) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (isErr ? ' error' : '');
+    t.innerHTML = `<i class="fas ${isErr ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── PERFIL ──
+async function loadProfile() {
+    try {
         const res = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { logout(); return; }
         currentUser = await res.json();
-        document.getElementById('userName').innerText = currentUser.name || 'Usuario';
+
+        document.getElementById('userName').innerText  = currentUser.name || 'Usuario';
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userPhone').innerText = currentUser.phone || 'No registrado';
-        
-        let badges = '';
-        if (currentUser.verified) badges += '<span class="badge-verified"><i class="fas fa-check-circle"></i> Cuenta verificada</span> ';
-        if (currentUser.user_type === 'seller') badges += '<span style="background:#FFD600; color:#0A1F44; padding:4px 12px; border-radius:20px; font-size:0.7rem;"><i class="fas fa-store"></i> Vendedor</span>';
-        else badges += '<span style="background:#2196F3; color:white; padding:4px 12px; border-radius:20px; font-size:0.7rem;"><i class="fas fa-shopping-cart"></i> Comprador</span>';
-        document.getElementById('userBadges').innerHTML = badges;
-        
+
+        if (currentUser.avatar) {
+            document.getElementById('avatarDisplay').innerHTML = `<img src="${currentUser.avatar}" alt="avatar">`;
+        }
+
+        if (currentUser.rating_count > 0) {
+            document.getElementById('ratingDisplay').style.display = 'block';
+            document.getElementById('userRating').innerText = Number(currentUser.rating).toFixed(1);
+            document.getElementById('userRatingCount').innerText = currentUser.rating_count;
+        }
+
+        // Badges
+        const badges = [];
+        if (currentUser.verified) badges.push('<span class="badge badge-verified"><i class="fas fa-check-circle"></i> Verificado</span>');
+        if (currentUser.user_type === 'seller') badges.push('<span class="badge badge-seller"><i class="fas fa-store"></i> Vendedor</span>');
+        else badges.push('<span class="badge badge-buyer"><i class="fas fa-shopping-cart"></i> Comprador</span>');
+        if (currentUser.plan_type === 'pro')     badges.push('<span class="badge badge-pro">⭐ PRO</span>');
+        if (currentUser.plan_type === 'premium') badges.push('<span class="badge badge-premium">💎 PREMIUM</span>');
+        document.getElementById('userBadges').innerHTML = badges.join('');
+
+        // Banner de verificación
+        renderVerifBanner();
+
         if (currentUser.user_type === 'seller') {
-            document.getElementById('postAdBtnContainer').innerHTML = '<button class="btn-primary" onclick="showPostAdModal()"><i class="fas fa-plus"></i> Publicar anuncio</button>';
-            document.getElementById('buyerSection').style.display = 'none';
             document.getElementById('sellerSection').style.display = 'block';
+            document.getElementById('profileActions').innerHTML = `<button class="btn-primary" onclick="openPostModal()"><i class="fas fa-plus"></i> Nuevo anuncio</button>`;
             loadMyAds();
             loadOffersReceived();
             loadSellerStats();
+            loadSectores();
         } else {
-            document.getElementById('postAdBtnContainer').innerHTML = '';
             document.getElementById('buyerSection').style.display = 'block';
-            document.getElementById('sellerSection').style.display = 'none';
             loadOffers();
             loadFavorites();
             loadBuyerStats();
         }
+    } catch(e) { console.error(e); }
+}
+
+function renderVerifBanner() {
+    const banner = document.getElementById('verifBanner');
+    if (currentUser.verified) { banner.style.display = 'none'; return; }
+    if (currentUser.verification_status === 'pending') {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div class="verif-banner pending"><div><i class="fas fa-clock"></i> <strong>Verificación en revisión</strong><br><small>Tu solicitud está siendo revisada. Te notificaremos pronto.</small></div></div>`;
+    } else {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div class="verif-banner"><div><i class="fas fa-shield-alt"></i> <strong>¡Verifica tu cuenta!</strong><br><small>Los usuarios verificados generan más confianza y pueden usar Boost.</small></div><button class="btn-verif" onclick="openVerifModal()"><i class="fas fa-id-card"></i> Verificarme</button></div>`;
     }
-    
-    async function loadOffers() {
-        const res = await fetch('/api/offers/my-offers', { headers: { 'Authorization': `Bearer ${token}` } });
+}
+
+// ── AVATAR ──
+async function uploadAvatar(input) {
+    if (!input.files[0]) return;
+    const formData = new FormData();
+    formData.append('avatar', input.files[0]);
+    try {
+        const res = await fetch('/api/users/avatar', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
         const data = await res.json();
-        const tbody = document.getElementById('offersList');
-        if (!data.offers?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No has hecho ofertas</td></tr>'; return; }
-        tbody.innerHTML = data.offers.map(o => {
-            let statusClass = o.status === 'accepted' ? 'badge-accepted' : (o.status === 'rejected' ? 'badge-rejected' : 'badge-pending');
-            let statusText = o.status === 'accepted' ? 'Aceptada' : (o.status === 'rejected' ? 'Rechazada' : 'Pendiente');
-            return `<tr><td><a href="/producto/${o.ad_id}" target="_blank">${o.ad_title}</a></td><td><strong>RD$ ${Number(o.offered_price).toLocaleString()}</strong></td><td><span class="badge ${statusClass}">${statusText}</span></td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.status === 'pending' ? `<button class="btn-icon" onclick="cancelOffer(${o.id})"><i class="fas fa-times-circle"></i> Cancelar</button>` : '-'}</td></tr>`;
-        }).join('');
+        if (data.success) {
+            document.getElementById('avatarDisplay').innerHTML = `<img src="${data.avatar}" alt="avatar">`;
+            toast('Foto actualizada');
+        }
+    } catch(e) { toast('Error al subir foto', true); }
+}
+
+// ── ESTADÍSTICAS VENDEDOR ──
+async function loadSellerStats() {
+    const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    let totalViews = 0, boostedCount = 0, soldCount = 0;
+    (data.ads || []).forEach(ad => {
+        totalViews += ad.views || 0;
+        if (ad.is_boosted) boostedCount++;
+        if (ad.status === 'sold') soldCount++;
+    });
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><i class="fas fa-ad"></i><div class="number">${data.ads?.length || 0}</div><div class="label">Anuncios</div></div>
+        <div class="stat-card"><i class="fas fa-eye"></i><div class="number">${totalViews}</div><div class="label">Vistas</div></div>
+        <div class="stat-card"><i class="fas fa-fire" style="color:#FF9800"></i><div class="number">${boostedCount}</div><div class="label">Destacados</div></div>
+        <div class="stat-card"><i class="fas fa-check-circle" style="color:#4CAF50"></i><div class="number">${soldCount}</div><div class="label">Vendidos</div></div>
+    `;
+}
+
+// ── ESTADÍSTICAS COMPRADOR ──
+async function loadBuyerStats() {
+    const [offRes, favRes] = await Promise.all([
+        fetch('/api/offers/my-offers', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/favorites',        { headers: { 'Authorization': `Bearer ${token}` } })
+    ]);
+    const off = await offRes.json();
+    const fav = await favRes.json();
+    const accepted = (off.offers || []).filter(o => o.status === 'accepted').length;
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><i class="fas fa-tags"></i><div class="number">${off.offers?.length || 0}</div><div class="label">Ofertas</div></div>
+        <div class="stat-card"><i class="fas fa-check-circle" style="color:#4CAF50"></i><div class="number">${accepted}</div><div class="label">Aceptadas</div></div>
+        <div class="stat-card"><i class="fas fa-heart" style="color:#f44336"></i><div class="number">${fav.favorites?.length || 0}</div><div class="label">Favoritos</div></div>
+    `;
+}
+
+// ── MIS ANUNCIOS ──
+async function loadMyAds() {
+    const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const tbody = document.getElementById('myAdsList');
+    if (!data.ads?.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-ad" style="font-size:2rem;margin-bottom:8px;display:block;color:#ddd"></i>No tienes anuncios aún.<br><small>Haz clic en "Nuevo anuncio" para publicar.</small></td></tr>';
+        return;
     }
-    
-    async function loadFavorites() {
-        const res = await fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${token}` } });
+    tbody.innerHTML = data.ads.map(ad => `
+        <tr>
+            <td><strong>${ad.title}</strong></td>
+            <td>RD$ ${Number(ad.price||0).toLocaleString()}</td>
+            <td>${ad.ubicacion_sector || 'SDE'}</td>
+            <td><i class="fas fa-eye" style="color:#888;margin-right:4px"></i>${ad.views || 0}</td>
+            <td><span class="badge ${ad.status === 'active' ? 'badge-active' : 'badge-sold'}">${ad.status === 'active' ? 'Activo' : 'Vendido'}</span></td>
+            <td>${ad.is_boosted ? '<span class="fire"><i class="fas fa-fire"></i> Destacado</span>' : '<span style="color:#ccc">—</span>'}</td>
+            <td style="white-space:nowrap">
+                <button class="btn-sm btn-edit" onclick="openEditModal(${ad.id},'${esc(ad.title)}','${esc(ad.description||'')}',${ad.price||0})"><i class="fas fa-edit"></i></button>
+                ${!ad.is_boosted && ad.status === 'active' ? `<button class="btn-sm btn-boost" onclick="boostAd(${ad.id})" title="Destacar 24h (RD$199)"><i class="fas fa-fire"></i> Boost</button>` : ''}
+                ${ad.status === 'active' ? `<button class="btn-sm btn-sold" onclick="markSold(${ad.id})"><i class="fas fa-check"></i> Vendido</button>` : ''}
+                <button class="btn-sm btn-del" onclick="deleteAd(${ad.id})"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ── OFERTAS RECIBIDAS ──
+async function loadOffersReceived() {
+    const res = await fetch('/api/offers/received', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const tbody = document.getElementById('offersReceivedList');
+    if (!data.offers?.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay ofertas pendientes</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.offers.map(o => `
+        <tr>
+            <td><strong>${o.ad_title}</strong></td>
+            <td>${o.buyer_name}<br><small style="color:#888">${o.buyer_phone||''}</small></td>
+            <td><strong style="color:#4CAF50">RD$ ${Number(o.offered_price||0).toLocaleString()}</strong></td>
+            <td>${o.message || '—'}</td>
+            <td style="color:#888;font-size:0.8rem">${fmtDate(o.created_at)}</td>
+            <td style="white-space:nowrap">
+                <button class="btn-sm btn-accept" onclick="respondOffer(${o.id},'accept')"><i class="fas fa-check"></i> Aceptar</button>
+                <button class="btn-sm btn-counter" onclick="openCounterModal(${o.id})"><i class="fas fa-exchange-alt"></i></button>
+                <button class="btn-sm btn-reject" onclick="respondOffer(${o.id},'reject')"><i class="fas fa-times"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ── MIS OFERTAS (comprador) ──
+async function loadOffers() {
+    const res = await fetch('/api/offers/my-offers', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const tbody = document.getElementById('offersList');
+    if (!data.offers?.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No has hecho ofertas aún</td></tr>';
+        return;
+    }
+    const statusMap = { pending: ['badge-pending','Pendiente'], accepted: ['badge-accepted','Aceptada ✓'], rejected: ['badge-rejected','Rechazada'], cancelled: ['badge-info','Cancelada'] };
+    tbody.innerHTML = data.offers.map(o => {
+        const [cls, label] = statusMap[o.status] || ['badge-info', o.status];
+        return `<tr>
+            <td><a href="/producto/${o.ad_id}" target="_blank" style="color:#0A1F44;font-weight:500">${o.ad_title}</a></td>
+            <td><strong>RD$ ${Number(o.offered_price||0).toLocaleString()}</strong></td>
+            <td><span class="badge ${cls}">${label}</span></td>
+            <td style="color:#888;font-size:0.8rem">${fmtDate(o.created_at)}</td>
+            <td>${o.status === 'pending' ? `<button class="btn-sm btn-cancel" onclick="cancelOffer(${o.id})"><i class="fas fa-times"></i> Cancelar</button>` : '—'}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ── FAVORITOS ──
+async function loadFavorites() {
+    const res = await fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    const tbody = document.getElementById('favoritesList');
+    if (!data.favorites?.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No tienes favoritos guardados</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.favorites.map(f => `
+        <tr>
+            <td><a href="/producto/${f.id}" target="_blank" style="color:#0A1F44;font-weight:500">${f.title}</a></td>
+            <td>RD$ ${Number(f.price||0).toLocaleString()}</td>
+            <td>${f.user_name || 'Vendedor'}</td>
+            <td>${f.ubicacion_sector || 'SDE'}</td>
+            <td><button class="btn-fav-del" onclick="removeFav(${f.id})" title="Quitar favorito"><i class="fas fa-heart-broken"></i></button></td>
+        </tr>
+    `).join('');
+}
+
+// ── SECTORES ──
+async function loadSectores() {
+    const res = await fetch('/api/sectores');
+    const data = await res.json();
+    const sel = document.getElementById('adSector');
+    sel.innerHTML = (data.sectores||[]).map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
+}
+
+// ── ACCIONES VENDEDOR ──
+async function boostAd(adId) {
+    if (!confirm('¿Destacar este anuncio por 24 horas? (RD$ 199)')) return;
+    const res = await fetch(`/api/ads/${adId}/boost`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    if (data.success) { toast('🔥 Anuncio destacado por 24 horas'); loadMyAds(); loadSellerStats(); }
+    else toast(data.error || 'Error', true);
+}
+
+async function markSold(adId) {
+    if (!confirm('¿Marcar este anuncio como vendido?')) return;
+    await fetch(`/api/ads/${adId}/sold`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
+    toast('✅ Marcado como vendido');
+    loadMyAds();
+    loadSellerStats();
+}
+
+async function deleteAd(adId) {
+    if (!confirm('¿Eliminar este anuncio? Esta acción no se puede deshacer.')) return;
+    await fetch(`/api/ads/${adId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    toast('Anuncio eliminado');
+    loadMyAds();
+    loadSellerStats();
+}
+
+async function respondOffer(offerId, action) {
+    await fetch(`/api/offers/${offerId}/${action}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
+    toast(action === 'accept' ? '✅ Oferta aceptada' : 'Oferta rechazada');
+    loadOffersReceived();
+}
+
+// ── ACCIONES COMPRADOR ──
+async function cancelOffer(offerId) {
+    if (!confirm('¿Cancelar esta oferta?')) return;
+    await fetch(`/api/offers/${offerId}/cancel`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
+    toast('Oferta cancelada');
+    loadOffers();
+    loadBuyerStats();
+}
+
+async function removeFav(adId) {
+    await fetch(`/api/favorites/${adId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    toast('Quitado de favoritos');
+    loadFavorites();
+    loadBuyerStats();
+}
+
+// ── MODAL PUBLICAR ──
+function openPostModal()  { loadSectores(); document.getElementById('postModal').classList.add('open'); }
+function closePostModal() { document.getElementById('postModal').classList.remove('open'); }
+
+async function createAd() {
+    const title    = document.getElementById('adTitle').value.trim();
+    const sector   = document.getElementById('adSector').value;
+    const desc     = document.getElementById('adDesc').value.trim();
+    const price    = document.getElementById('adPrice').value;
+    const category = document.getElementById('adCategory').value;
+    if (!title || !sector) { toast('Título y sector son obligatorios', true); return; }
+    try {
+        const res  = await fetch('/api/ads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title, description: desc, price: price || 0, category, ubicacion_sector: sector }) });
         const data = await res.json();
-        const tbody = document.getElementById('favoritesList');
-        if (!data.favorites?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No tienes favoritos</td></tr>'; return; }
-        tbody.innerHTML = data.favorites.map(f => `<tr><td><a href="/producto/${f.id}" target="_blank">${f.title}</a></td><td>RD$ ${Number(f.price).toLocaleString()}</td><td>${f.user_name || 'Vendedor'}</td><td>${f.ubicacion_sector || 'SDE'}</td><td><button class="btn-icon" onclick="removeFavorite(${f.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-    }
-    
-    async function cancelOffer(offerId) { if (confirm('¿Cancelar esta oferta?')) { await fetch(`/api/offers/${offerId}/cancel`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadOffers(); } }
-    async function removeFavorite(adId) { await fetch(`/api/favorites/${adId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadFavorites(); }
-    
-    async function loadBuyerStats() {
-        const [offers, favorites] = await Promise.all([
-            fetch('/api/offers/my-offers', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
-            fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
-        ]);
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><i class="fas fa-hand-holding-usd"></i><div class="number">${offers.offers?.length || 0}</div><div>Ofertas</div></div>
-            <div class="stat-card"><i class="fas fa-heart"></i><div class="number">${favorites.favorites?.length || 0}</div><div>Favoritos</div></div>
-        `;
-    }
-    
-    async function loadMyAds() {
-        const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        const tbody = document.getElementById('myAdsList');
-        if (!data.ads?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tienes anuncios</td></tr>'; return; }
-        tbody.innerHTML = data.ads.map(ad => `
-            <tr>
-                <td>${ad.title}</td>
-                <td><strong>RD$ ${Number(ad.price).toLocaleString()}</strong></td>
-                <td>${ad.ubicacion_sector || 'SDE'}</td>
-                <td>${ad.views || 0}</td>
-                <td><span class="badge ${ad.status === 'active' ? 'badge-active' : 'badge-sold'}">${ad.status === 'active' ? 'Activo' : 'Vendido'}</span></td>
-                <td>${ad.is_boosted ? '<span style="color:#FF9800;">🔥 Destacado</span>' : '-'}</td>
-                <td>
-                    <button class="btn-edit" onclick="editAd(${ad.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn-boost" onclick="boostAd(${ad.id})"><i class="fas fa-fire"></i> Boost</button>
-                    ${ad.status === 'active' ? `<button class="btn-sold" onclick="markAsSold(${ad.id})"><i class="fas fa-check"></i> Vendido</button>` : ''}
-                    <button class="btn-icon" onclick="deleteAd(${ad.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
-    }
-    
-    async function loadOffersReceived() {
-        const res = await fetch('/api/offers/received', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        const tbody = document.getElementById('offersReceivedList');
-        if (!data.offers?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay ofertas recibidas</td></tr>'; return; }
-        tbody.innerHTML = data.offers.map(o => `
-            <tr>
-                <td>${o.ad_title}</td>
-                <td>${o.buyer_name}</td>
-                <td><strong>RD$ ${Number(o.offered_price).toLocaleString()}</strong></td>
-                <td>${o.message || '-'}</td>
-                <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                <td>
-                    <button class="btn-sold" onclick="respondOffer(${o.id}, 'accept')"><i class="fas fa-check"></i> Aceptar</button>
-                    <button class="btn-boost" onclick="showCounterOffer(${o.id})"><i class="fas fa-exchange-alt"></i> Contra</button>
-                    <button class="btn-icon" onclick="respondOffer(${o.id}, 'reject')"><i class="fas fa-times"></i></button>
-                </td>
-            </tr>
-        `).join('');
-    }
-    
-    async function loadSellerStats() {
-        const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        let views = 0, boosted = 0;
-        (data.ads || []).forEach(ad => { views += ad.views || 0; if (ad.is_boosted) boosted++; });
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><i class="fas fa-ad"></i><div class="number">${data.ads?.length || 0}</div><div>Anuncios</div></div>
-            <div class="stat-card"><i class="fas fa-eye"></i><div class="number">${views}</div><div>Vistas</div></div>
-            <div class="stat-card"><i class="fas fa-fire"></i><div class="number">${boosted}</div><div>Destacados</div></div>
-        `;
-    }
-    
-    async function editAd(id) { const newPrice = prompt('Nuevo precio:'); if (newPrice) { await fetch(`/api/ads/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ price: newPrice }) }); loadMyAds(); } }
-    async function boostAd(adId) { if (confirm('¿Destacar por 24 horas? (RD$199)')) { await fetch(`/api/ads/${adId}/boost`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadMyAds(); } }
-    async function markAsSold(id) { if (confirm('¿Marcar como vendido?')) { await fetch(`/api/ads/${id}/sold`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadMyAds(); } }
-    async function deleteAd(id) { if (confirm('¿Eliminar anuncio?')) { await fetch(`/api/ads/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadMyAds(); } }
-    async function respondOffer(offerId, action) { await fetch(`/api/offers/${offerId}/${action}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadOffersReceived(); }
-    function showCounterOffer(offerId) { const price = prompt('Contraoferta (RD$):'); if (price) { const msg = prompt('Mensaje:'); fetch(`/api/offers/${offerId}/counter`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ counter_price: price, message: msg }) }).then(() => { showToast('Contraoferta enviada'); loadOffersReceived(); }); } }
-    
-    function showPostAdModal() {
-        loadSectoresForSelect();
-        document.getElementById('postAdModal').style.display = 'flex';
-    }
-    function closePostAdModal() { document.getElementById('postAdModal').style.display = 'none'; }
-    
-    async function loadSectoresForSelect() {
-        const res = await fetch('/api/sectores');
-        const data = await res.json();
-        document.getElementById('postAdBody').innerHTML = `
-            <div class="form-group"><label>Título *</label><input type="text" id="adTitle" placeholder="Ej: iPhone 13 Pro"></div>
-            <div class="form-group"><label>Descripción</label><textarea id="adDesc" rows="3"></textarea></div>
-            <div class="form-group"><label>Precio (RD$)</label><input type="number" id="adPrice" placeholder="0"></div>
-            <div class="form-group"><label>Categoría</label><select id="adCategory"><option>Vehículos</option><option>Inmuebles</option><option>Empleos</option><option>Electrónica</option><option>Hogar</option><option>Servicios</option></select></div>
-            <div class="form-group"><label>Sector *</label><select id="adSector">${(data.sectores || []).map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('')}</select></div>
-            <div class="form-group"><label>Imágenes</label><input type="file" id="adImages" multiple accept="image/*"></div>
-            <button class="btn-primary" style="width:100%;" onclick="createAdWithImages()">Publicar anuncio</button>
-        `;
-    }
-    
-    async function createAdWithImages() {
-        const ad = { title: document.getElementById('adTitle').value, description: document.getElementById('adDesc').value, price: document.getElementById('adPrice').value, category: document.getElementById('adCategory').value, ubicacion_sector: document.getElementById('adSector').value };
-        if (!ad.title || !ad.ubicacion_sector) { showToast('Título y sector requeridos', true); return; }
-        try {
-            const res = await fetch('/api/ads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(ad) });
-            const data = await res.json();
-            if (data.success) {
-                const adId = data.ad.id;
-                const imageFiles = document.getElementById('adImages').files;
-                if (imageFiles.length > 0) {
-                    const formData = new FormData();
-                    for (let i = 0; i < imageFiles.length; i++) formData.append('images', imageFiles[i]);
-                    await fetch(`/api/upload-images/${adId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-                }
-                showToast('Anuncio publicado');
-                closePostAdModal();
-                loadMyAds();
-                loadSellerStats();
-            } else showToast(data.error, true);
-        } catch(e) { showToast('Error', true); }
-    }
-    
-    function logout() { localStorage.clear(); window.location.href = '/'; }
-    
-    loadProfile();
+        if (!data.success) { toast(data.error || 'Error al publicar', true); return; }
+        const adId = data.ad.id;
+        const imageFiles = document.getElementById('adImages').files;
+        if (imageFiles.length > 0) {
+            const formData = new FormData();
+            for (let i = 0; i < imageFiles.length; i++) formData.append('images', imageFiles[i]);
+            await fetch(`/api/upload-images/${adId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+        }
+        toast('🎉 Anuncio publicado');
+        closePostModal();
+        document.getElementById('adTitle').value = '';
+        document.getElementById('adDesc').value  = '';
+        document.getElementById('adPrice').value = '';
+        loadMyAds();
+        loadSellerStats();
+    } catch(e) { toast('Error al publicar', true); }
+}
+
+// ── MODAL EDITAR ──
+function openEditModal(id, title, desc, price) {
+    document.getElementById('editAdId').value  = id;
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDesc').value  = desc;
+    document.getElementById('editPrice').value = price;
+    document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEdit() {
+    const id    = document.getElementById('editAdId').value;
+    const title = document.getElementById('editTitle').value.trim();
+    const desc  = document.getElementById('editDesc').value.trim();
+    const price = document.getElementById('editPrice').value;
+    if (!title) { toast('El título es obligatorio', true); return; }
+    await fetch(`/api/ads/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title, description: desc, price }) });
+    toast('✅ Cambios guardados');
+    closeEditModal();
+    loadMyAds();
+}
+
+// ── MODAL CONTRAOFERTA ──
+function openCounterModal(offerId) {
+    document.getElementById('counterOfferId').value = offerId;
+    document.getElementById('counterPrice').value   = '';
+    document.getElementById('counterMessage').value = '';
+    document.getElementById('counterModal').classList.add('open');
+}
+function closeCounterModal() { document.getElementById('counterModal').classList.remove('open'); }
+
+async function sendCounter() {
+    const offerId = document.getElementById('counterOfferId').value;
+    const price   = document.getElementById('counterPrice').value;
+    const message = document.getElementById('counterMessage').value;
+    if (!price) { toast('Ingresa tu contraoferta', true); return; }
+    await fetch(`/api/offers/${offerId}/counter`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ counter_price: price, message }) });
+    toast('Contraoferta enviada');
+    closeCounterModal();
+    loadOffersReceived();
+}
+
+// ── HELPERS ──
+function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function esc(str) {
+    return String(str||'').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+function logout() { localStorage.clear(); window.location.href = '/'; }
+
+// Cerrar modales al hacer click afuera
+['postModal','editModal','counterModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('open');
+    });
+});
+
+loadProfile();
 </script>
 </body>
 </html>
