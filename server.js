@@ -45,7 +45,7 @@ function clearCache() {
 }
 
 // ============================================================
-// BASE DE DATOS (SIN TABLAS DE IMÁGENES)
+// BASE DE DATOS
 // ============================================================
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -82,7 +82,7 @@ async function initDB() {
         )
     `);
 
-    // ADS (sin imágenes)
+    // ADS
     await db.query(`
         CREATE TABLE IF NOT EXISTS ads (
             id SERIAL PRIMARY KEY,
@@ -99,7 +99,9 @@ async function initDB() {
             boosted_expires TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP,
-            deleted_at TIMESTAMP
+            deleted_at TIMESTAMP,
+            deleted_reason TEXT,
+            deleted_by VARCHAR(100)
         )
     `);
 
@@ -173,11 +175,42 @@ async function initDB() {
     `);
     await db.query(`INSERT INTO plans (name, price, duration_days, features) VALUES ('pro', 399, 30, '["perfil_tienda","anuncios_destacados"]'), ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]') ON CONFLICT (name) DO NOTHING`);
 
+    // SOPORTE TICKETS
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS support_tickets (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(100) NOT NULL,
+            type VARCHAR(50),
+            ad_id INTEGER,
+            message TEXT NOT NULL,
+            status VARCHAR(20) DEFAULT 'pending',
+            admin_reply TEXT,
+            replied_at TIMESTAMP,
+            replied_by VARCHAR(100),
+            resolved_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // AUDIT LOG
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id SERIAL PRIMARY KEY,
+            action VARCHAR(50),
+            admin_email VARCHAR(100),
+            ad_id INTEGER,
+            ad_title TEXT,
+            seller_email VARCHAR(100),
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // ÍNDICES
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_category ON ads(category) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
 
     // Admin por defecto
@@ -189,7 +222,7 @@ async function initDB() {
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
     }
 
-    console.log('✅ Base de datos inicializada (sin multimedia)');
+    console.log('✅ Base de datos inicializada correctamente');
 }
 
 // ============================================================
@@ -241,6 +274,11 @@ const verifyToken = (req, res, next) => {
     } catch {
         res.status(401).json({ error: 'Token inválido' });
     }
+};
+
+const verifyAdmin = async (req, res, next) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+    next();
 };
 
 // ============================================================
@@ -301,7 +339,7 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// ANUNCIOS (SIN IMÁGENES)
+// ANUNCIOS
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
@@ -430,6 +468,128 @@ app.delete('/api/ads/:id', verifyToken, async (req, res) => {
 });
 
 // ============================================================
+// ADMIN - ELIMINAR CON MOTIVO Y AUDITORÍA
+// ============================================================
+
+app.get('/api/admin/ads/deleted', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`
+        SELECT a.*, u.email as user_email, u.name as user_name, 
+               a.deleted_reason, a.deleted_by, a.deleted_at
+        FROM ads a 
+        JOIN users u ON a.user_id = u.id 
+        WHERE a.deleted_at IS NOT NULL 
+        ORDER BY a.deleted_at DESC LIMIT 100`);
+    res.json({ ads: result.rows });
+});
+
+app.delete('/api/admin/ads/:id/delete', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    try {
+        const ad = await db.query(`SELECT a.*, u.email as user_email, u.name as user_name 
+                                   FROM ads a JOIN users u ON a.user_id = u.id 
+                                   WHERE a.id = $1`, [id]);
+        if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+        
+        await db.query(`
+            UPDATE ads SET 
+                deleted_at = NOW(), 
+                deleted_reason = $1, 
+                deleted_by = $2,
+                status = 'deleted'
+            WHERE id = $3`,
+            [reason || 'Sin motivo especificado', req.user.email, id]);
+        
+        await db.query(`
+            INSERT INTO audit_log (action, admin_email, ad_id, ad_title, seller_email, reason, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            ['DELETE_AD', req.user.email, id, ad.rows[0].title, ad.rows[0].user_email, reason]);
+        
+        clearCache();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/admin/ads/:id/restore', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.query(`
+            UPDATE ads SET 
+                deleted_at = NULL, 
+                deleted_reason = NULL, 
+                deleted_by = NULL,
+                status = 'active',
+                updated_at = NOW()
+            WHERE id = $1`, [id]);
+        
+        await db.query(`
+            INSERT INTO audit_log (action, admin_email, ad_id, reason, created_at)
+            VALUES ($1, $2, $3, $4, NOW())`,
+            ['RESTORE_AD', req.user.email, id, 'Anuncio restaurado desde el panel']);
+        
+        clearCache();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/admin/audit', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 200`);
+    res.json({ audit: result.rows });
+});
+
+// ============================================================
+// SOPORTE Y TICKETS
+// ============================================================
+
+app.post('/api/support/ticket', async (req, res) => {
+    const { name, email, type, ad_id, message } = req.body;
+    if (!name || !email || !message) return res.status(400).json({ error: 'Campos requeridos' });
+    try {
+        const result = await db.query(`
+            INSERT INTO support_tickets (name, email, type, ad_id, message, status, created_at)
+            VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
+            RETURNING id
+        `, [name, email, type, ad_id || null, message]);
+        res.json({ success: true, ticket_id: result.rows[0].id });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/support/tickets', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT * FROM support_tickets ORDER BY 
+        CASE WHEN status = 'pending' THEN 1 WHEN status = 'replied' THEN 2 ELSE 3 END, created_at DESC`);
+    res.json({ tickets: result.rows });
+});
+
+app.get('/api/support/tickets/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT * FROM support_tickets WHERE id = $1`, [req.params.id]);
+    res.json(result.rows[0] || {});
+});
+
+app.post('/api/support/tickets/:id/reply', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { reply } = req.body;
+    await db.query(`UPDATE support_tickets SET status = 'replied', admin_reply = $1, replied_at = NOW(), replied_by = $2 WHERE id = $3`, [reply, req.user.email, id]);
+    res.json({ success: true });
+});
+
+app.post('/api/support/tickets/:id/resolve', verifyToken, verifyAdmin, async (req, res) => {
+    await db.query(`UPDATE support_tickets SET status = 'resolved', resolved_at = NOW() WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+});
+
+app.get('/api/admin/verification-photos/:userId', verifyToken, verifyAdmin, async (req, res) => {
+    const { userId } = req.params;
+    const user = await db.query(`SELECT name, email, phone FROM users WHERE id = $1`, [userId]);
+    const request = await db.query(`SELECT id_photo_front, id_photo_back, selfie_photo FROM verification_requests WHERE user_id = $1 ORDER BY requested_at DESC LIMIT 1`, [userId]);
+    res.json({ ...user.rows[0], ...request.rows[0] });
+});
+
+// ============================================================
 // OFERTAS
 // ============================================================
 app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
@@ -537,29 +697,26 @@ app.get('/api/plans', async (req, res) => {
 });
 
 // ============================================================
-// ADMIN
+// ADMIN ESTADÍSTICAS
 // ============================================================
-const verifyAdmin = async (req, res, next) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-    next();
-};
-
 app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
     let cached = getCache('stats');
     if (cached) return res.json(cached);
-    const [users, ads, activeAds, verifiedUsers, pendingVerifications] = await Promise.all([
+    const [users, ads, activeAds, verifiedUsers, pendingVerifications, deletedAds] = await Promise.all([
         db.query(`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM ads WHERE deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM ads WHERE status = 'active' AND deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM users WHERE verified = true`),
-        db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`)
+        db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`),
+        db.query(`SELECT COUNT(*) FROM ads WHERE deleted_at IS NOT NULL`)
     ]);
     const stats = {
         totalUsers: parseInt(users.rows[0].count),
         totalAds: parseInt(ads.rows[0].count),
         activeAds: parseInt(activeAds.rows[0].count),
         verifiedUsers: parseInt(verifiedUsers.rows[0].count),
-        pendingVerifications: parseInt(pendingVerifications.rows[0].count)
+        pendingVerifications: parseInt(pendingVerifications.rows[0].count),
+        deletedAds: parseInt(deletedAds.rows[0].count)
     };
     setCache('stats', stats);
     res.json(stats);
@@ -631,38 +788,38 @@ app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
-// SERVIDOR DE ARCHIVOS ESTÁTICOS
+// SERVIDOR DE ARCHIVOS ESTÁTICOS Y RUTAS
 // ============================================================
 const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
 app.use(express.static(publicDir));
 
-// ============================================================
 // RUTAS DEL FRONTEND
-// ============================================================
-
-// Página principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// Panel de Administración
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// Perfil del Comprador
 app.get('/perfil/comprador', (req, res) => {
     res.sendFile(path.join(publicDir, 'profile-buyer.html'));
 });
 
-// Perfil del Vendedor
 app.get('/perfil/vendedor', (req, res) => {
     res.sendFile(path.join(publicDir, 'profile-seller.html'));
 });
 
-// Cualquier otra ruta
+app.get('/help-faq', (req, res) => {
+    res.sendFile(path.join(publicDir, 'help-faq.html'));
+});
+
+app.get('/admin-support', (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin-support.html'));
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
@@ -676,10 +833,9 @@ async function start() {
         app.listen(PORT, () => {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
             console.log(`👑 Admin: http://localhost:${PORT}/admin`);
-            console.log(`👤 Comprador: http://localhost:${PORT}/perfil/comprador`);
-            console.log(`💰 Vendedor: http://localhost:${PORT}/perfil/vendedor`);
+            console.log(`🆘 Soporte: http://localhost:${PORT}/help-faq`);
             console.log(`🔐 Credenciales: admin@elfarol.com.do / admin123`);
-            console.log(`✅ Sin multimedia - Solo texto\n`);
+            console.log(`✅ Base de datos optimizada con soporte integrado\n`);
         });
     } catch (error) {
         console.error('❌ Error al iniciar:', error.message);
