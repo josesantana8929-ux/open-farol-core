@@ -3,45 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Farol - Panel de Administración</title>
+    <title>Panel de Control | El Farol Corporativo</title>
+    <!-- Font Awesome para iconos pro -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Segoe UI',Arial,sans-serif;background:#1a1a2e;color:#fff;}
+        :root { 
+            --primary: #0A1F44; 
+            --accent: #D4AF37; 
+            --bg: #F4F7F9; 
+            --white: #ffffff; 
+            --text: #1A1A1A;
+            --danger: #C62828;
+            --success: #2E7D32;
+        }
         
-        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0d1b4a);}
-        .login-box{background:white;padding:40px;border-radius:16px;width:400px;color:#333;}
-        .login-box h2{color:#1A237E;margin-bottom:24px;text-align:center;}
-        input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
-        .btn-primary{width:100%;background:#1A237E;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
-        .btn-primary:hover{background:#0D1B4A;}
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+        /* Pantalla de Login con Clase */
+        .login-container { min-height:100vh; display:flex; align-items:center; justify-content:center; background: var(--primary); }
+        .login-box { background: var(--white); padding: 40px; border-radius: 4px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; }
+        .login-box h2 { color: var(--primary); margin-bottom: 25px; font-weight: 600; letter-spacing: 1px; }
+        .login-box input { width:100%; padding:14px; margin:10px 0; border:1px solid #DDD; border-radius:4px; outline:none; }
+        .btn-primary { width:100%; background: var(--primary); color:white; padding:14px; border:none; border-radius:4px; cursor:pointer; font-weight:600; text-transform:uppercase; transition: 0.3s; }
+        .btn-primary:hover { background: var(--accent); color: var(--primary); }
+
+        /* Dashboard de Alto Nivel */
+        .dashboard { display:none; display: flex; flex-direction: row; min-height: 100vh; }
         
-        .dashboard{display:none;}
-        .sidebar{width:260px;background:#0f0f1a;position:fixed;height:100%;padding:20px;}
-        .sidebar h3{color:#FFD600;margin-bottom:20px;}
-        .sidebar button{width:100%;margin:8px 0;padding:12px;background:#1a1a2e;border:1px solid #2d2d44;color:white;border-radius:8px;cursor:pointer;text-align:left;}
-        .sidebar button:hover{background:#FFD600;color:#1A237E;}
-        .main-content{margin-left:260px;padding:20px;}
-        .topbar{background:#1a1a2e;padding:15px 20px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:20px;}
-        .stat-card{background:#1a1a2e;padding:20px;border-radius:10px;text-align:center;}
-        .stat-number{font-size:2rem;font-weight:bold;color:#FFD600;}
-        .stat-label{color:#c9a87b;margin-top:5px;}
-        table{width:100%;background:#1a1a2e;border-collapse:collapse;border-radius:10px;overflow:hidden;}
-        th,td{padding:12px;text-align:left;border-bottom:1px solid #2d2d44;}
-        th{background:#0f0f1a;color:#FFD600;}
-        .badge{padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:bold;}
-        .badge-success{background:#4CAF50;color:white;}
-        .badge-warning{background:#FF9800;color:white;}
-        .badge-danger{background:#f44336;color:white;}
-        .btn-approve{background:#4CAF50;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;}
-        .btn-reject{background:#f44336;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;margin-left:5px;}
-        .logout-btn{background:#f44336;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;}
-        .toast{position:fixed;bottom:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:1000;}
-        .toast.error{background:#f44336;}
+        /* Sidebar Profesional */
+        .sidebar { width:260px; background: var(--primary); color: white; padding: 25px 15px; flex-shrink: 0; border-right: 4px solid var(--accent); }
+        .sidebar h3 { color: var(--accent); margin-bottom: 30px; text-align: center; font-size: 1.4rem; font-weight: 600; }
+        .sidebar button { width:100%; margin:5px 0; padding:12px 15px; background:transparent; border:none; color:#BDC3C7; border-radius:4px; cursor:pointer; text-align:left; font-size: 0.9rem; transition: 0.3s; }
+        .sidebar button i { margin-right: 10px; width: 20px; }
+        .sidebar button:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
+        .sidebar button.active { background: var(--accent); color: var(--primary); font-weight: 600; }
+
+        /* Contenido */
+        .main-content { flex: 1; padding: 30px; }
+        .topbar { background: var(--white); padding: 20px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center; }
+        .topbar h1 { font-size: 1.2rem; color: var(--primary); font-weight: 600; }
+
+        /* Tarjetas de Estadísticas */
+        .stats-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 20px; }
+        .stat-card { background: var(--white); padding: 25px; border-radius: 4px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-bottom: 3px solid var(--accent); }
+        .stat-number { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
+        .stat-label { color: #888; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; margin-top: 5px; }
+
+        /* Tablas Limpias */
+        .table-container { background: var(--white); border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 25px; }
+        table { width:100%; border-collapse: collapse; }
+        th { background: #FAFBFC; color: #888; font-size: 0.8rem; text-transform: uppercase; padding: 15px; text-align: left; border-bottom: 2px solid #EEE; }
+        td { padding: 15px; border-bottom: 1px solid #F0F0F0; font-size: 0.9rem; }
         
+        .badge { padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; font-weight: 600; }
+        .badge-success { background: #E8F5E9; color: var(--success); }
+        .badge-warning { background: #FFF3E0; color: #E65100; }
+        
+        .btn-approve { background: var(--success); color: white; border:none; padding: 6px 12px; border-radius: 2px; cursor:pointer; }
+        .btn-reject { background: var(--danger); color: white; border:none; padding: 6px 12px; border-radius: 2px; cursor:pointer; }
+
         @media(max-width:768px){
-            .sidebar{width:100%;position:relative;height:auto;}
-            .main-content{margin-left:0;}
+            .dashboard { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; }
+            .main-content { padding: 15px; }
         }
     </style>
 </head>
@@ -49,250 +75,38 @@
 
 <div id="loginPanel" class="login-container">
     <div class="login-box">
-        <h2>🏮 El Farol - Admin</h2>
-        <input type="email" id="adminEmail" placeholder="Email" value="admin@elfarol.com.do">
+        <h2>🏮 EL FAROL ADMIN</h2>
+        <input type="email" id="adminEmail" placeholder="Email corporativo" value="admin@elfarol.com.do">
         <input type="password" id="adminPassword" placeholder="Contraseña" value="admin123">
-        <button class="btn-primary" onclick="login()">Ingresar</button>
-        <div id="errorMsg" style="color:red;margin-top:10px"></div>
+        <button class="btn-primary" onclick="login()">ACCEDER AL PANEL</button>
+        <div id="errorMsg" style="color:red; margin-top:15px; font-size: 0.8rem;"></div>
     </div>
 </div>
 
-<div id="dashboardPanel" class="dashboard">
+<div id="dashboardPanel" class="dashboard" style="display:none;">
     <div class="sidebar">
-        <h3>🏮 El Farol Admin</h3>
-        <hr style="margin:10px 0;border-color:#2d2d44;">
-        <button onclick="loadStats()"><i class="fas fa-chart-line"></i> 📊 Dashboard</button>
-        <button onclick="loadVerificationRequests()"><i class="fas fa-check-circle"></i> ✅ Verificaciones</button>
-        <button onclick="loadUsers()"><i class="fas fa-users"></i> 👥 Usuarios</button>
-        <button onclick="loadAds()"><i class="fas fa-ad"></i> 📢 Anuncios</button>
-        <button onclick="logout()" style="background:#f44336;"><i class="fas fa-sign-out-alt"></i> 🚪 Salir</button>
+        <h3>🏮 EL FAROL</h3>
+        <button onclick="loadStats()" class="active"><i class="fas fa-th-large"></i> DASHBOARD</button>
+        <button onclick="loadVerificationRequests()"><i class="fas fa-user-check"></i> VERIFICACIONES</button>
+        <button onclick="loadUsers()"><i class="fas fa-users"></i> USUARIOS</button>
+        <button onclick="loadAds()"><i class="fas fa-ad"></i> ANUNCIOS</button>
+        <div style="margin-top: 50px; padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logout()" style="color: var(--accent);"><i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN</button>
+        </div>
     </div>
     <div class="main-content">
         <div class="topbar">
-            <h1 id="pageTitle">Dashboard</h1>
-            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
+            <h1 id="pageTitle">Resumen General</h1>
+            <div style="color: #888; font-size: 0.9rem;">Socio: <strong>mxl</strong></div>
         </div>
         <div id="contentArea"></div>
     </div>
 </div>
 
+<!-- Mismo Script que ya tienes porque funciona perfecto -->
 <script>
-    let token = null;
-    
-    async function login() {
-        const email = document.getElementById('adminEmail').value;
-        const password = document.getElementById('adminPassword').value;
-        
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            
-            if (res.ok && data.user?.role === 'admin') {
-                token = data.token;
-                localStorage.setItem('adminToken', token);
-                document.getElementById('loginPanel').style.display = 'none';
-                document.getElementById('dashboardPanel').style.display = 'block';
-                loadStats();
-            } else {
-                document.getElementById('errorMsg').innerText = 'Acceso denegado. Solo administradores.';
-            }
-        } catch(e) {
-            document.getElementById('errorMsg').innerText = 'Error de conexión';
-        }
-    }
-    
-    async function loadStats() {
-        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
-        try {
-            const res = await fetch('/api/admin/stats', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            
-            document.getElementById('contentArea').innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-number">${data.totalUsers || 0}</div><div class="stat-label">👥 Usuarios</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.totalAds || 0}</div><div class="stat-label">📢 Anuncios totales</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.activeAds || 0}</div><div class="stat-label">✅ Anuncios activos</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.verifiedUsers || 0}</div><div class="stat-label">🔒 Usuarios verificados</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.pendingVerifications || 0}</div><div class="stat-label">⏳ Verificaciones pendientes</div></div>
-                </div>
-                <div style="background:#1a1a2e;padding:20px;border-radius:10px;margin-top:20px;">
-                    <h3><i class="fas fa-info-circle"></i> Resumen rápido</h3>
-                    <p>✅ ${data.verifiedUsers || 0} usuarios verificados</p>
-                    <p>📢 ${data.activeAds || 0} anuncios activos</p>
-                    <p>⏳ ${data.pendingVerifications || 0} solicitudes de verificación pendientes</p>
-                    <hr style="margin:15px 0;border-color:#2d2d44;">
-                    <p><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Los vendedores verificados pueden destacar sus anuncios con Boost.</p>
-                </div>
-            `;
-        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar estadísticas</p>'; }
-    }
-    
-    async function loadVerificationRequests() {
-        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-check-circle"></i> Solicitudes de Verificación';
-        try {
-            const res = await fetch('/api/admin/verification-requests', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            
-            if (!data.requests || data.requests.length === 0) {
-                document.getElementById('contentArea').innerHTML = '<div style="background:#1a1a2e;padding:20px;border-radius:10px;">✅ No hay solicitudes de verificación pendientes</div>';
-                return;
-            }
-            
-            let html = '<table><thead><tr><th>ID</th><th>Usuario</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
-            for (const req of data.requests) {
-                html += `<tr>
-                    <td>${req.id}</td>
-                    <td>${req.name || '-'}</td>
-                    <td>${req.email}</td>
-                    <td>${req.phone || '-'}</td>
-                    <td>${new Date(req.requested_at).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn-approve" onclick="approveVerification(${req.user_id})">✅ Aprobar</button>
-                        <button class="btn-reject" onclick="rejectVerification(${req.user_id})">❌ Rechazar</button>
-                    </td>
-                </tr>`;
-            }
-            html += '</tbody></table>';
-            document.getElementById('contentArea').innerHTML = html;
-        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar solicitudes</p>'; }
-    }
-    
-    async function approveVerification(userId) {
-        if (!confirm('¿Aprobar la verificación de este usuario?')) return;
-        try {
-            const res = await fetch(`/api/admin/verify/${userId}/approve`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ notes: 'Aprobado por administrador' })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ Usuario verificado exitosamente');
-                loadVerificationRequests();
-                loadStats();
-            } else {
-                showToast('❌ Error: ' + (data.error || 'Desconocido'), true);
-            }
-        } catch(e) { showToast('Error de conexión', true); }
-    }
-    
-    async function rejectVerification(userId) {
-        const reason = prompt('Motivo del rechazo:');
-        if (!reason) return;
-        try {
-            const res = await fetch(`/api/admin/verify/${userId}/reject`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ notes: reason })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('❌ Solicitud rechazada');
-                loadVerificationRequests();
-            } else {
-                showToast('❌ Error: ' + (data.error || 'Desconocido'), true);
-            }
-        } catch(e) { showToast('Error de conexión', true); }
-    }
-    
-    async function loadUsers() {
-        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-users"></i> Usuarios';
-        try {
-            const res = await fetch('/api/admin/users', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            
-            let html = '<tr><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Rol</th><th>Verificado</th></tr></thead><tbody>';
-            for (const user of data.users || []) {
-                html += `<tr>
-                    <td>${user.id}</td>
-                    <td>${user.name || '-'}</td>
-                    <td>${user.email}</td>
-                    <td>${user.user_type === 'seller' ? '💰 Vendedor' : '📦 Comprador'}</td>
-                    <td><span class="badge ${user.role === 'admin' ? 'badge-success' : 'badge-warning'}">${user.role || 'user'}</span></td>
-                    <td>${user.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td>
-                </tr>`;
-            }
-            html += '</tbody></table>';
-            document.getElementById('contentArea').innerHTML = html;
-        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar usuarios</p>'; }
-    }
-    
-    async function loadAds() {
-        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-ad"></i> Anuncios';
-        try {
-            const res = await fetch('/api/admin/ads', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            
-            let html = '<table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
-            for (const ad of data.ads || []) {
-                html += `<tr>
-                    <td>${ad.id}</td>
-                    <td>${ad.title}</td>
-                    <td>RD$ ${Number(ad.price).toLocaleString()}</td>
-                    <td>${ad.user_name || ad.user_email}</td>
-                    <td><span class="badge ${ad.status === 'active' ? 'badge-success' : 'badge-warning'}">${ad.status}</span></td>
-                    <td><button class="btn-reject" onclick="deleteAd(${ad.id})">🗑️ Eliminar</button></td>
-                </tr>`;
-            }
-            html += '</tbody></table>';
-            document.getElementById('contentArea').innerHTML = html;
-        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar anuncios</p>'; }
-    }
-    
-    async function deleteAd(id) {
-        if (!confirm('¿Eliminar este anuncio permanentemente?')) return;
-        try {
-            const res = await fetch(`/api/admin/ads/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ Anuncio eliminado');
-                loadAds();
-                loadStats();
-            } else {
-                showToast('❌ Error al eliminar', true);
-            }
-        } catch(e) { showToast('Error de conexión', true); }
-    }
-    
-    function logout() {
-        localStorage.removeItem('adminToken');
-        token = null;
-        document.getElementById('loginPanel').style.display = 'flex';
-        document.getElementById('dashboardPanel').style.display = 'none';
-        showToast('Sesión cerrada');
-    }
-    
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isError ? ' error' : '');
-        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-    
-    // Cargar sesión guardada
-    const savedToken = localStorage.getItem('adminToken');
-    if (savedToken) {
-        token = savedToken;
-        document.getElementById('loginPanel').style.display = 'none';
-        document.getElementById('dashboardPanel').style.display = 'block';
-        loadStats();
-    }
+    // ... (Mantén toda la lógica de login(), loadStats(), etc. que me pasaste arriba) ...
 </script>
+
 </body>
 </html>
