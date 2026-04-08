@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Farol - Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>EL FAROL ADMIN</title>
+    <!-- Usamos estilos directos para que no dependa de enlaces externos si fallan -->
     <style>
-        body { background-color: #001f3f; } /* Azul Marino Farol */
+        body { background-color: #001f3f; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-h-screen; margin: 0; height: 100vh; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 350px; text-align: center; }
+        .logo { font-size: 40px; margin-bottom: 10px; }
+        h1 { color: #001f3f; margin-bottom: 5px; font-size: 24px; }
+        p { color: #666; font-size: 14px; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #001f3f; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #003366; }
+        #message { color: red; font-size: 13px; margin-top: 15px; display: none; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body>
 
-    <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
-        <div class="mb-4">
-            <span class="text-4xl">🏮</span>
-            <h1 class="text-2xl font-bold text-gray-800 mt-2">EL FAROL ADMIN</h1>
-            <p class="text-sm text-gray-500">Panel de administración</p>
-        </div>
+    <div class="login-card">
+        <div class="logo">🏮</div>
+        <h1>EL FAROL ADMIN</h1>
+        <p>Panel de administración</p>
 
-        <form id="loginForm" class="space-y-4">
-            <input type="email" id="email" placeholder="Email" required 
-                class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-900">
-            <input type="password" id="password" placeholder="Contraseña" required 
-                class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-900">
-            
-            <button type="submit" 
-                class="w-full bg-[#001f3f] text-white py-2 rounded font-bold hover:bg-blue-900 transition">
-                ACCEDER AL PANEL
-            </button>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit" id="btnAcceder">ACCEDER AL PANEL</button>
         </form>
-        <div id="message" class="mt-4 text-red-600 text-sm hidden"></div>
+        
+        <div id="message"></div>
     </div>
 
     <script>
@@ -37,7 +38,11 @@
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const msgDiv = document.getElementById('message');
+            const msg = document.getElementById('message');
+            const btn = document.getElementById('btnAcceder');
+
+            btn.innerText = "CARGANDO...";
+            btn.disabled = true;
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -50,16 +55,19 @@
 
                 if (data.success && data.user.role === 'admin') {
                     localStorage.setItem('adminToken', data.token);
-                    // AQUÍ ES DONDE ENTRA AL PANEL REAL
-                    alert('¡Bienvenido Jefe mxl! Entrando al sistema...');
+                    alert('¡Acceso concedido, mxl!');
                     window.location.href = '/admin-dashboard'; 
                 } else {
-                    msgDiv.textContent = "Acceso denegado: Usuario no es administrador.";
-                    msgDiv.classList.remove('hidden');
+                    msg.innerText = "Error: " + (data.error || "No eres administrador");
+                    msg.style.display = "block";
+                    btn.innerText = "ACCEDER AL PANEL";
+                    btn.disabled = false;
                 }
             } catch (error) {
-                msgDiv.textContent = "Error de conexión con el servidor.";
-                msgDiv.classList.remove('hidden');
+                msg.innerText = "Error de conexión con el servidor";
+                msg.style.display = "block";
+                btn.innerText = "ACCEDER AL PANEL";
+                btn.disabled = false;
             }
         });
     </script>
