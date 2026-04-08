@@ -19,17 +19,52 @@ const SITE_NAME = process.env.SITE_NAME || 'El Farol Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // ============================================================
-// BASE DE DATOS
+// CACHÉ EN MEMORIA PARA ALTO RENDIMIENTO
+// ============================================================
+const cache = {
+    sectores: { data: null, expires: 0 },
+    categorias: { data: null, expires: 0 },
+    stats: { data: null, expires: 0 }
+};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+function getCache(key) {
+    const item = cache[key];
+    if (item && item.expires > Date.now()) {
+        return item.data;
+    }
+    return null;
+}
+
+function setCache(key, data) {
+    cache[key] = { data, expires: Date.now() + CACHE_TTL };
+}
+
+function clearCache() {
+    cache.sectores.data = null;
+    cache.categorias.data = null;
+    cache.stats.data = null;
+}
+
+// ============================================================
+// BASE DE DATOS CON POOL OPTIMIZADO
 // ============================================================
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: isProduction ? { rejectUnauthorized: false } : false,
-    max: 10,
+    max: 20,              // Máximo de conexiones para alto tráfico
+    min: 5,               // Mínimo siempre activas
     idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    statement_timeout: 10000,
+});
+
+db.on('error', (err) => {
+    console.error('❌ Error en pool de DB:', err.message);
 });
 
 async function initDB() {
-    // TABLA USERS (sin columna verified al inicio)
+    // USERS
     await db.query(`
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -39,79 +74,18 @@ async function initDB() {
             phone VARCHAR(20),
             user_type VARCHAR(20) DEFAULT 'buyer',
             role VARCHAR(20) DEFAULT 'user',
+            verified BOOLEAN DEFAULT FALSE,
+            verification_status VARCHAR(20) DEFAULT 'pending',
+            verified_date TIMESTAMP,
+            plan_type VARCHAR(20) DEFAULT 'free',
+            plan_expires TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_login TIMESTAMP,
             deleted_at TIMESTAMP
         )
     `);
 
-    // Agregar columna verified si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'verified') THEN
-                ALTER TABLE users ADD COLUMN verified BOOLEAN DEFAULT FALSE;
-            END IF;
-        END $$;
-    `);
-
-    // Agregar columna verification_status si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'verification_status') THEN
-                ALTER TABLE users ADD COLUMN verification_status VARCHAR(20) DEFAULT 'pending';
-            END IF;
-        END $$;
-    `);
-
-    // Agregar columna verified_date si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'verified_date') THEN
-                ALTER TABLE users ADD COLUMN verified_date TIMESTAMP;
-            END IF;
-        END $$;
-    `);
-
-    // Agregar columna plan_type si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'plan_type') THEN
-                ALTER TABLE users ADD COLUMN plan_type VARCHAR(20) DEFAULT 'free';
-            END IF;
-        END $$;
-    `);
-
-    // Agregar columna plan_expires si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'plan_expires') THEN
-                ALTER TABLE users ADD COLUMN plan_expires TIMESTAMP;
-            END IF;
-        END $$;
-    `);
-
-    // Agregar columna avatar si no existe
-    await db.query(`
-        DO $$ 
-        BEGIN 
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name = 'users' AND column_name = 'avatar') THEN
-                ALTER TABLE users ADD COLUMN avatar TEXT;
-            END IF;
-        END $$;
-    `);
-
-    // TABLA ADS (anuncios)
+    // ADS
     await db.query(`
         CREATE TABLE IF NOT EXISTS ads (
             id SERIAL PRIMARY KEY,
@@ -132,7 +106,7 @@ async function initDB() {
         )
     `);
 
-    // TABLA VERIFICATION_REQUESTS
+    // VERIFICATION REQUESTS
     await db.query(`
         CREATE TABLE IF NOT EXISTS verification_requests (
             id SERIAL PRIMARY KEY,
@@ -148,7 +122,7 @@ async function initDB() {
         )
     `);
 
-    // TABLA OFFERS (ofertas)
+    // OFFERS
     await db.query(`
         CREATE TABLE IF NOT EXISTS offers (
             id SERIAL PRIMARY KEY,
@@ -165,7 +139,7 @@ async function initDB() {
         )
     `);
 
-    // TABLA FAVORITES
+    // FAVORITES
     await db.query(`
         CREATE TABLE IF NOT EXISTS favorites (
             id SERIAL PRIMARY KEY,
@@ -176,7 +150,7 @@ async function initDB() {
         )
     `);
 
-    // TABLA SECTORES
+    // SECTORES
     await db.query(`
         CREATE TABLE IF NOT EXISTS sectores (
             id SERIAL PRIMARY KEY,
@@ -185,13 +159,12 @@ async function initDB() {
         )
     `);
 
-    // Insertar sectores por defecto
     const sectores = ['Los Mina', 'Invivienda', 'San Vicente', 'Mendoza', 'Cancino', 'Alma Rosa', 'Villa Francisca', 'Villa Duarte', 'Miami Este', 'Brisas del Este', 'Residencial del Este', 'San Isidro', 'Lucerna', 'Villa Faro', 'Los Trinitarios', 'El Paredón'];
     for (const sector of sectores) {
         await db.query(`INSERT INTO sectores (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING`, [sector]);
     }
 
-    // TABLA PLANS
+    // PLANS
     await db.query(`
         CREATE TABLE IF NOT EXISTS plans (
             id SERIAL PRIMARY KEY,
@@ -201,8 +174,20 @@ async function initDB() {
             features JSONB
         )
     `);
-
     await db.query(`INSERT INTO plans (name, price, duration_days, features) VALUES ('pro', 399, 30, '["perfil_tienda","anuncios_destacados"]'), ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]') ON CONFLICT (name) DO NOTHING`);
+
+    // ============================================================
+    // ÍNDICES PARA ALTO RENDIMIENTO
+    // ============================================================
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status) WHERE deleted_at IS NULL`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_boosted ON ads(boosted_expires) WHERE boosted_expires > NOW()`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_category ON ads(category) WHERE deleted_at IS NULL`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_sector ON ads(ubicacion_sector) WHERE deleted_at IS NULL`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_offers_seller ON offers(seller_id, status)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id)`);
 
     // Crear admin por defecto
     const adminEmail = 'admin@elfarol.com.do';
@@ -211,12 +196,9 @@ async function initDB() {
         const hashedPassword = await bcrypt.hash('admin123', 10);
         await db.query(`INSERT INTO users (name, email, password, role, user_type, verified) VALUES ($1, $2, $3, $4, $5, $6)`, ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
-    } else if (adminExists.rows[0].role !== 'admin') {
-        await db.query(`UPDATE users SET role = 'admin', verified = true WHERE email = $1`, [adminEmail]);
-        console.log('✅ Usuario actualizado a admin');
     }
 
-    console.log('✅ Base de datos inicializada correctamente');
+    console.log('✅ Base de datos inicializada con índices optimizados');
 }
 
 // ============================================================
@@ -237,8 +219,13 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+// Rate limiting para API
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
 app.use('/api/', limiter);
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // ============================================================
 // UTILS
@@ -283,6 +270,7 @@ app.post('/api/auth/register', async (req, res) => {
         );
         const user = result.rows[0];
         const token = generateToken(user);
+        clearCache();
         res.json({ success: true, token, user });
     } catch (error) { res.status(500).json({ error: 'Error al registrar' }); }
 });
@@ -323,28 +311,61 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// ANUNCIOS
+// ANUNCIOS (OPTIMIZADO)
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
-    let query = `SELECT a.*, u.name as user_name, u.phone as user_phone, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL AND a.status = 'active'`;
+    const safeLimit = Math.min(parseInt(limit) || 20, 50);
+    const safeOffset = parseInt(offset) || 0;
+    
+    let query = `
+        SELECT a.id, a.title, a.price, a.ubicacion_sector, a.status, a.views, 
+               a.created_at, a.boosted_expires,
+               u.name as user_name, u.verified, u.plan_type
+        FROM ads a 
+        JOIN users u ON a.user_id = u.id 
+        WHERE a.deleted_at IS NULL AND a.status = 'active'
+    `;
     const params = [];
     let paramIndex = 1;
+    
     if (categoria) { query += ` AND a.category = $${paramIndex++}`; params.push(categoria); }
     if (sector) { query += ` AND a.ubicacion_sector = $${paramIndex++}`; params.push(sector); }
     if (search) { query += ` AND (a.title ILIKE $${paramIndex++} OR a.description ILIKE $${paramIndex++})`; params.push(`%${search}%`, `%${search}%`); }
     if (verified_only === 'true') { query += ` AND u.verified = true`; }
+    
     query += ` ORDER BY CASE WHEN a.boosted_expires > NOW() THEN 1 ELSE 0 END DESC, a.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-    params.push(limit, offset);
+    params.push(safeLimit, safeOffset);
+    
     const result = await db.query(query, params);
-    const adsWithBadges = result.rows.map(ad => ({ ...ad, badges: { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' } }));
+    
+    const adsWithBadges = result.rows.map(ad => ({
+        id: ad.id,
+        title: ad.title,
+        price: ad.price,
+        ubicacion_sector: ad.ubicacion_sector,
+        status: ad.status,
+        views: ad.views,
+        created_at: ad.created_at,
+        user_name: ad.user_name,
+        badges: {
+            verified: ad.verified,
+            boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(),
+            pro: ad.plan_type === 'pro',
+            premium: ad.plan_type === 'premium'
+        }
+    }));
+    
     res.json({ ads: adsWithBadges });
 });
 
 app.get('/api/ads/:id', async (req, res) => {
     const { id } = req.params;
     await db.query(`UPDATE ads SET views = views + 1 WHERE id = $1`, [id]);
-    const result = await db.query(`SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
+    const result = await db.query(`
+        SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type 
+        FROM ads a JOIN users u ON a.user_id = u.id 
+        WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     const ad = result.rows[0];
     ad.badges = { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' };
@@ -355,12 +376,19 @@ app.post('/api/ads', verifyToken, async (req, res) => {
     if (req.user.user_type !== 'seller' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo vendedores pueden publicar' });
     const { title, description, price, category, ubicacion_sector } = req.body;
     if (!title || !ubicacion_sector) return res.status(400).json({ error: 'Título y ubicación requeridos' });
-    const result = await db.query(`INSERT INTO ads (user_id, title, description, price, category, ubicacion_sector, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`, [req.user.id, title, description, price || 0, category, ubicacion_sector]);
+    const result = await db.query(
+        `INSERT INTO ads (user_id, title, description, price, category, ubicacion_sector, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
+        [req.user.id, title, description, price || 0, category, ubicacion_sector]
+    );
+    clearCache();
     res.json({ success: true, ad: result.rows[0] });
 });
 
 app.get('/api/ads/my-ads', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT *, CASE WHEN boosted_expires > NOW() THEN true ELSE false END as is_boosted FROM ads WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC`, [req.user.id]);
+    const result = await db.query(
+        `SELECT *, CASE WHEN boosted_expires > NOW() THEN true ELSE false END as is_boosted FROM ads WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC`,
+        [req.user.id]
+    );
     res.json({ ads: result.rows });
 });
 
@@ -370,7 +398,11 @@ app.put('/api/ads/:id', verifyToken, async (req, res) => {
     const ad = await db.query(`SELECT * FROM ads WHERE id = $1`, [id]);
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
-    await db.query(`UPDATE ads SET title = COALESCE($1, title), description = COALESCE($2, description), price = COALESCE($3, price), category = COALESCE($4, category), ubicacion_sector = COALESCE($5, ubicacion_sector), status = COALESCE($6, status), updated_at = NOW() WHERE id = $7`, [title, description, price, category, ubicacion_sector, status, id]);
+    await db.query(
+        `UPDATE ads SET title = COALESCE($1, title), description = COALESCE($2, description), price = COALESCE($3, price), category = COALESCE($4, category), ubicacion_sector = COALESCE($5, ubicacion_sector), status = COALESCE($6, status), updated_at = NOW() WHERE id = $7`,
+        [title, description, price, category, ubicacion_sector, status, id]
+    );
+    clearCache();
     res.json({ success: true });
 });
 
@@ -380,6 +412,7 @@ app.put('/api/ads/:id/sold', verifyToken, async (req, res) => {
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     await db.query(`UPDATE ads SET status = 'sold', updated_at = NOW() WHERE id = $1`, [id]);
+    clearCache();
     res.json({ success: true });
 });
 
@@ -392,6 +425,7 @@ app.post('/api/ads/:id/boost', verifyToken, async (req, res) => {
     const now = new Date();
     const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     await db.query(`UPDATE ads SET boosted_at = $1, boosted_expires = $2, updated_at = NOW() WHERE id = $3`, [now, expires, id]);
+    clearCache();
     res.json({ success: true, message: 'Anuncio destacado por 24 horas', expires_at: expires });
 });
 
@@ -401,6 +435,7 @@ app.delete('/api/ads/:id', verifyToken, async (req, res) => {
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
+    clearCache();
     res.json({ success: true });
 });
 
@@ -413,12 +448,21 @@ app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
     if (req.user.user_type !== 'buyer' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo compradores pueden hacer ofertas' });
     const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND deleted_at IS NULL`, [id]);
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
-    const result = await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, payment_method, delivery_location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`, [id, req.user.id, ad.rows[0].user_id, offered_price, message, payment_method, delivery_location]);
+    const result = await db.query(
+        `INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, payment_method, delivery_location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`,
+        [id, req.user.id, ad.rows[0].user_id, offered_price, message, payment_method, delivery_location]
+    );
     res.json({ success: true, offer: result.rows[0] });
 });
 
 app.get('/api/offers/received', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT o.*, a.title as ad_title, u.name as buyer_name, u.phone as buyer_phone FROM offers o JOIN ads a ON o.ad_id = a.id JOIN users u ON o.buyer_id = u.id WHERE o.seller_id = $1 AND o.status = 'pending' ORDER BY o.created_at DESC`, [req.user.id]);
+    const result = await db.query(`
+        SELECT o.*, a.title as ad_title, u.name as buyer_name, u.phone as buyer_phone 
+        FROM offers o 
+        JOIN ads a ON o.ad_id = a.id 
+        JOIN users u ON o.buyer_id = u.id 
+        WHERE o.seller_id = $1 AND o.status = 'pending' 
+        ORDER BY o.created_at DESC`, [req.user.id]);
     res.json({ offers: result.rows });
 });
 
@@ -431,7 +475,10 @@ app.put('/api/offers/:id/:action', verifyToken, async (req, res) => {
     let newStatus = action === 'accept' ? 'accepted' : (action === 'reject' ? 'rejected' : 'counter');
     await db.query(`UPDATE offers SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]);
     if (action === 'counter' && counter_price) {
-        await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, status, payment_method, delivery_location) VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`, [offer.rows[0].ad_id, offer.rows[0].seller_id, offer.rows[0].buyer_id, counter_price, message, offer.rows[0].payment_method, offer.rows[0].delivery_location]);
+        await db.query(
+            `INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, status, payment_method, delivery_location) VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`,
+            [offer.rows[0].ad_id, offer.rows[0].seller_id, offer.rows[0].buyer_id, counter_price, message, offer.rows[0].payment_method, offer.rows[0].delivery_location]
+        );
     }
     res.json({ success: true });
 });
@@ -452,20 +499,31 @@ app.delete('/api/favorites/:adId', verifyToken, async (req, res) => {
 });
 
 app.get('/api/favorites', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT a.* FROM ads a JOIN favorites f ON a.id = f.ad_id WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
+    const result = await db.query(`
+        SELECT a.* FROM ads a JOIN favorites f ON a.id = f.ad_id 
+        WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
     res.json({ favorites: result.rows });
 });
 
 // ============================================================
-// DATOS AUXILIARES
+// DATOS AUXILIARES (CON CACHÉ)
 // ============================================================
 app.get('/api/sectores', async (req, res) => {
+    let cached = getCache('sectores');
+    if (cached) return res.json({ sectores: cached });
     const result = await db.query(`SELECT * FROM sectores ORDER BY nombre`);
+    setCache('sectores', result.rows);
     res.json({ sectores: result.rows });
 });
 
 app.get('/api/categorias', async (req, res) => {
-    const result = await db.query(`SELECT DISTINCT category, COUNT(*) as total FROM ads WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL GROUP BY category ORDER BY total DESC`);
+    let cached = getCache('categorias');
+    if (cached) return res.json({ categorias: cached });
+    const result = await db.query(`
+        SELECT category, COUNT(*) as total FROM ads 
+        WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL 
+        GROUP BY category ORDER BY total DESC LIMIT 20`);
+    setCache('categorias', result.rows);
     res.json({ categorias: result.rows });
 });
 
@@ -475,7 +533,7 @@ app.get('/api/plans', async (req, res) => {
 });
 
 // ============================================================
-// ADMIN
+// ADMIN (CON CACHÉ)
 // ============================================================
 const verifyAdmin = async (req, res, next) => {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
@@ -483,6 +541,8 @@ const verifyAdmin = async (req, res, next) => {
 };
 
 app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
+    let cached = getCache('stats');
+    if (cached) return res.json(cached);
     const [users, ads, activeAds, verifiedUsers, pendingVerifications] = await Promise.all([
         db.query(`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM ads WHERE deleted_at IS NULL`),
@@ -490,11 +550,24 @@ app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
         db.query(`SELECT COUNT(*) FROM users WHERE verified = true`),
         db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`)
     ]);
-    res.json({ totalUsers: parseInt(users.rows[0].count), totalAds: parseInt(ads.rows[0].count), activeAds: parseInt(activeAds.rows[0].count), verifiedUsers: parseInt(verifiedUsers.rows[0].count), pendingVerifications: parseInt(pendingVerifications.rows[0].count) });
+    const stats = {
+        totalUsers: parseInt(users.rows[0].count),
+        totalAds: parseInt(ads.rows[0].count),
+        activeAds: parseInt(activeAds.rows[0].count),
+        verifiedUsers: parseInt(verifiedUsers.rows[0].count),
+        pendingVerifications: parseInt(pendingVerifications.rows[0].count)
+    };
+    setCache('stats', stats);
+    res.json(stats);
 });
 
 app.get('/api/admin/verification-requests', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`SELECT vr.*, u.name, u.email, u.phone FROM verification_requests vr JOIN users u ON vr.user_id = u.id WHERE vr.status = 'pending' ORDER BY vr.requested_at ASC`);
+    const result = await db.query(`
+        SELECT vr.*, u.name, u.email, u.phone 
+        FROM verification_requests vr 
+        JOIN users u ON vr.user_id = u.id 
+        WHERE vr.status = 'pending' 
+        ORDER BY vr.requested_at ASC`);
     res.json({ requests: result.rows });
 });
 
@@ -503,6 +576,7 @@ app.post('/api/admin/verify/:userId/approve', verifyToken, verifyAdmin, async (r
     const { notes } = req.body;
     await db.query(`UPDATE users SET verified = true, verification_status = 'approved', verified_date = NOW() WHERE id = $1`, [userId]);
     await db.query(`UPDATE verification_requests SET status = 'approved', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`, [notes, req.user.id, userId]);
+    clearCache();
     res.json({ success: true });
 });
 
@@ -510,22 +584,29 @@ app.post('/api/admin/verify/:userId/reject', verifyToken, verifyAdmin, async (re
     const { userId } = req.params;
     const { notes } = req.body;
     await db.query(`UPDATE verification_requests SET status = 'rejected', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`, [notes, req.user.id, userId]);
+    clearCache();
     res.json({ success: true });
 });
 
 app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
+    const result = await db.query(`
+        SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at 
+        FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
     res.json({ users: result.rows });
 });
 
 app.get('/api/admin/ads', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`SELECT a.*, u.email as user_email, u.name as user_name FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 100`);
+    const result = await db.query(`
+        SELECT a.*, u.email as user_email, u.name as user_name 
+        FROM ads a JOIN users u ON a.user_id = u.id 
+        WHERE a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 100`);
     res.json({ ads: result.rows });
 });
 
 app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
     const { id } = req.params;
     await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
+    clearCache();
     res.json({ success: true });
 });
 
@@ -549,7 +630,7 @@ async function start() {
         app.listen(PORT, () => {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
             console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
-            console.log(`✅ Modo Corotos: Verificación + Boost + Ofertas + Favoritos\n`);
+            console.log(`✅ Modo producción - Optimizado para alto rendimiento\n`);
         });
     } catch (error) {
         console.error('❌ Error al iniciar:', error.message);
