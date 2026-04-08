@@ -22,7 +22,6 @@
             overflow-x: hidden;
         }
 
-        /* Animaciones */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -35,33 +34,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         @keyframes float {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-20px);
-            }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
 
-        @keyframes shimmer {
-            0% {
-                background-position: -1000px 0;
-            }
-            100% {
-                background-position: 1000px 0;
-            }
-        }
-
-        /* Contenedor principal */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -75,7 +56,6 @@
             z-index: 1;
         }
 
-        /* Header */
         .header {
             text-align: center;
             margin-bottom: 50px;
@@ -112,7 +92,6 @@
             margin-bottom: 30px;
         }
 
-        /* Contador */
         .countdown-container {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -159,7 +138,6 @@
             letter-spacing: 1px;
         }
 
-        /* Características */
         .features {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -203,8 +181,8 @@
             line-height: 1.6;
         }
 
-        /* Botón de registro */
-        .register-btn {
+        /* Botón de registro con ID correcto */
+        #registerBtn {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             border: none;
@@ -219,7 +197,7 @@
             animation: fadeInUp 1s ease-out 0.6s both;
         }
 
-        .register-btn:hover {
+        #registerBtn:hover {
             animation: pulse 0.5s ease;
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -238,7 +216,6 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            animation: fadeInUp 0.3s ease;
         }
 
         .modal-content {
@@ -306,7 +283,6 @@
             color: #999;
         }
 
-        /* Footer */
         .footer {
             text-align: center;
             margin-top: 50px;
@@ -333,50 +309,13 @@
             opacity: 1;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .logo {
-                font-size: 2.5rem;
-            }
-            
-            .countdown-number {
-                font-size: 1.5rem;
-                min-width: 60px;
-                padding: 10px 15px;
-            }
-            
-            .countdown-item {
-                min-width: 60px;
-            }
-            
-            .features {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .register-btn {
-                padding: 14px 35px;
-                font-size: 1rem;
-            }
-        }
-
-        /* Loading effect */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            h1 { font-size: 2rem; }
+            .logo { font-size: 2.5rem; }
+            .countdown-number { font-size: 1.5rem; min-width: 60px; padding: 10px 15px; }
+            .countdown-item { min-width: 60px; }
+            .features { grid-template-columns: 1fr; gap: 20px; }
+            #registerBtn { padding: 14px 35px; font-size: 1rem; }
         }
     </style>
 </head>
@@ -435,7 +374,8 @@
             </div>
         </div>
 
-        <button class="register-btn" onclick="openRegisterModal()">
+        <!-- Botón con ID correcto -->
+        <button id="registerBtn">
             📝 Regístrate para la lista de espera
         </button>
 
@@ -454,29 +394,30 @@
         </div>
     </div>
 
-    <!-- Modal de Registro -->
+    <!-- Modal de Registro con IDs correctos -->
     <div id="registerModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeRegisterModal()">&times;</span>
-            <h2>📝 Lista de Espera</h2>
-            <p>Sé el primero en enterarte cuando lancemos El Farol Clasificados.</p>
+            <span class="close-modal">&times;</span>
+            <h2>📝 Crear Cuenta</h2>
+            <p>Regístrate para ser el primero en enterarte del lanzamiento.</p>
             <form id="registerForm">
-                <input type="text" id="name" placeholder="Tu nombre" required>
-                <input type="email" id="email" placeholder="Tu email" required>
-                <input type="tel" id="phone" placeholder="Tu teléfono (opcional)">
+                <input type="text" id="regName" placeholder="Nombre completo" required>
+                <input type="email" id="regEmail" placeholder="Correo electrónico" required>
+                <input type="password" id="regPassword" placeholder="Contraseña (mínimo 6 caracteres)" required>
+                <input type="tel" id="regPhone" placeholder="Teléfono (opcional)">
                 <div class="modal-buttons">
                     <button type="submit" class="modal-btn modal-btn-primary">Registrarme</button>
-                    <button type="button" class="modal-btn modal-btn-secondary" onclick="closeRegisterModal()">Cerrar</button>
+                    <button type="button" id="cancelRegister" class="modal-btn modal-btn-secondary">Cancelar</button>
                 </div>
             </form>
             <p style="font-size: 0.8rem; margin-top: 15px; color: #666;">
-                No compartiremos tu información con terceros.
+                Al registrarte aceptas nuestros <a href="#" style="color:#667eea;">Términos y Condiciones</a>
             </p>
         </div>
     </div>
 
+    <!-- Script de contador -->
     <script>
-        // Contador regresivo (30 días desde ahora)
         function startCountdown() {
             const targetDate = new Date();
             targetDate.setDate(targetDate.getDate() + 30);
@@ -509,76 +450,10 @@
             setInterval(updateCountdown, 1000);
         }
 
-        // Modal functions
-        function openRegisterModal() {
-            document.getElementById('registerModal').style.display = 'flex';
-        }
-
-        function closeRegisterModal() {
-            document.getElementById('registerModal').style.display = 'none';
-        }
-
-        // Handle form submission
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳ Enviando...';
-            submitBtn.disabled = true;
-            
-            try {
-                // Aquí puedes conectar con tu API cuando esté lista
-                console.log('Registro:', { name, email, phone });
-                
-                // Simular envío
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                alert('✅ ¡Gracias por registrarte! Te avisaremos cuando lancemos.');
-                closeRegisterModal();
-                document.getElementById('registerForm').reset();
-            } catch (error) {
-                alert('❌ Error al registrarte. Por favor intenta más tarde.');
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-
-        // Cerrar modal al hacer click fuera
-        window.onclick = (event) => {
-            const modal = document.getElementById('registerModal');
-            if (event.target === modal) {
-                closeRegisterModal();
-            }
-        };
-
-        // Iniciar contador
         startCountdown();
-
-        // Añadir animación de entrada a las tarjetas
-        const cards = document.querySelectorAll('.feature-card');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }, index * 100);
-                }
-            });
-        }, { threshold: 0.1 });
-
-        cards.forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(30px)';
-            card.style.transition = 'all 0.6s ease';
-            observer.observe(card);
-        });
     </script>
+
+    <!-- Script principal (DEBE IR AL FINAL) -->
+    <script src="js/main.js"></script>
 </body>
 </html>
