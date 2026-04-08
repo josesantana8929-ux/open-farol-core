@@ -6,469 +6,502 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const http = require('http');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
 
-// Cargar variables de entorno
 dotenv.config();
 
-// Importar módulos
-const db = require('./db');
-const authRoutes = require('./routes/authRoutes');
-const adRoutes = require('./routes/adRoutes');
-
-// Configuración
+const app = express();
 const PORT = process.env.PORT || 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'el_farol_secret_2026';
 const SITE_NAME = process.env.SITE_NAME || 'El Farol Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-// Validar SESSION_SECRET
-if (!process.env.SESSION_SECRET) {
-    if (isProduction) {
-        console.error('❌ SESSION_SECRET no configurado en producción');
-        process.exit(1);
-    } else {
-        process.env.SESSION_SECRET = 'dev_secret_key_123456789';
-        console.warn('⚠️ Usando SESSION_SECRET temporal para desarrollo');
+// ============================================================
+// BASE DE DATOS
+// ============================================================
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+    max: 10,
+    idleTimeoutMillis: 30000,
+});
+
+async function initDB() {
+    // Usuarios
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100),
+            email VARCHAR(100) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            phone VARCHAR(20),
+            user_type VARCHAR(20) DEFAULT 'buyer',
+            role VARCHAR(20) DEFAULT 'user',
+            verified BOOLEAN DEFAULT FALSE,
+            verification_status VARCHAR(20) DEFAULT 'pending',
+            verified_date TIMESTAMP,
+            plan_type VARCHAR(20) DEFAULT 'free',
+            plan_expires TIMESTAMP,
+            avatar TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP,
+            deleted_at TIMESTAMP
+        )
+    `);
+
+    // Anuncios
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS ads (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            title VARCHAR(200) NOT NULL,
+            description TEXT,
+            price DECIMAL(10,2),
+            category VARCHAR(100),
+            ubicacion_sector VARCHAR(100),
+            ubicacion_ciudad VARCHAR(50) DEFAULT 'Santo Domingo Este',
+            status VARCHAR(20) DEFAULT 'active',
+            views INTEGER DEFAULT 0,
+            boosted_at TIMESTAMP,
+            boosted_expires TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP,
+            deleted_at TIMESTAMP
+        )
+    `);
+
+    // Imágenes de anuncios
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS ad_images (
+            id SERIAL PRIMARY KEY,
+            ad_id INTEGER REFERENCES ads(id),
+            image_url TEXT,
+            is_primary BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Solicitudes de verificación
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS verification_requests (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            id_photo_front TEXT,
+            id_photo_back TEXT,
+            selfie_photo TEXT,
+            status VARCHAR(20) DEFAULT 'pending',
+            admin_notes TEXT,
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TIMESTAMP,
+            reviewed_by INTEGER
+        )
+    `);
+
+    // Ofertas / Negociación
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS offers (
+            id SERIAL PRIMARY KEY,
+            ad_id INTEGER REFERENCES ads(id),
+            buyer_id INTEGER REFERENCES users(id),
+            seller_id INTEGER REFERENCES users(id),
+            offered_price DECIMAL(10,2),
+            message TEXT,
+            status VARCHAR(20) DEFAULT 'pending',
+            payment_method VARCHAR(50),
+            delivery_location TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP
+        )
+    `);
+
+    // Mensajes
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS messages (
+            id SERIAL PRIMARY KEY,
+            offer_id INTEGER REFERENCES offers(id),
+            from_user_id INTEGER REFERENCES users(id),
+            to_user_id INTEGER REFERENCES users(id),
+            message TEXT,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Favoritos
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS favorites (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            ad_id INTEGER REFERENCES ads(id),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, ad_id)
+        )
+    `);
+
+    // Sectores
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS sectores (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) UNIQUE NOT NULL,
+            ciudad VARCHAR(50) DEFAULT 'Santo Domingo Este'
+        )
+    `);
+
+    // Insertar sectores
+    const sectores = ['Los Mina', 'Invivienda', 'San Vicente', 'Mendoza', 'Cancino', 'Alma Rosa', 'Villa Francisca', 'Villa Duarte', 'Miami Este', 'Brisas del Este', 'Residencial del Este', 'San Isidro', 'Lucerna', 'Villa Faro', 'Los Trinitarios', 'El Paredón'];
+    for (const sector of sectores) {
+        await db.query(`INSERT INTO sectores (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING`, [sector]);
     }
+
+    // Planes
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS plans (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE NOT NULL,
+            price DECIMAL(10,2),
+            duration_days INTEGER,
+            features JSONB
+        )
+    `);
+    await db.query(`INSERT INTO plans (name, price, duration_days, features) VALUES ('pro', 399, 30, '["perfil_tienda","anuncios_destacados"]'), ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]') ON CONFLICT (name) DO NOTHING`);
+
+    // Admin por defecto
+    const adminEmail = 'admin@elfarol.com.do';
+    const adminExists = await db.query(`SELECT * FROM users WHERE email = $1`, [adminEmail]);
+    if (adminExists.rows.length === 0) {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await db.query(`INSERT INTO users (name, email, password, role, user_type, verified) VALUES ($1, $2, $3, $4, $5, $6)`, ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
+        console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
+    }
+
+    console.log('✅ Base de datos lista - Modo Corotos completo');
 }
 
-console.log(`\n🚀 Iniciando ${SITE_NAME}...`);
-console.log(`📡 Puerto: ${PORT}`);
-console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
-console.log(`📍 Base URL: ${BASE_URL}\n`);
-
-const app = express();
-
-// ============ SEGURIDAD ============
+// ============================================================
+// MIDDLEWARE
+// ============================================================
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-            imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"],
-            connectSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
         },
     },
 }));
-
-// CORS
-app.use(cors({
-    origin: isProduction ? process.env.ALLOWED_ORIGINS?.split(',') || true : true,
-    credentials: true,
-}));
-
-// Compresión
+app.use(cors());
 app.use(compression());
-
-// Archivos estáticos
-const publicDir = path.join(__dirname, 'public');
-if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-
-app.use(express.static(publicDir, {
-    maxAge: isProduction ? '1y' : 0,
-    etag: true,
-    lastModified: true,
-}));
-
-// Rate limiting para API
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Demasiadas solicitudes',
-    skip: (req) => req.path === '/' || req.path === '/admin' || req.path === '/ping',
-});
-app.use('/api/', limiter);
-
-// Rate limit más estricto para autenticación
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
-    message: 'Demasiados intentos, intenta más tarde',
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-
-// Parseo de JSON
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Headers personalizados
-app.use((req, res, next) => {
-    res.setHeader('X-Powered-By', SITE_NAME);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
-});
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+app.use('/api/', limiter);
 
-// Logging en desarrollo
-if (!isProduction) {
-    app.use((req, res, next) => {
-        console.log(`📝 ${req.method} ${req.path}`);
-        next();
-    });
-}
+// ============================================================
+// UTILS
+// ============================================================
+const generateToken = (user) => {
+    return jwt.sign({ id: user.id, email: user.email, role: user.role, user_type: user.user_type, verified: user.verified, plan_type: user.plan_type }, JWT_SECRET, { expiresIn: '7d' });
+};
 
-// ============ RUTA PING PARA KEEP ALIVE ============
-app.get('/ping', (req, res) => {
-    res.status(200).json({
-        status: 'pong',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        version: process.version
-    });
-});
-
-// ============ RUTAS DE API ============
-
-// Health check
-app.get('/health', async (req, res) => {
-    try {
-        const dbStatus = await db.testConnection();
-        res.json({
-            status: 'OK',
-            siteName: SITE_NAME,
-            timestamp: new Date().toISOString(),
-            uptime: process.uptime(),
-            environment: process.env.NODE_ENV || 'development',
-            database: dbStatus ? 'connected' : 'disconnected',
-            port: PORT,
-            memory: process.memoryUsage(),
-        });
-    } catch (error) {
-        res.status(503).json({ status: 'ERROR', error: error.message });
-    }
-});
-
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/ads', adRoutes);
-
-// ============ RUTAS DE ADMINISTRACIÓN ADICIONALES ============
-
-const { verifyToken } = require('./utils/jwtUtils');
-
-// Middleware para verificar admin
-const verifyAdmin = async (req, res, next) => {
+const verifyToken = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ error: 'Token requerido' });
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch {
+        res.status(401).json({ error: 'Token inválido' });
     }
-    
-    const { valid, decoded } = verifyToken(token);
-    
-    if (!valid || decoded.role !== 'admin') {
-        return res.status(403).json({ error: 'Acceso denegado. Se requieren permisos de administrador.' });
+};
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
+app.post('/api/auth/register', async (req, res) => {
+    const { name, email, password, phone, user_type } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
+    try {
+        const existing = await db.query(`SELECT * FROM users WHERE email = $1`, [email]);
+        if (existing.rows.length > 0) return res.status(400).json({ error: 'Email ya registrado' });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const userType = user_type === 'seller' ? 'seller' : 'buyer';
+        const result = await db.query(`INSERT INTO users (name, email, password, phone, user_type) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, user_type, role, verified, plan_type`, [name || email.split('@')[0], email, hashedPassword, phone || null, userType]);
+        const user = result.rows[0];
+        const token = generateToken(user);
+        res.json({ success: true, token, user });
+    } catch (error) { res.status(500).json({ error: 'Error al registrar' }); }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await db.query(`SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL`, [email]);
+        const user = result.rows[0];
+        if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+        await db.query(`UPDATE users SET last_login = NOW() WHERE id = $1`, [user.id]);
+        const token = generateToken(user);
+        res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, user_type: user.user_type, role: user.role, verified: user.verified, plan_type: user.plan_type } });
+    } catch (error) { res.status(500).json({ error: 'Error al iniciar sesión' }); }
+});
+
+app.get('/api/auth/me', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, plan_expires FROM users WHERE id = $1`, [req.user.id]);
+    res.json(result.rows[0]);
+});
+
+// ============================================================
+// VERIFICACIÓN DE CUENTA
+// ============================================================
+app.post('/api/auth/verify/request', verifyToken, async (req, res) => {
+    const { id_photo_front, id_photo_back, selfie_photo } = req.body;
+    if (!id_photo_front || !id_photo_back) return res.status(400).json({ error: 'Fotos de cédula requeridas' });
+    try {
+        const existing = await db.query(`SELECT * FROM verification_requests WHERE user_id = $1 AND status = 'pending'`, [req.user.id]);
+        if (existing.rows.length > 0) return res.status(400).json({ error: 'Ya tienes una solicitud pendiente' });
+        await db.query(`INSERT INTO verification_requests (user_id, id_photo_front, id_photo_back, selfie_photo, status) VALUES ($1, $2, $3, $4, 'pending')`, [req.user.id, id_photo_front, id_photo_back, selfie_photo || null]);
+        res.json({ success: true, message: 'Solicitud enviada. Espera revisión del administrador.' });
+    } catch (error) { res.status(500).json({ error: 'Error al enviar solicitud' }); }
+});
+
+app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
+    const user = await db.query(`SELECT verified, verification_status FROM users WHERE id = $1`, [req.user.id]);
+    const request = await db.query(`SELECT * FROM verification_requests WHERE user_id = $1 ORDER BY requested_at DESC LIMIT 1`, [req.user.id]);
+    res.json({ verified: user.rows[0]?.verified || false, status: user.rows[0]?.verification_status || 'pending', request: request.rows[0] || null });
+});
+
+// ============================================================
+// ANUNCIOS
+// ============================================================
+app.get('/api/ads', async (req, res) => {
+    const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
+    let query = `SELECT a.*, u.name as user_name, u.phone as user_phone, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL AND a.status = 'active'`;
+    const params = [];
+    let paramIndex = 1;
+    if (categoria) { query += ` AND a.category = $${paramIndex++}`; params.push(categoria); }
+    if (sector) { query += ` AND a.ubicacion_sector = $${paramIndex++}`; params.push(sector); }
+    if (search) { query += ` AND (a.title ILIKE $${paramIndex++} OR a.description ILIKE $${paramIndex++})`; params.push(`%${search}%`, `%${search}%`); }
+    if (verified_only === 'true') { query += ` AND u.verified = true`; }
+    query += ` ORDER BY CASE WHEN a.boosted_expires > NOW() THEN 1 ELSE 0 END DESC, a.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    params.push(limit, offset);
+    const result = await db.query(query, params);
+    const adsWithBadges = result.rows.map(ad => ({ ...ad, badges: { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' } }));
+    res.json({ ads: adsWithBadges });
+});
+
+app.get('/api/ads/:id', async (req, res) => {
+    const { id } = req.params;
+    await db.query(`UPDATE ads SET views = views + 1 WHERE id = $1`, [id]);
+    const result = await db.query(`SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    const ad = result.rows[0];
+    ad.badges = { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' };
+    res.json({ ad });
+});
+
+app.post('/api/ads', verifyToken, async (req, res) => {
+    if (req.user.user_type !== 'seller' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo vendedores pueden publicar' });
+    const { title, description, price, category, ubicacion_sector } = req.body;
+    if (!title || !ubicacion_sector) return res.status(400).json({ error: 'Título y ubicación requeridos' });
+    const result = await db.query(`INSERT INTO ads (user_id, title, description, price, category, ubicacion_sector, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`, [req.user.id, title, description, price || 0, category, ubicacion_sector]);
+    res.json({ success: true, ad: result.rows[0] });
+});
+
+app.get('/api/ads/my-ads', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT *, CASE WHEN boosted_expires > NOW() THEN true ELSE false END as is_boosted FROM ads WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC`, [req.user.id]);
+    res.json({ ads: result.rows });
+});
+
+app.put('/api/ads/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const { title, description, price, category, ubicacion_sector, status } = req.body;
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1`, [id]);
+    if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+    await db.query(`UPDATE ads SET title = COALESCE($1, title), description = COALESCE($2, description), price = COALESCE($3, price), category = COALESCE($4, category), ubicacion_sector = COALESCE($5, ubicacion_sector), status = COALESCE($6, status), updated_at = NOW() WHERE id = $7`, [title, description, price, category, ubicacion_sector, status, id]);
+    res.json({ success: true });
+});
+
+app.put('/api/ads/:id/sold', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1`, [id]);
+    if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+    await db.query(`UPDATE ads SET status = 'sold', updated_at = NOW() WHERE id = $1`, [id]);
+    res.json({ success: true });
+});
+
+app.post('/api/ads/:id/boost', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND user_id = $2`, [id, req.user.id]);
+    if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    const user = await db.query(`SELECT verified FROM users WHERE id = $1`, [req.user.id]);
+    if (!user.rows[0]?.verified) return res.status(403).json({ error: 'Debes tener cuenta verificada para usar Boost' });
+    const now = new Date();
+    const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    await db.query(`UPDATE ads SET boosted_at = $1, boosted_expires = $2, updated_at = NOW() WHERE id = $3`, [now, expires, id]);
+    res.json({ success: true, message: 'Anuncio destacado por 24 horas', expires_at: expires });
+});
+
+app.delete('/api/ads/:id', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1`, [id]);
+    if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+    await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
+    res.json({ success: true });
+});
+
+// ============================================================
+// OFERTAS Y NEGOCIACIÓN
+// ============================================================
+app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const { offered_price, message, payment_method, delivery_location } = req.body;
+    if (req.user.user_type !== 'buyer' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo compradores pueden hacer ofertas' });
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND deleted_at IS NULL`, [id]);
+    if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    const result = await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, payment_method, delivery_location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`, [id, req.user.id, ad.rows[0].user_id, offered_price, message, payment_method, delivery_location]);
+    res.json({ success: true, offer: result.rows[0] });
+});
+
+app.get('/api/offers/received', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT o.*, a.title as ad_title, u.name as buyer_name, u.phone as buyer_phone FROM offers o JOIN ads a ON o.ad_id = a.id JOIN users u ON o.buyer_id = u.id WHERE o.seller_id = $1 AND o.status = 'pending' ORDER BY o.created_at DESC`, [req.user.id]);
+    res.json({ offers: result.rows });
+});
+
+app.put('/api/offers/:id/:action', verifyToken, async (req, res) => {
+    const { id, action } = req.params;
+    const { counter_price, message } = req.body;
+    if (action !== 'accept' && action !== 'reject' && action !== 'counter') return res.status(400).json({ error: 'Acción inválida' });
+    const offer = await db.query(`SELECT * FROM offers WHERE id = $1`, [id]);
+    if (offer.rows.length === 0) return res.status(404).json({ error: 'Oferta no encontrada' });
+    let newStatus = action === 'accept' ? 'accepted' : (action === 'reject' ? 'rejected' : 'counter');
+    await db.query(`UPDATE offers SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]);
+    if (action === 'counter' && counter_price) {
+        await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, status, payment_method, delivery_location) VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`, [offer.rows[0].ad_id, offer.rows[0].seller_id, offer.rows[0].buyer_id, counter_price, message, offer.rows[0].payment_method, offer.rows[0].delivery_location]);
     }
-    
-    req.user = decoded;
+    res.json({ success: true });
+});
+
+// ============================================================
+// FAVORITOS
+// ============================================================
+app.post('/api/favorites/:adId', verifyToken, async (req, res) => {
+    const { adId } = req.params;
+    await db.query(`INSERT INTO favorites (user_id, ad_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [req.user.id, adId]);
+    res.json({ success: true });
+});
+
+app.delete('/api/favorites/:adId', verifyToken, async (req, res) => {
+    const { adId } = req.params;
+    await db.query(`DELETE FROM favorites WHERE user_id = $1 AND ad_id = $2`, [req.user.id, adId]);
+    res.json({ success: true });
+});
+
+app.get('/api/favorites', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT a.* FROM ads a JOIN favorites f ON a.id = f.ad_id WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
+    res.json({ favorites: result.rows });
+});
+
+// ============================================================
+// DATOS AUXILIARES
+// ============================================================
+app.get('/api/sectores', async (req, res) => {
+    const result = await db.query(`SELECT * FROM sectores ORDER BY nombre`);
+    res.json({ sectores: result.rows });
+});
+
+app.get('/api/categorias', async (req, res) => {
+    const result = await db.query(`SELECT DISTINCT category, COUNT(*) as total FROM ads WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL GROUP BY category ORDER BY total DESC`);
+    res.json({ categorias: result.rows });
+});
+
+app.get('/api/plans', async (req, res) => {
+    const result = await db.query(`SELECT * FROM plans ORDER BY price ASC`);
+    res.json({ plans: result.rows });
+});
+
+// ============================================================
+// ADMIN
+// ============================================================
+const verifyAdmin = async (req, res, next) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
     next();
 };
 
-// Estadísticas del dashboard
-app.get('/api/admin/stats', verifyAdmin, async (req, res) => {
-    try {
-        const [usersRes, adsRes, activeAdsRes, pendingAdsRes, verifiedUsersRes] = await Promise.all([
-            db.query('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL'),
-            db.query('SELECT COUNT(*) FROM ads WHERE deleted_at IS NULL'),
-            db.query('SELECT COUNT(*) FROM ads WHERE status = $1 AND deleted_at IS NULL', ['active']),
-            db.query('SELECT COUNT(*) FROM ads WHERE status = $1 AND deleted_at IS NULL', ['pending']),
-            db.query('SELECT COUNT(*) FROM users WHERE verified = true')
-        ]);
-        
-        res.json({
-            totalUsers: parseInt(usersRes.rows[0].count),
-            totalAds: parseInt(adsRes.rows[0].count),
-            activeAds: parseInt(activeAdsRes.rows[0].count),
-            pendingAds: parseInt(pendingAdsRes.rows[0].count),
-            verifiedUsers: parseInt(verifiedUsersRes.rows[0].count)
-        });
-    } catch (error) {
-        console.error('Error en stats:', error);
-        res.status(500).json({ error: 'Error al obtener estadísticas' });
-    }
+app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
+    const [users, ads, activeAds, verifiedUsers, pendingVerifications] = await Promise.all([
+        db.query(`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`),
+        db.query(`SELECT COUNT(*) FROM ads WHERE deleted_at IS NULL`),
+        db.query(`SELECT COUNT(*) FROM ads WHERE status = 'active' AND deleted_at IS NULL`),
+        db.query(`SELECT COUNT(*) FROM users WHERE verified = true`),
+        db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`)
+    ]);
+    res.json({ totalUsers: parseInt(users.rows[0].count), totalAds: parseInt(ads.rows[0].count), activeAds: parseInt(activeAds.rows[0].count), verifiedUsers: parseInt(verifiedUsers.rows[0].count), pendingVerifications: parseInt(pendingVerifications.rows[0].count) });
 });
 
-// Listar solicitudes de verificación pendientes
-app.get('/api/admin/verification-requests', verifyAdmin, async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT vr.*, u.name, u.email, u.phone
-            FROM verification_requests vr
-            JOIN users u ON vr.user_id = u.id
-            WHERE vr.status = 'pending'
-            ORDER BY vr.requested_at ASC
-        `);
-        res.json({ requests: result.rows });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener solicitudes' });
-    }
+app.get('/api/admin/verification-requests', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT vr.*, u.name, u.email, u.phone FROM verification_requests vr JOIN users u ON vr.user_id = u.id WHERE vr.status = 'pending' ORDER BY vr.requested_at ASC`);
+    res.json({ requests: result.rows });
 });
 
-// Aprobar verificación
-app.post('/api/admin/verify/:userId/approve', verifyAdmin, async (req, res) => {
+app.post('/api/admin/verify/:userId/approve', verifyToken, verifyAdmin, async (req, res) => {
     const { userId } = req.params;
     const { notes } = req.body;
-    
-    try {
-        await db.query(
-            `UPDATE users SET verified = true, verification_status = 'approved', verified_date = NOW() WHERE id = $1`,
-            [userId]
-        );
-        await db.query(
-            `UPDATE verification_requests SET status = 'approved', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`,
-            [notes, req.user.id, userId]
-        );
-        res.json({ success: true, message: 'Usuario verificado exitosamente' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al aprobar verificación' });
-    }
+    await db.query(`UPDATE users SET verified = true, verification_status = 'approved', verified_date = NOW() WHERE id = $1`, [userId]);
+    await db.query(`UPDATE verification_requests SET status = 'approved', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`, [notes, req.user.id, userId]);
+    res.json({ success: true });
 });
 
-// Rechazar verificación
-app.post('/api/admin/verify/:userId/reject', verifyAdmin, async (req, res) => {
+app.post('/api/admin/verify/:userId/reject', verifyToken, verifyAdmin, async (req, res) => {
     const { userId } = req.params;
     const { notes } = req.body;
-    
-    try {
-        await db.query(
-            `UPDATE verification_requests SET status = 'rejected', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`,
-            [notes, req.user.id, userId]
-        );
-        res.json({ success: true, message: 'Solicitud rechazada' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al rechazar verificación' });
-    }
+    await db.query(`UPDATE verification_requests SET status = 'rejected', admin_notes = $1, reviewed_at = NOW(), reviewed_by = $2 WHERE user_id = $3 AND status = 'pending'`, [notes, req.user.id, userId]);
+    res.json({ success: true });
 });
 
-// Listar todos los usuarios (admin)
-app.get('/api/admin/users', verifyAdmin, async (req, res) => {
-    try {
-        const { limit = 100 } = req.query;
-        const result = await db.query(`
-            SELECT id, name, email, phone, role, user_type, verified, plan_type, created_at, last_login 
-            FROM users WHERE deleted_at IS NULL 
-            ORDER BY created_at DESC LIMIT $1
-        `, [limit]);
-        res.json({ users: result.rows });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener usuarios' });
-    }
+app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
+    res.json({ users: result.rows });
 });
 
-// Listar todos los anuncios (admin)
-app.get('/api/admin/ads', verifyAdmin, async (req, res) => {
-    try {
-        const { limit = 100 } = req.query;
-        const result = await db.query(`
-            SELECT a.*, u.email as user_email, u.name as user_name, u.verified
-            FROM ads a
-            JOIN users u ON a.user_id = u.id
-            WHERE a.deleted_at IS NULL 
-            ORDER BY a.created_at DESC LIMIT $1
-        `, [limit]);
-        res.json({ ads: result.rows });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener anuncios' });
-    }
+app.get('/api/admin/ads', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`SELECT a.*, u.email as user_email, u.name as user_name FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 100`);
+    res.json({ ads: result.rows });
 });
 
-// Eliminar anuncio (admin)
-app.delete('/api/admin/ads/:id', verifyAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('UPDATE ads SET deleted_at = NOW() WHERE id = $1', [id]);
-        res.json({ success: true, message: 'Anuncio eliminado' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al eliminar anuncio' });
-    }
+app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
+    res.json({ success: true });
 });
 
-// Sectores
-app.get('/api/sectores', async (req, res) => {
-    try {
-        const result = await db.query('SELECT * FROM sectores ORDER BY nombre');
-        res.json({ sectores: result.rows });
-    } catch (error) {
-        res.json({ sectores: [] });
-    }
-});
+// ============================================================
+// FRONTEND
+// ============================================================
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
-// Categorías
-app.get('/api/categorias', async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT DISTINCT category, COUNT(*) as total 
-            FROM ads 
-            WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL
-            GROUP BY category ORDER BY total DESC
-        `);
-        res.json({ categorias: result.rows });
-    } catch (error) {
-        res.json({ categorias: [] });
-    }
-});
-
-// Planes
-app.get('/api/plans', async (req, res) => {
-    try {
-        const result = await db.query('SELECT * FROM plans ORDER BY price ASC');
-        res.json({ plans: result.rows });
-    } catch (error) {
-        res.json({ plans: [] });
-    }
-});
-
-// ============ RUTAS PÚBLICAS ============
-
-// Ruta principal
-app.get('/', (req, res) => {
+app.use(express.static(publicDir));
+app.get('*', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// Ruta admin
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(publicDir, 'admin.html'));
-});
-
-// ============ MANEJO DE ERRORES ============
-
-// 404 handler para API
-app.use('/api/*', (req, res) => {
-    res.status(404).json({
-        error: 'Not Found',
-        message: `La ruta ${req.method} ${req.path} no existe`,
+// ============================================================
+// INICIO
+// ============================================================
+async function start() {
+    await initDB();
+    app.listen(PORT, () => {
+        console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
+        console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
+        console.log(`✅ Modo Corotos: Verificación + Boost + Ofertas + Favoritos\n`);
     });
-});
-
-// 404 handler para archivos estáticos
-app.use((req, res) => {
-    if (!req.path.startsWith('/api') && req.path !== '/health' && req.path !== '/ping') {
-        const notFoundFile = path.join(publicDir, '404.html');
-        if (fs.existsSync(notFoundFile)) {
-            res.status(404).sendFile(notFoundFile);
-        } else {
-            res.status(404).send('<h1>404 - Página no encontrada</h1>');
-        }
-    } else {
-        res.status(404).json({ error: 'Ruta no encontrada' });
-    }
-});
-
-// Error handler global
-app.use((err, req, res, next) => {
-    console.error('❌ Error no capturado:', err.message);
-    console.error(err.stack);
-    
-    const status = err.status || 500;
-    const message = isProduction && status === 500 ? 'Error interno del servidor' : err.message;
-    
-    res.status(status).json({
-        error: message,
-        ...(!isProduction && { stack: err.stack }),
-    });
-});
-
-// ============ SELF-PING ============
-let pingInterval = null;
-let consecutiveFails = 0;
-const MAX_CONSECUTIVE_FAILS = 3;
-
-function startSelfPing() {
-    const selfUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
-        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-        : `http://localhost:${PORT}`;
-    
-    console.log(`🔄 Iniciando Self-Ping cada 10 minutos a: ${selfUrl}/ping`);
-    
-    const ping = () => {
-        const host = process.env.RAILWAY_PUBLIC_DOMAIN || 'localhost';
-        const port = process.env.RAILWAY_PUBLIC_DOMAIN ? 443 : PORT;
-        const protocol = process.env.RAILWAY_PUBLIC_DOMAIN ? 'https' : 'http';
-        
-        const options = {
-            hostname: host,
-            port: port,
-            path: '/ping',
-            method: 'GET',
-        };
-        
-        const req = http.request(options, (res) => {
-            if (res.statusCode === 200) {
-                consecutiveFails = 0;
-                console.log(`💓 Self-Ping exitoso - ${new Date().toISOString()}`);
-            } else {
-                consecutiveFails++;
-                console.warn(`⚠️ Self-Ping status: ${res.statusCode} (Fallo ${consecutiveFails})`);
-            }
-        });
-        
-        req.on('error', (error) => {
-            consecutiveFails++;
-            console.error(`❌ Self-Ping falló: ${error.message} (Fallo ${consecutiveFails})`);
-        });
-        
-        req.end();
-    };
-    
-    setTimeout(ping, 5000);
-    pingInterval = setInterval(ping, 10 * 60 * 1000);
 }
 
-// ============ INICIAR SERVIDOR ============
-const startServer = async () => {
-    try {
-        console.log('🔄 Verificando conexión a la base de datos...');
-        const dbConnected = await db.testConnection();
-        
-        if (!dbConnected && isProduction) {
-            console.error('❌ No se pudo conectar a la base de datos en producción');
-            process.exit(1);
-        }
-        
-        const server = app.listen(PORT, () => {
-            console.log(`
-╔══════════════════════════════════════════════════════════════════════════╗
-║                    🚀 ${SITE_NAME} - SERVIDOR INICIADO                       ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  📡 Puerto: ${PORT}                                                          ║
-║  🌍 Entorno: ${(process.env.NODE_ENV || 'development').padEnd(35)}║
-║  🗄️  Base Datos: ${dbConnected ? '✅ CONECTADA' : '⚠️ SIN CONEXIÓN'}                                          ║
-║  💓 Ping: /ping                                                          ║
-║  💚 Health: /health                                                      ║
-║  🌐 Web: http://localhost:${PORT}                                           ║
-║  👑 Admin: http://localhost:${PORT}/admin                                  ║
-╚══════════════════════════════════════════════════════════════════════════╝
-            `);
-            
-            startSelfPing();
-        });
-        
-        process.on('SIGTERM', () => {
-            console.log('🛑 Cerrando servidor...');
-            if (pingInterval) clearInterval(pingInterval);
-            server.close(() => process.exit(0));
-        });
-        
-        process.on('SIGINT', () => {
-            console.log('🛑 Cerrando servidor...');
-            if (pingInterval) clearInterval(pingInterval);
-            server.close(() => process.exit(0));
-        });
-        
-    } catch (error) {
-        console.error('❌ Error fatal:', error.message);
-        if (isProduction) process.exit(1);
-    }
-};
-
-if (require.main === module) {
-    startServer();
-}
-
-module.exports = app;
+start();
