@@ -1,1 +1,7 @@
-3.11.10
+# Eliminar el archivo que causa el problema
+rm -f runtime.txt
+
+# Hacer commit del cambio
+git add -A
+git commit -m "Remove runtime.txt - forcing Python detection"
+git push
