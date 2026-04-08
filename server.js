@@ -29,7 +29,7 @@ const db = new Pool({
 });
 
 async function initDB() {
-    // Usuarios
+    // TABLA USERS (sin columna verified al inicio)
     await db.query(`
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -39,19 +39,79 @@ async function initDB() {
             phone VARCHAR(20),
             user_type VARCHAR(20) DEFAULT 'buyer',
             role VARCHAR(20) DEFAULT 'user',
-            verified BOOLEAN DEFAULT FALSE,
-            verification_status VARCHAR(20) DEFAULT 'pending',
-            verified_date TIMESTAMP,
-            plan_type VARCHAR(20) DEFAULT 'free',
-            plan_expires TIMESTAMP,
-            avatar TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_login TIMESTAMP,
             deleted_at TIMESTAMP
         )
     `);
 
-    // Anuncios
+    // Agregar columna verified si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'verified') THEN
+                ALTER TABLE users ADD COLUMN verified BOOLEAN DEFAULT FALSE;
+            END IF;
+        END $$;
+    `);
+
+    // Agregar columna verification_status si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'verification_status') THEN
+                ALTER TABLE users ADD COLUMN verification_status VARCHAR(20) DEFAULT 'pending';
+            END IF;
+        END $$;
+    `);
+
+    // Agregar columna verified_date si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'verified_date') THEN
+                ALTER TABLE users ADD COLUMN verified_date TIMESTAMP;
+            END IF;
+        END $$;
+    `);
+
+    // Agregar columna plan_type si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'plan_type') THEN
+                ALTER TABLE users ADD COLUMN plan_type VARCHAR(20) DEFAULT 'free';
+            END IF;
+        END $$;
+    `);
+
+    // Agregar columna plan_expires si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'plan_expires') THEN
+                ALTER TABLE users ADD COLUMN plan_expires TIMESTAMP;
+            END IF;
+        END $$;
+    `);
+
+    // Agregar columna avatar si no existe
+    await db.query(`
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name = 'users' AND column_name = 'avatar') THEN
+                ALTER TABLE users ADD COLUMN avatar TEXT;
+            END IF;
+        END $$;
+    `);
+
+    // TABLA ADS (anuncios)
     await db.query(`
         CREATE TABLE IF NOT EXISTS ads (
             id SERIAL PRIMARY KEY,
@@ -72,18 +132,7 @@ async function initDB() {
         )
     `);
 
-    // Imágenes de anuncios
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS ad_images (
-            id SERIAL PRIMARY KEY,
-            ad_id INTEGER REFERENCES ads(id),
-            image_url TEXT,
-            is_primary BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Solicitudes de verificación
+    // TABLA VERIFICATION_REQUESTS
     await db.query(`
         CREATE TABLE IF NOT EXISTS verification_requests (
             id SERIAL PRIMARY KEY,
@@ -99,7 +148,7 @@ async function initDB() {
         )
     `);
 
-    // Ofertas / Negociación
+    // TABLA OFFERS (ofertas)
     await db.query(`
         CREATE TABLE IF NOT EXISTS offers (
             id SERIAL PRIMARY KEY,
@@ -116,20 +165,7 @@ async function initDB() {
         )
     `);
 
-    // Mensajes
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS messages (
-            id SERIAL PRIMARY KEY,
-            offer_id INTEGER REFERENCES offers(id),
-            from_user_id INTEGER REFERENCES users(id),
-            to_user_id INTEGER REFERENCES users(id),
-            message TEXT,
-            is_read BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Favoritos
+    // TABLA FAVORITES
     await db.query(`
         CREATE TABLE IF NOT EXISTS favorites (
             id SERIAL PRIMARY KEY,
@@ -140,7 +176,7 @@ async function initDB() {
         )
     `);
 
-    // Sectores
+    // TABLA SECTORES
     await db.query(`
         CREATE TABLE IF NOT EXISTS sectores (
             id SERIAL PRIMARY KEY,
@@ -149,13 +185,13 @@ async function initDB() {
         )
     `);
 
-    // Insertar sectores
+    // Insertar sectores por defecto
     const sectores = ['Los Mina', 'Invivienda', 'San Vicente', 'Mendoza', 'Cancino', 'Alma Rosa', 'Villa Francisca', 'Villa Duarte', 'Miami Este', 'Brisas del Este', 'Residencial del Este', 'San Isidro', 'Lucerna', 'Villa Faro', 'Los Trinitarios', 'El Paredón'];
     for (const sector of sectores) {
         await db.query(`INSERT INTO sectores (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING`, [sector]);
     }
 
-    // Planes
+    // TABLA PLANS
     await db.query(`
         CREATE TABLE IF NOT EXISTS plans (
             id SERIAL PRIMARY KEY,
@@ -165,18 +201,22 @@ async function initDB() {
             features JSONB
         )
     `);
+
     await db.query(`INSERT INTO plans (name, price, duration_days, features) VALUES ('pro', 399, 30, '["perfil_tienda","anuncios_destacados"]'), ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]') ON CONFLICT (name) DO NOTHING`);
 
-    // Admin por defecto
+    // Crear admin por defecto
     const adminEmail = 'admin@elfarol.com.do';
     const adminExists = await db.query(`SELECT * FROM users WHERE email = $1`, [adminEmail]);
     if (adminExists.rows.length === 0) {
         const hashedPassword = await bcrypt.hash('admin123', 10);
         await db.query(`INSERT INTO users (name, email, password, role, user_type, verified) VALUES ($1, $2, $3, $4, $5, $6)`, ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
+    } else if (adminExists.rows[0].role !== 'admin') {
+        await db.query(`UPDATE users SET role = 'admin', verified = true WHERE email = $1`, [adminEmail]);
+        console.log('✅ Usuario actualizado a admin');
     }
 
-    console.log('✅ Base de datos lista - Modo Corotos completo');
+    console.log('✅ Base de datos inicializada correctamente');
 }
 
 // ============================================================
@@ -204,7 +244,14 @@ app.use('/api/', limiter);
 // UTILS
 // ============================================================
 const generateToken = (user) => {
-    return jwt.sign({ id: user.id, email: user.email, role: user.role, user_type: user.user_type, verified: user.verified, plan_type: user.plan_type }, JWT_SECRET, { expiresIn: '7d' });
+    return jwt.sign({ 
+        id: user.id, 
+        email: user.email, 
+        role: user.role, 
+        user_type: user.user_type, 
+        verified: user.verified || false, 
+        plan_type: user.plan_type || 'free' 
+    }, JWT_SECRET, { expiresIn: '7d' });
 };
 
 const verifyToken = (req, res, next) => {
@@ -230,7 +277,10 @@ app.post('/api/auth/register', async (req, res) => {
         if (existing.rows.length > 0) return res.status(400).json({ error: 'Email ya registrado' });
         const hashedPassword = await bcrypt.hash(password, 10);
         const userType = user_type === 'seller' ? 'seller' : 'buyer';
-        const result = await db.query(`INSERT INTO users (name, email, password, phone, user_type) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, user_type, role, verified, plan_type`, [name || email.split('@')[0], email, hashedPassword, phone || null, userType]);
+        const result = await db.query(
+            `INSERT INTO users (name, email, password, phone, user_type) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, user_type, role, verified, plan_type`,
+            [name || email.split('@')[0], email, hashedPassword, phone || null, userType]
+        );
         const user = result.rows[0];
         const token = generateToken(user);
         res.json({ success: true, token, user });
@@ -255,14 +305,12 @@ app.get('/api/auth/me', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// VERIFICACIÓN DE CUENTA
+// VERIFICACIÓN
 // ============================================================
 app.post('/api/auth/verify/request', verifyToken, async (req, res) => {
     const { id_photo_front, id_photo_back, selfie_photo } = req.body;
     if (!id_photo_front || !id_photo_back) return res.status(400).json({ error: 'Fotos de cédula requeridas' });
     try {
-        const existing = await db.query(`SELECT * FROM verification_requests WHERE user_id = $1 AND status = 'pending'`, [req.user.id]);
-        if (existing.rows.length > 0) return res.status(400).json({ error: 'Ya tienes una solicitud pendiente' });
         await db.query(`INSERT INTO verification_requests (user_id, id_photo_front, id_photo_back, selfie_photo, status) VALUES ($1, $2, $3, $4, 'pending')`, [req.user.id, id_photo_front, id_photo_back, selfie_photo || null]);
         res.json({ success: true, message: 'Solicitud enviada. Espera revisión del administrador.' });
     } catch (error) { res.status(500).json({ error: 'Error al enviar solicitud' }); }
@@ -357,7 +405,7 @@ app.delete('/api/ads/:id', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// OFERTAS Y NEGOCIACIÓN
+// OFERTAS
 // ============================================================
 app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
     const { id } = req.params;
@@ -496,12 +544,17 @@ app.get('*', (req, res) => {
 // INICIO
 // ============================================================
 async function start() {
-    await initDB();
-    app.listen(PORT, () => {
-        console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
-        console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
-        console.log(`✅ Modo Corotos: Verificación + Boost + Ofertas + Favoritos\n`);
-    });
+    try {
+        await initDB();
+        app.listen(PORT, () => {
+            console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
+            console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
+            console.log(`✅ Modo Corotos: Verificación + Boost + Ofertas + Favoritos\n`);
+        });
+    } catch (error) {
+        console.error('❌ Error al iniciar:', error.message);
+        process.exit(1);
+    }
 }
 
 start();
