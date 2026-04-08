@@ -1,33 +1,31 @@
-{
-  "name": "classifieds-platform",
-  "version": "1.0.0",
-  "description": "Plataforma de clasificados escalable con Node.js, Express y PostgreSQL",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "migrate": "node scripts/migrate.js"
-  },
-  "keywords": ["classifieds", "express", "postgresql", "nodejs"],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "express": "^4.18.2",
-    "pg": "^8.11.3",
-    "dotenv": "^16.3.1",
-    "cloudinary": "^1.41.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "express-rate-limit": "^7.1.5",
-    "compression": "^1.7.4"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
-}
+#!/usr/bin/env python3
+"""
+Script de migración para SmartClienteRD IA
+Ejecutar: python scripts/migrate.py
+"""
+
+import os
+import asyncio
+import asyncpg
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv()
+
+async def migrate():
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        raise Exception("DATABASE_URL no configurada")
+    
+    conn = await asyncpg.connect(database_url)
+    
+    schema_path = Path(__file__).parent.parent / "schema.sql"
+    with open(schema_path, 'r') as f:
+        sql = f.read()
+    
+    await conn.execute(sql)
+    print("✅ Migración completada")
+    await conn.close()
+
+if __name__ == "__main__":
+    asyncio.run(migrate())
