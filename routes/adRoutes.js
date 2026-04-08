@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const adsController = require('../controllers/adsController');
 const { authenticateToken } = require('../utils/jwtUtils');
+const { validateCreateAd, validateId, validateSearchParams, validateImages } = require('../middleware/validators');
 
 // Configurar multer para manejar archivos en memoria
 const storage = multer.memoryStorage();
@@ -21,13 +22,13 @@ const upload = multer({
   }
 });
 
-// Rutas públicas
-router.get('/', adsController.getAllAds);
-router.get('/:id', adsController.getAdById);
+// Rutas públicas CON VALIDACIÓN
+router.get('/', validateSearchParams, adsController.getAllAds);
+router.get('/:id', validateId, adsController.getAdById);
 
-// Rutas protegidas
-router.post('/', authenticateToken, upload.array('images', 5), adsController.createAd);
+// Rutas protegidas CON VALIDACIÓN
+router.post('/', authenticateToken, upload.array('images', 5), validateImages, validateCreateAd, adsController.createAd);
 router.get('/user/my-ads', authenticateToken, adsController.getUserAds);
-router.delete('/:id', authenticateToken, adsController.deleteAd);
+router.delete('/:id', authenticateToken, validateId, adsController.deleteAd);
 
 module.exports = router;
