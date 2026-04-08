@@ -4,7 +4,7 @@ const { uploadImages, deleteImage } = require('../services/uploadService');
 // Crear anuncio
 const createAd = async (req, res) => {
   const { title, description, price, category, location, condition } = req.body;
-  const userId = req.user.userId;
+  const userId = req.user.id;  // ✅ CORREGIDO: userId → id
   
   // Validaciones
   if (!title || !price || !category) {
@@ -83,13 +83,13 @@ const getAllAds = async (req, res) => {
   
   if (minPrice) {
     query += ` AND a.price >= $${paramIndex}`;
-    params.push(minPrice);
+    params.push(parseFloat(minPrice));
     paramIndex++;
   }
   
   if (maxPrice) {
     query += ` AND a.price <= $${paramIndex}`;
-    params.push(maxPrice);
+    params.push(parseFloat(maxPrice));
     paramIndex++;
   }
   
@@ -101,7 +101,7 @@ const getAllAds = async (req, res) => {
   
   // Ordenar y paginar
   query += ` ORDER BY a.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-  params.push(limit, offset);
+  params.push(parseInt(limit), offset);
   
   try {
     const result = await db.query(query, params);
@@ -117,7 +117,30 @@ const getAllAds = async (req, res) => {
       countParams.push(category);
       countIndex++;
     }
-    // ... (añadir los mismos filtros para el contador)
+    
+    if (location) {
+      countQuery += ` AND a.location ILIKE $${countIndex}`;
+      countParams.push(`%${location}%`);
+      countIndex++;
+    }
+    
+    if (minPrice) {
+      countQuery += ` AND a.price >= $${countIndex}`;
+      countParams.push(parseFloat(minPrice));
+      countIndex++;
+    }
+    
+    if (maxPrice) {
+      countQuery += ` AND a.price <= $${countIndex}`;
+      countParams.push(parseFloat(maxPrice));
+      countIndex++;
+    }
+    
+    if (search) {
+      countQuery += ` AND (a.title ILIKE $${countIndex} OR a.description ILIKE $${countIndex})`;
+      countParams.push(`%${search}%`);
+      countIndex++;
+    }
     
     const countResult = await db.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].total);
@@ -181,7 +204,7 @@ const getAdById = async (req, res) => {
 
 // Obtener anuncios por usuario
 const getUserAds = async (req, res) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;  // ✅ CORREGIDO: userId → id
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
   
@@ -191,7 +214,7 @@ const getUserAds = async (req, res) => {
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
+      [userId, parseInt(limit), offset]
     );
     
     const countResult = await db.query(
@@ -218,7 +241,7 @@ const getUserAds = async (req, res) => {
 // Eliminar anuncio
 const deleteAd = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user.id;  // ✅ CORREGIDO: userId → id
   
   try {
     // Verificar que el anuncio pertenece al usuario
