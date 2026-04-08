@@ -67,6 +67,7 @@ const db = new Pool({
 db.on('error', (err) => console.error('❌ DB pool error:', err.message));
 
 async function initDB() {
+    // USERS
     await db.query(`CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL, phone VARCHAR(20), user_type VARCHAR(20) DEFAULT 'buyer',
@@ -76,6 +77,7 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_login TIMESTAMP, deleted_at TIMESTAMP
     )`);
     
+    // ADS
     await db.query(`CREATE TABLE IF NOT EXISTS ads (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title VARCHAR(200) NOT NULL,
         description TEXT, price DECIMAL(10,2), category VARCHAR(100), ubicacion_sector VARCHAR(100),
@@ -85,11 +87,13 @@ async function initDB() {
         deleted_at TIMESTAMP, deleted_reason TEXT, deleted_by VARCHAR(100)
     )`);
     
+    // AD IMAGES
     await db.query(`CREATE TABLE IF NOT EXISTS ad_images (
         id SERIAL PRIMARY KEY, ad_id INTEGER REFERENCES ads(id), image_url TEXT NOT NULL,
         is_primary BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
+    // VERIFICATION REQUESTS
     await db.query(`CREATE TABLE IF NOT EXISTS verification_requests (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
         id_photo_front TEXT, id_photo_back TEXT, selfie_photo TEXT,
@@ -97,6 +101,7 @@ async function initDB() {
         requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, reviewed_at TIMESTAMP, reviewed_by INTEGER
     )`);
     
+    // OFFERS
     await db.query(`CREATE TABLE IF NOT EXISTS offers (
         id SERIAL PRIMARY KEY, ad_id INTEGER REFERENCES ads(id), buyer_id INTEGER REFERENCES users(id),
         seller_id INTEGER REFERENCES users(id), offered_price DECIMAL(10,2), message TEXT,
@@ -104,17 +109,20 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP
     )`);
     
+    // FAVORITES
     await db.query(`CREATE TABLE IF NOT EXISTS favorites (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), ad_id INTEGER REFERENCES ads(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, ad_id)
     )`);
     
+    // SECTORES
     await db.query(`CREATE TABLE IF NOT EXISTS sectores (
         id SERIAL PRIMARY KEY, nombre VARCHAR(100) UNIQUE NOT NULL, ciudad VARCHAR(50) DEFAULT 'Santo Domingo Este'
     )`);
     const sectores = ['Los Mina', 'Invivienda', 'San Vicente', 'Mendoza', 'Cancino', 'Alma Rosa', 'Villa Francisca', 'Villa Duarte', 'Miami Este', 'Brisas del Este', 'Residencial del Este', 'San Isidro', 'Lucerna', 'Villa Faro', 'Los Trinitarios', 'El Paredón'];
     for (const sector of sectores) await db.query(`INSERT INTO sectores (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING`, [sector]);
     
+    // PLANS
     await db.query(`CREATE TABLE IF NOT EXISTS plans (
         id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL, price DECIMAL(10,2),
         duration_days INTEGER, features JSONB
@@ -124,6 +132,7 @@ async function initDB() {
         ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]')
         ON CONFLICT (name) DO NOTHING`);
     
+    // SOPORTE TICKETS
     await db.query(`CREATE TABLE IF NOT EXISTS support_tickets (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), user_name VARCHAR(100),
         user_email VARCHAR(100), subject VARCHAR(200), message TEXT, status VARCHAR(20) DEFAULT 'pending',
@@ -148,11 +157,42 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
+    // ============================================================
+    // TABLAS DE PAGOS Y GANANCIAS
+    // ============================================================
+    await db.query(`CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
+        amount DECIMAL(10,2), currency VARCHAR(3) DEFAULT 'DOP',
+        concept VARCHAR(100), payment_method VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'pending',
+        transaction_id VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP
+    )`);
+    
+    await db.query(`CREATE TABLE IF NOT EXISTS earnings (
+        id SERIAL PRIMARY KEY, source VARCHAR(50),
+        amount DECIMAL(10,2), description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    await db.query(`CREATE TABLE IF NOT EXISTS seller_wallets (
+        id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) UNIQUE,
+        paypal_email VARCHAR(100), bank_account VARCHAR(100),
+        total_earned DECIMAL(10,2) DEFAULT 0,
+        pending_balance DECIMAL(10,2) DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // ÍNDICES
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)`);
     
+    // ADMIN POR DEFECTO
     const adminEmail = 'admin@elfarol.com.do';
     const adminExists = await db.query(`SELECT * FROM users WHERE email = $1`, [adminEmail]);
     if (adminExists.rows.length === 0) {
@@ -161,7 +201,7 @@ async function initDB() {
             ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
     }
-    console.log('✅ Base de datos lista');
+    console.log('✅ Base de datos lista con sistema de pagos');
 }
 
 // ============================================================
@@ -258,7 +298,7 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// ANUNCIOS CON MULTIMEDIA
+// ANUNCIOS
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
@@ -349,11 +389,30 @@ app.post('/api/ads/:id/boost', verifyToken, async (req, res) => {
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     const user = await db.query(`SELECT verified FROM users WHERE id = $1`, [req.user.id]);
     if (!user.rows[0]?.verified) return res.status(403).json({ error: 'Debes tener cuenta verificada para usar Boost' });
+    
+    // Registrar pago pendiente
+    const amount = 199;
+    const payment = await db.query(`
+        INSERT INTO payments (user_id, amount, concept, payment_method, status, created_at)
+        VALUES ($1, $2, 'Boost 24 horas', 'pending', 'pending', NOW())
+        RETURNING id
+    `, [req.user.id, amount]);
+    
+    // Simular pago exitoso (en producción: integrar PayPal/Stripe)
+    await db.query(`
+        UPDATE payments SET status = 'completed', completed_at = NOW(), transaction_id = $1 WHERE id = $2
+    `, ['TXN_' + Date.now(), payment.rows[0].id]);
+    
+    // Registrar ganancia
+    await db.query(`
+        INSERT INTO earnings (source, amount, description) VALUES ('boost', $1, 'Usuario ${req.user.id} compró Boost')
+    `, [amount]);
+    
     const now = new Date();
     const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     await db.query(`UPDATE ads SET boosted_at = $1, boosted_expires = $2, updated_at = NOW() WHERE id = $3`, [now, expires, id]);
     clearCache();
-    res.json({ success: true, message: 'Anuncio destacado por 24 horas', expires_at: expires });
+    res.json({ success: true, message: 'Anuncio destacado por 24 horas', expires_at: expires, payment_id: payment.rows[0].id });
 });
 
 app.delete('/api/ads/:id', verifyToken, async (req, res) => {
@@ -490,6 +549,123 @@ app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
     res.json(stats);
 });
 
+// ============================================================
+// ADMIN - GANANCIAS Y PAGOS
+// ============================================================
+app.get('/api/admin/earnings', verifyToken, verifyAdmin, async (req, res) => {
+    const [totalEarnings, monthlyEarnings, boostCount, paymentsByMethod] = await Promise.all([
+        db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM earnings`),
+        db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM earnings WHERE created_at > NOW() - INTERVAL '30 days'`),
+        db.query(`SELECT COUNT(*) as count FROM payments WHERE concept = 'Boost 24 horas' AND status = 'completed'`),
+        db.query(`SELECT payment_method, COUNT(*) as count, COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'completed' GROUP BY payment_method`)
+    ]);
+    
+    const recentPayments = await db.query(`
+        SELECT p.*, u.name as user_name, u.email as user_email
+        FROM payments p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.status = 'completed'
+        ORDER BY p.created_at DESC
+        LIMIT 50
+    `);
+    
+    res.json({
+        total_earnings: parseFloat(totalEarnings.rows[0].total),
+        monthly_earnings: parseFloat(monthlyEarnings.rows[0].total),
+        total_boosts: parseInt(boostCount.rows[0].count),
+        by_method: paymentsByMethod.rows,
+        recent_payments: recentPayments.rows
+    });
+});
+
+app.get('/api/admin/payments', verifyToken, verifyAdmin, async (req, res) => {
+    const result = await db.query(`
+        SELECT p.*, u.name as user_name, u.email as user_email
+        FROM payments p
+        JOIN users u ON p.user_id = u.id
+        ORDER BY p.created_at DESC
+        LIMIT 100
+    `);
+    res.json({ payments: result.rows });
+});
+
+// ============================================================
+// SISTEMA DE PAGOS PARA USUARIOS
+// ============================================================
+app.post('/api/payments/boost', verifyToken, async (req, res) => {
+    const { payment_method } = req.body;
+    
+    if (req.user.user_type !== 'seller') {
+        return res.status(403).json({ error: 'Solo vendedores pueden usar Boost' });
+    }
+    
+    const amount = 199;
+    const payment = await db.query(`
+        INSERT INTO payments (user_id, amount, concept, payment_method, status, created_at)
+        VALUES ($1, $2, 'Boost 24 horas', $3, 'pending', NOW())
+        RETURNING id
+    `, [req.user.id, amount, payment_method || 'pending']);
+    
+    res.json({ success: true, payment_id: payment.rows[0].id, amount });
+});
+
+app.post('/api/payments/confirm/:paymentId', verifyToken, async (req, res) => {
+    const { paymentId } = req.params;
+    const { transaction_id } = req.body;
+    
+    const payment = await db.query(`SELECT * FROM payments WHERE id = $1 AND user_id = $2`, [paymentId, req.user.id]);
+    if (payment.rows.length === 0) {
+        return res.status(404).json({ error: 'Pago no encontrado' });
+    }
+    
+    await db.query(`
+        UPDATE payments SET status = 'completed', completed_at = NOW(), transaction_id = $1 WHERE id = $2
+    `, [transaction_id || 'TXN_' + Date.now(), paymentId]);
+    
+    await db.query(`
+        INSERT INTO earnings (source, amount, description) VALUES ('boost', $1, 'Usuario ${req.user.id} completó pago')
+    `, [payment.rows[0].amount]);
+    
+    res.json({ success: true });
+});
+
+app.get('/api/payments/my-payments', verifyToken, async (req, res) => {
+    const result = await db.query(`
+        SELECT * FROM payments WHERE user_id = $1 ORDER BY created_at DESC
+    `, [req.user.id]);
+    res.json({ payments: result.rows });
+});
+
+// ============================================================
+// WALLET DE VENDEDOR (PayPal)
+// ============================================================
+app.post('/api/seller/wallet', verifyToken, async (req, res) => {
+    if (req.user.user_type !== 'seller') {
+        return res.status(403).json({ error: 'Solo vendedores pueden tener wallet' });
+    }
+    
+    const { paypal_email, bank_account } = req.body;
+    
+    await db.query(`
+        INSERT INTO seller_wallets (user_id, paypal_email, bank_account, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+            paypal_email = EXCLUDED.paypal_email,
+            bank_account = EXCLUDED.bank_account,
+            updated_at = NOW()
+    `, [req.user.id, paypal_email || null, bank_account || null]);
+    
+    res.json({ success: true });
+});
+
+app.get('/api/seller/wallet', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT * FROM seller_wallets WHERE user_id = $1`, [req.user.id]);
+    res.json({ wallet: result.rows[0] || null });
+});
+
+// ============================================================
+// ADMIN - VERIFICACIONES
+// ============================================================
 app.get('/api/admin/verification-requests', verifyToken, verifyAdmin, async (req, res) => {
     const result = await db.query(`SELECT vr.*, u.name, u.email, u.phone FROM verification_requests vr JOIN users u ON vr.user_id = u.id WHERE vr.status = 'pending' ORDER BY vr.requested_at ASC`);
     res.json({ requests: result.rows });
@@ -534,7 +710,7 @@ app.get('/api/admin/verification-photos/:userId', verifyToken, verifyAdmin, asyn
 });
 
 // ============================================================
-// SOPORTE Y ASISTENCIA
+// SOPORTE
 // ============================================================
 app.post('/api/support/create-ticket', async (req, res) => {
     const { user_id, user_name, user_email, subject, message } = req.body;
@@ -632,12 +808,13 @@ async function start() {
         await initDB();
         app.listen(PORT, () => {
             console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-            console.log(`║     🚀 EL FAROL - SERVIDOR CORRIENDO 🚀                         ║`);
+            console.log(`║     🚀 EL FAROL - SERVIDOR COMPLETO CON PAGOS 🚀              ║`);
             console.log(`╠════════════════════════════════════════════════════════════════╣`);
             console.log(`║  📡 Puerto: ${PORT}                                                 ║`);
             console.log(`║  🌐 Web: http://localhost:${PORT}                                    ║`);
             console.log(`║  👑 Admin: http://localhost:${PORT}/admin                           ║`);
             console.log(`║  👤 Perfil: http://localhost:${PORT}/perfil                         ║`);
+            console.log(`║  💰 Ganancias Admin: /api/admin/earnings                           ║`);
             console.log(`║  🔐 Admin: admin@elfarol.com.do / admin123                         ║`);
             console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
         });
