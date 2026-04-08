@@ -9,6 +9,7 @@ const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const multer = require('multer');
 
 dotenv.config();
 
@@ -17,6 +18,45 @@ const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'el_farol_secret_2026';
 const SITE_NAME = process.env.SITE_NAME || 'El Farol Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
+
+// ============================================================
+// CONFIGURACIÓN DE SUBIDA DE IMÁGENES (MULTIMEDIA)
+// ============================================================
+// Crear carpeta de uploads si no existe
+const uploadDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configurar almacenamiento de imágenes
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+// Filtrar solo imágenes
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+        cb(null, true);
+    } else {
+        cb(new Error('Solo se permiten imágenes (JPEG, PNG, GIF, WEBP)'));
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+    fileFilter: fileFilter
+});
 
 // ============================================================
 // CACHÉ EN MEMORIA
@@ -82,6 +122,7 @@ async function initDB() {
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type VARCHAR(20) DEFAULT 'free'`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires TIMESTAMP`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT`);
 
     // ADS
     await db.query(`
@@ -104,6 +145,18 @@ async function initDB() {
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS boosted_expires TIMESTAMP`);
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP`);
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS primary_image TEXT`);
+
+    // AD IMAGES (MULTIMEDIA)
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS ad_images (
+            id SERIAL PRIMARY KEY,
+            ad_id INTEGER REFERENCES ads(id),
+            image_url TEXT NOT NULL,
+            is_primary BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
 
     // VERIFICATION REQUESTS
     await db.query(`
@@ -181,6 +234,7 @@ async function initDB() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_category ON ads(category) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_ad_images_ad_id ON ad_images(ad_id)`);
 
     // Admin por defecto
     const adminEmail = 'admin@elfarol.com.do';
@@ -280,7 +334,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/me', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, plan_expires FROM users WHERE id = $1`, [req.user.id]);
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, plan_expires, avatar FROM users WHERE id = $1`, [req.user.id]);
     res.json(result.rows[0]);
 });
 
@@ -303,7 +357,146 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// ANUNCIOS
+// IMÁGENES / MULTIMEDIA
+// ============================================================
+
+// Subir imágenes para un anuncio
+app.post('/api/upload-images/:adId', verifyToken, upload.array('images', 10), async (req, res) => {
+    const { adId } = req.params;
+    const files = req.files;
+    
+    if (!files || files.length === 0) {
+        return res.status(400).json({ error: 'No se subieron imágenes' });
+    }
+    
+    try {
+        const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND user_id = $2`, [adId, req.user.id]);
+        if (ad.rows.length === 0) {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+        
+        const imageUrls = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const imageUrl = `/uploads/${file.filename}`;
+            const isPrimary = i === 0 && (ad.rows[0].primary_image === null || ad.rows[0].primary_image === '');
+            
+            const result = await db.query(
+                `INSERT INTO ad_images (ad_id, image_url, is_primary) VALUES ($1, $2, $3) RETURNING *`,
+                [adId, imageUrl, isPrimary]
+            );
+            
+            if (isPrimary) {
+                await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [imageUrl, adId]);
+            }
+            
+            imageUrls.push({ id: result.rows[0].id, url: imageUrl, is_primary: isPrimary });
+        }
+        
+        clearCache();
+        res.json({ success: true, images: imageUrls });
+    } catch (error) {
+        console.error('Error al guardar imágenes:', error);
+        res.status(500).json({ error: 'Error al guardar imágenes' });
+    }
+});
+
+// Obtener imágenes de un anuncio
+app.get('/api/ads/:id/images', async (req, res) => {
+    const { id } = req.params;
+    const result = await db.query(
+        `SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`,
+        [id]
+    );
+    res.json({ images: result.rows });
+});
+
+// Eliminar imagen
+app.delete('/api/images/:imageId', verifyToken, async (req, res) => {
+    const { imageId } = req.params;
+    
+    try {
+        const image = await db.query(`
+            SELECT ai.*, a.user_id, a.id as ad_id
+            FROM ad_images ai 
+            JOIN ads a ON ai.ad_id = a.id 
+            WHERE ai.id = $1
+        `, [imageId]);
+        
+        if (image.rows.length === 0) {
+            return res.status(404).json({ error: 'Imagen no encontrada' });
+        }
+        
+        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+        
+        // Eliminar archivo físico
+        const filePath = path.join(__dirname, 'public', image.rows[0].image_url);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        
+        // Eliminar de la base de datos
+        await db.query(`DELETE FROM ad_images WHERE id = $1`, [imageId]);
+        
+        // Si era la imagen principal, actualizar
+        if (image.rows[0].is_primary) {
+            const newPrimary = await db.query(
+                `SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY created_at ASC LIMIT 1`,
+                [image.rows[0].ad_id]
+            );
+            if (newPrimary.rows.length > 0) {
+                await db.query(`UPDATE ad_images SET is_primary = true WHERE id = $1`, [newPrimary.rows[0].id]);
+                await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [newPrimary.rows[0].image_url, image.rows[0].ad_id]);
+            } else {
+                await db.query(`UPDATE ads SET primary_image = NULL WHERE id = $1`, [image.rows[0].ad_id]);
+            }
+        }
+        
+        clearCache();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar imagen' });
+    }
+});
+
+// Establecer imagen como principal
+app.put('/api/images/:imageId/primary', verifyToken, async (req, res) => {
+    const { imageId } = req.params;
+    
+    try {
+        const image = await db.query(`
+            SELECT ai.*, a.user_id, a.id as ad_id
+            FROM ad_images ai 
+            JOIN ads a ON ai.ad_id = a.id 
+            WHERE ai.id = $1
+        `, [imageId]);
+        
+        if (image.rows.length === 0) {
+            return res.status(404).json({ error: 'Imagen no encontrada' });
+        }
+        
+        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+        
+        // Quitar primary de todas las imágenes del anuncio
+        await db.query(`UPDATE ad_images SET is_primary = false WHERE ad_id = $1`, [image.rows[0].ad_id]);
+        
+        // Establecer esta como primary
+        await db.query(`UPDATE ad_images SET is_primary = true WHERE id = $1`, [imageId]);
+        await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [image.rows[0].image_url, image.rows[0].ad_id]);
+        
+        clearCache();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al establecer imagen principal' });
+    }
+});
+
+// ============================================================
+// ANUNCIOS (CON IMAGEN PRINCIPAL)
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
@@ -312,7 +505,7 @@ app.get('/api/ads', async (req, res) => {
     
     let query = `
         SELECT a.id, a.title, a.price, a.ubicacion_sector, a.status, a.views, 
-               a.created_at, a.boosted_expires,
+               a.created_at, a.boosted_expires, a.primary_image,
                u.name as user_name, u.verified, u.plan_type
         FROM ads a 
         JOIN users u ON a.user_id = u.id 
@@ -340,6 +533,7 @@ app.get('/api/ads', async (req, res) => {
         views: ad.views,
         created_at: ad.created_at,
         user_name: ad.user_name,
+        primary_image: ad.primary_image,
         badges: {
             verified: ad.verified,
             boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(),
@@ -360,7 +554,18 @@ app.get('/api/ads/:id', async (req, res) => {
         WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     const ad = result.rows[0];
-    ad.badges = { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' };
+    
+    // Obtener imágenes del anuncio
+    const images = await db.query(`SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`, [id]);
+    
+    ad.badges = { 
+        verified: ad.verified, 
+        boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), 
+        pro: ad.plan_type === 'pro', 
+        premium: ad.plan_type === 'premium' 
+    };
+    ad.images = images.rows;
+    
     res.json({ ad });
 });
 
@@ -378,7 +583,12 @@ app.post('/api/ads', verifyToken, async (req, res) => {
 
 app.get('/api/ads/my-ads', verifyToken, async (req, res) => {
     const result = await db.query(
-        `SELECT *, CASE WHEN boosted_expires > NOW() THEN true ELSE false END as is_boosted FROM ads WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC`,
+        `SELECT a.*, 
+                CASE WHEN a.boosted_expires > NOW() THEN true ELSE false END as is_boosted,
+                (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count
+         FROM ads a 
+         WHERE a.user_id = $1 AND a.deleted_at IS NULL 
+         ORDER BY a.created_at DESC`,
         [req.user.id]
     );
     res.json({ ads: result.rows });
@@ -449,7 +659,7 @@ app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
 
 app.get('/api/offers/received', verifyToken, async (req, res) => {
     const result = await db.query(`
-        SELECT o.*, a.title as ad_title, u.name as buyer_name, u.phone as buyer_phone 
+        SELECT o.*, a.title as ad_title, a.primary_image, u.name as buyer_name, u.phone as buyer_phone 
         FROM offers o 
         JOIN ads a ON o.ad_id = a.id 
         JOIN users u ON o.buyer_id = u.id 
@@ -492,7 +702,10 @@ app.delete('/api/favorites/:adId', verifyToken, async (req, res) => {
 
 app.get('/api/favorites', verifyToken, async (req, res) => {
     const result = await db.query(`
-        SELECT a.* FROM ads a JOIN favorites f ON a.id = f.ad_id 
+        SELECT a.*, u.name as user_name 
+        FROM ads a 
+        JOIN favorites f ON a.id = f.ad_id 
+        JOIN users u ON a.user_id = u.id
         WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
     res.json({ favorites: result.rows });
 });
@@ -535,19 +748,21 @@ const verifyAdmin = async (req, res, next) => {
 app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
     let cached = getCache('stats');
     if (cached) return res.json(cached);
-    const [users, ads, activeAds, verifiedUsers, pendingVerifications] = await Promise.all([
+    const [users, ads, activeAds, verifiedUsers, pendingVerifications, totalImages] = await Promise.all([
         db.query(`SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM ads WHERE deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM ads WHERE status = 'active' AND deleted_at IS NULL`),
         db.query(`SELECT COUNT(*) FROM users WHERE verified = true`),
-        db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`)
+        db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`),
+        db.query(`SELECT COUNT(*) FROM ad_images`)
     ]);
     const stats = {
         totalUsers: parseInt(users.rows[0].count),
         totalAds: parseInt(ads.rows[0].count),
         activeAds: parseInt(activeAds.rows[0].count),
         verifiedUsers: parseInt(verifiedUsers.rows[0].count),
-        pendingVerifications: parseInt(pendingVerifications.rows[0].count)
+        pendingVerifications: parseInt(pendingVerifications.rows[0].count),
+        totalImages: parseInt(totalImages.rows[0].count)
     };
     setCache('stats', stats);
     res.json(stats);
@@ -582,33 +797,54 @@ app.post('/api/admin/verify/:userId/reject', verifyToken, verifyAdmin, async (re
 
 app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
     const result = await db.query(`
-        SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at 
+        SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at, avatar 
         FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
     res.json({ users: result.rows });
 });
 
 app.get('/api/admin/ads', verifyToken, verifyAdmin, async (req, res) => {
     const result = await db.query(`
-        SELECT a.*, u.email as user_email, u.name as user_name 
-        FROM ads a JOIN users u ON a.user_id = u.id 
-        WHERE a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 100`);
+        SELECT a.*, u.email as user_email, u.name as user_name,
+               (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count
+        FROM ads a 
+        JOIN users u ON a.user_id = u.id 
+        WHERE a.deleted_at IS NULL 
+        ORDER BY a.created_at DESC LIMIT 100`);
     res.json({ ads: result.rows });
 });
 
 app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
     const { id } = req.params;
+    
+    // Eliminar imágenes asociadas
+    const images = await db.query(`SELECT image_url FROM ad_images WHERE ad_id = $1`, [id]);
+    for (const img of images.rows) {
+        const filePath = path.join(__dirname, 'public', img.image_url);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    }
+    await db.query(`DELETE FROM ad_images WHERE ad_id = $1`, [id]);
     await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
     clearCache();
     res.json({ success: true });
 });
 
 // ============================================================
-// FRONTEND (Rutas del Jefe mxl)
+// SERVIDOR DE ARCHIVOS ESTÁTICOS (IMÁGENES)
 // ============================================================
 const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
+// Servir archivos estáticos (CSS, JS, imágenes, uploads)
 app.use(express.static(publicDir));
+
+// Ruta específica para uploads
+app.use('/uploads', express.static(path.join(publicDir, 'uploads')));
+
+// ============================================================
+// FRONTEND (Rutas)
+// ============================================================
 
 // 1. Ruta específica para el Panel de Administración
 app.get('/admin', (req, res) => {
@@ -630,6 +866,7 @@ async function start() {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
             console.log(`👑 Admin: http://localhost:${PORT}/admin`);
             console.log(`🔐 Credenciales: admin@elfarol.com.do / admin123`);
+            console.log(`📸 Uploads: http://localhost:${PORT}/uploads`);
             console.log(`✅ Base de datos optimizada con índices\n`);
         });
     } catch (error) {
