@@ -21,18 +21,14 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 email-validator==2.1.0
 
-# === IA (Opcional - elegir UNO) ===
-# Opción 1: OpenAI
+# === IA ===
 openai==1.6.1
 
-# Opción 2: Google Gemini (descomentar si usas Gemini)
-# google-generativeai==0.3.2
-
 # === Utilidades ===
-httpx==0.25.1  # Para llamadas HTTP asíncronas
+httpx==0.25.1
 python-dateutil==2.8.2
-ujson==5.9.0  # JSON más rápido
+ujson==5.9.0
 
-# === Middleware y Seguridad ===
-cors==0.0.2
-slowapi==0.1.9  # Rate limiting para FastAPI
+# === Middleware (CORREGIDO) ===
+cors==1.0.1              # ← Cambiado de 0.0.2 a 1.0.1
+slowapi==0.1.9
