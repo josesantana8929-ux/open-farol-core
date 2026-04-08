@@ -31,7 +31,7 @@
         .admin-container { display: flex; min-height: calc(100vh - 60px); }
         
         .sidebar {
-            width: 260px;
+            width: 280px;
             background: #1a1a2e;
             color: white;
             padding: 20px 0;
@@ -58,7 +58,7 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -89,6 +89,7 @@
             border-radius: 12px;
             overflow-x: auto;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -106,6 +107,7 @@
         .badge-warning { background: #FF9800; color: white; }
         .badge-danger { background: #f44336; color: white; }
         .badge-info { background: #2196F3; color: white; }
+        .badge-bot { background: #9C27B0; color: white; }
         
         .btn-icon {
             background: none;
@@ -118,7 +120,6 @@
         .btn-reject { color: #f44336; }
         .btn-delete { color: #f44336; }
         .btn-restore { color: #2196F3; }
-        .btn-edit { color: #FF9800; }
         
         .modal {
             display: none;
@@ -160,11 +161,30 @@
             border-radius: 8px;
         }
         
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+        .bot-status {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
         }
+        .bot-status i { font-size: 1.5rem; margin-right: 10px; }
+        .bot-status .status { display: flex; align-items: center; gap: 15px; }
+        .bot-pulse {
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+        
+        .empty-state { text-align: center; padding: 40px; color: #999; }
         
         .toast {
             position: fixed;
@@ -179,6 +199,24 @@
         }
         .toast.error { background: #f44336; }
         @keyframes fadeIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: #e0e0e0;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #0A1F44;
+            color: white;
+        }
         
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
@@ -203,6 +241,9 @@
         <ul class="sidebar-menu">
             <li onclick="showSection('dashboard')" class="active" id="menu-dashboard">
                 <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </li>
+            <li onclick="showSection('botcontable')" id="menu-botcontable">
+                <i class="fas fa-robot"></i> <span>🤖 BOT CONTABLE</span>
             </li>
             <li onclick="showSection('earnings')" id="menu-earnings">
                 <i class="fas fa-chart-line"></i> <span>💰 Ganancias</span>
@@ -245,6 +286,46 @@
             </div>
         </div>
 
+        <!-- SECCIÓN BOT CONTABLE -->
+        <div id="botcontableSection" style="display: none;">
+            <div class="bot-status">
+                <div class="status">
+                    <i class="fas fa-robot"></i>
+                    <div>
+                        <strong>🤖 BOT CONTABLE ACTIVO</strong><br>
+                        <small>Registrando cada transacción automáticamente</small>
+                    </div>
+                </div>
+                <div class="status">
+                    <div class="bot-pulse"></div>
+                    <span>En línea</span>
+                </div>
+            </div>
+            
+            <div class="section-title"><i class="fas fa-chart-line"></i> Resumen Contable</div>
+            <div class="stats-grid" id="contabilidadStats">
+                <div class="stat-card"><h4>Total Ingresos</h4><div class="stat-number" id="totalIngresos">RD$ 0</div></div>
+                <div class="stat-card"><h4>Total Egresos</h4><div class="stat-number" id="totalEgresos">RD$ 0</div></div>
+                <div class="stat-card"><h4>Balance Neto</h4><div class="stat-number" id="balanceNeto">RD$ 0</div></div>
+            </div>
+            
+            <div class="filters">
+                <button class="filter-btn active" onclick="loadContabilidad('dia')">📅 Hoy</button>
+                <button class="filter-btn" onclick="loadContabilidad('semana')">📆 Esta semana</button>
+                <button class="filter-btn" onclick="loadContabilidad('mes')">📊 Este mes</button>
+            </div>
+            
+            <div class="section-title"><i class="fas fa-chart-bar"></i> Resumen por día</div>
+            <div class="table-container" id="resumenDiarioTable">
+                <table><thead><tr><th>Fecha</th><th>Ingresos</th><th>Egresos</th><th>Boosts</th><th>Verificaciones</th><th>Ventas</th></tr></thead><tbody id="resumenDiarioList"></tbody></table>
+            </div>
+            
+            <div class="section-title"><i class="fas fa-history"></i> Últimos movimientos del BOT</div>
+            <div class="table-container" id="movimientosTable">
+                <table><thead><tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>Monto</th><th>Concepto</th><th>Tipo</th></tr></thead><tbody id="movimientosList"></tbody></table>
+            </div>
+        </div>
+
         <!-- SECCIÓN GANANCIAS -->
         <div id="earningsSection" style="display: none;">
             <div class="section-title"><i class="fas fa-chart-line"></i> Ganancias</div>
@@ -264,10 +345,7 @@
         <div id="paymentsSection" style="display: none;">
             <div class="section-title"><i class="fas fa-credit-card"></i> Transacciones</div>
             <div class="table-container">
-                <table>
-                    <thead><tr><th>ID</th><th>Usuario</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead>
-                    <tbody id="paymentsList"></tbody>
-                </table>
+                <table><thead><tr><th>ID</th><th>Usuario</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="paymentsList"></tbody></table>
             </div>
         </div>
 
@@ -275,7 +353,7 @@
         <div id="usersSection" style="display: none;">
             <div class="section-title"><i class="fas fa-users"></i> Usuarios</div>
             <div class="table-container">
-                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Acciones</th></tr></thead><tbody id="usersList"></tbody></table>
+                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Calificación</th><th>Acciones</th></tr></thead><tbody id="usersList"></tbody></table>
             </div>
         </div>
 
@@ -283,7 +361,7 @@
         <div id="sellersSection" style="display: none;">
             <div class="section-title"><i class="fas fa-store"></i> Vendedores</div>
             <div class="table-container">
-                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Verificado</th><th>Plan</th><th>PayPal</th><th>Acciones</th></tr></thead><tbody id="sellersList"></tbody></table>
+                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Verificado</th><th>Plan</th><th>Calificación</th><th>Acciones</th></tr></thead><tbody id="sellersList"></tbody></table>
             </div>
         </div>
 
@@ -307,7 +385,7 @@
         <div id="verificationsSection" style="display: none;">
             <div class="section-title"><i class="fas fa-id-card"></i> Verificaciones Pendientes</div>
             <div class="table-container">
-                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="verificationsList"></tbody></table>
+                <tr><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="verificationsList"></tbody></table>
             </div>
         </div>
 
@@ -333,9 +411,10 @@
 
 <script>
     let token = localStorage.getItem('adminToken');
-    if (!token) window.location.href = '/admin';
-    
     let currentDeleteId = null;
+    let currentPeriodo = 'mes';
+    
+    if (!token) window.location.href = '/admin';
     
     function showToast(msg, isError) {
         const toast = document.createElement('div');
@@ -348,9 +427,10 @@
     function showSection(section) {
         document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
         document.getElementById(`menu-${section}`).classList.add('active');
-        const sections = ['dashboard', 'earnings', 'payments', 'users', 'sellers', 'ads', 'deleted', 'verifications', 'audit'];
+        const sections = ['dashboard', 'botcontable', 'earnings', 'payments', 'users', 'sellers', 'ads', 'deleted', 'verifications', 'audit'];
         sections.forEach(s => { const el = document.getElementById(`${s}Section`); if (el) el.style.display = s === section ? 'block' : 'none'; });
         if (section === 'dashboard') loadStats();
+        if (section === 'botcontable') loadContabilidad(currentPeriodo);
         if (section === 'earnings') loadEarnings();
         if (section === 'payments') loadPayments();
         if (section === 'users') loadUsers();
@@ -371,6 +451,53 @@
             document.getElementById('statDeletedAds').innerText = data.deletedAds || 0;
             document.getElementById('statVerified').innerText = data.verifiedUsers || 0;
             document.getElementById('statPendingVerif').innerText = data.pendingVerifications || 0;
+        } catch(e) { console.error(e); }
+    }
+    
+    async function loadContabilidad(periodo) {
+        currentPeriodo = periodo;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        try {
+            const res = await fetch(`/api/admin/contabilidad?periodo=${periodo}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            
+            document.getElementById('totalIngresos').innerHTML = `RD$ ${(data.totales?.total_ingresos || 0).toLocaleString()}`;
+            document.getElementById('totalEgresos').innerHTML = `RD$ ${(data.totales?.total_egresos || 0).toLocaleString()}`;
+            document.getElementById('balanceNeto').innerHTML = `RD$ ${(data.totales?.balance || 0).toLocaleString()}`;
+            
+            const resumenBody = document.getElementById('resumenDiarioList');
+            if (data.resumen_diario?.length) {
+                resumenBody.innerHTML = data.resumen_diario.map(r => `
+                    <tr>
+                        <td>${new Date(r.fecha).toLocaleDateString()}</td>
+                        <td><strong class="badge-success" style="padding:4px 8px; border-radius:8px;">RD$ ${(r.total_ingresos || 0).toLocaleString()}</strong></td>
+                        <td><strong class="badge-danger" style="padding:4px 8px; border-radius:8px;">RD$ ${(r.total_egresos || 0).toLocaleString()}</strong></td>
+                        <td>RD$ ${(r.total_boosts || 0).toLocaleString()}</td>
+                        <td>RD$ ${(r.total_verificaciones || 0).toLocaleString()}</td>
+                        <td>RD$ ${(r.total_ventas || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } else {
+                resumenBody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay datos</td></tr>';
+            }
+            
+            const movimientosBody = document.getElementById('movimientosList');
+            if (data.ultimos_movimientos?.length) {
+                movimientosBody.innerHTML = data.ultimos_movimientos.map(m => `
+                    <tr>
+                        <td>${new Date(m.fecha).toLocaleString()}</td>
+                        <td><span class="badge badge-bot">${m.accion}</span></td>
+                        <td>${m.usuario_email || m.usuario_id || 'Sistema'}</td>
+                        <td><strong>RD$ ${(m.monto || 0).toLocaleString()}</strong></td>
+                        <td>${m.concepto || '-'}</td>
+                        <td><span class="badge ${m.tipo === 'ingreso' ? 'badge-success' : 'badge-danger'}">${m.tipo === 'ingreso' ? '💰 Ingreso' : '💸 Egreso'}</span></td>
+                    </tr>
+                `).join('');
+            } else {
+                movimientosBody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay movimientos</td></tr>';
+            }
         } catch(e) { console.error(e); }
     }
     
@@ -416,12 +543,13 @@
             const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('usersList');
-            if (!data.users?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay usuarios</td></tr>'; return; }
+            if (!data.users?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay usuarios</td></tr>'; return; }
             tbody.innerHTML = data.users.map(u => `
                 <tr>
                     <td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td>
                     <td><span class="badge ${u.user_type === 'seller' ? 'badge-warning' : 'badge-info'}">${u.user_type === 'seller' ? 'Vendedor' : 'Comprador'}</span></td>
                     <td>${u.verified ? '<span class="badge badge-success">Verificado</span>' : '<span class="badge badge-warning">Pendiente</span>'}</td>
+                    <td>⭐ ${u.rating || 0} (${u.rating_count || 0})</td>
                     <td><button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td>
                 </tr>
             `).join('');
@@ -440,19 +568,12 @@
             const sellers = (data.users || []).filter(u => u.user_type === 'seller');
             const tbody = document.getElementById('sellersList');
             if (!sellers.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay vendedores</td></tr>'; return; }
-            
-            // Obtener wallets
-            const walletsRes = await fetch('/api/admin/seller-wallets', { headers: { 'Authorization': `Bearer ${token}` } });
-            const wallets = await walletsRes.json();
-            const walletMap = {};
-            (wallets.wallets || []).forEach(w => { walletMap[w.user_id] = w.paypal_email || w.bank_account; });
-            
             tbody.innerHTML = sellers.map(u => `
                 <tr>
                     <td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td>
                     <td>${u.verified ? '<span class="badge badge-success">Verificado</span>' : '<span class="badge badge-warning">Pendiente</span>'}</td>
                     <td>${u.plan_type || 'Gratis'}</td>
-                    <td>${walletMap[u.id] || '-'}</td>
+                    <td>⭐ ${u.rating || 0} (${u.rating_count || 0})</td>
                     <td><button class="btn-icon btn-approve" onclick="verifySeller(${u.id})"><i class="fas fa-check-circle"></i></button>
                     <button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td>
                 </tr>
@@ -492,7 +613,9 @@
             tbody.innerHTML = data.ads.map(ad => `
                 <tr>
                     <td>${ad.id}</td><td>${ad.title}</td><td>RD$ ${Number(ad.price).toLocaleString()}</td>
-                    <td>${ad.user_name || ad.user_email}</td><td>${ad.deleted_reason || '-'}</td><td>${ad.deleted_by || '-'}</td>
+                    <td>${ad.user_name || ad.user_email}</td>
+                    <td>${ad.deleted_reason || '-'}</td>
+                    <td>${ad.deleted_by || '-'}</td>
                     <td>${new Date(ad.deleted_at).toLocaleDateString()}</td>
                     <td><button class="btn-icon btn-restore" onclick="restoreAd(${ad.id})"><i class="fas fa-undo-alt"></i></button></td>
                 </tr>
@@ -527,7 +650,10 @@
             if (!data.requests?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay solicitudes pendientes</td></tr>'; return; }
             tbody.innerHTML = data.requests.map(req => `
                 <tr>
-                    <td>${req.id}</td><td>${req.name || '-'}</td><td>${req.email}</td><td>${req.phone || '-'}</td>
+                    <td>${req.id}</td>
+                    <td>${req.name || '-'}</td>
+                    <td>${req.email}</td>
+                    <td>${req.phone || '-'}</td>
                     <td>${new Date(req.requested_at).toLocaleDateString()}</td>
                     <td><button class="btn-icon btn-approve" onclick="approveVerification(${req.user_id})"><i class="fas fa-check-circle"></i></button>
                     <button class="btn-icon btn-reject" onclick="rejectVerification(${req.user_id})"><i class="fas fa-times-circle"></i></button></td>
@@ -555,14 +681,27 @@
             if (!data.audit?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros</td></tr>'; return; }
             tbody.innerHTML = data.audit.map(a => `
                 <tr>
-                    <td>${new Date(a.created_at).toLocaleString()}</td><td>${a.admin_email || '-'}</td>
-                    <td>${a.ad_title || '-'}</td><td>${a.seller_email || '-'}</td><td>${a.reason || '-'}</td>
+                    <td>${new Date(a.created_at).toLocaleString()}</td>
+                    <td>${a.admin_email || '-'}</td>
+                    <td>${a.ad_title || '-'}</td>
+                    <td>${a.seller_email || '-'}</td>
+                    <td>${a.reason || '-'}</td>
                 </tr>
             `).join('');
         } catch(e) { console.error(e); }
     }
     
     function logout() { localStorage.removeItem('adminToken'); window.location.href = '/admin'; }
+    
+    // Auto-refresh cada 30 segundos
+    setInterval(() => {
+        if (document.getElementById('botcontableSection').style.display !== 'none') {
+            loadContabilidad(currentPeriodo);
+        }
+        if (document.getElementById('dashboardSection').style.display !== 'none') {
+            loadStats();
+        }
+    }, 30000);
     
     loadStats();
 </script>
