@@ -1,0 +1,33 @@
+# En la terminal, dentro del directorio del proyecto
+cat > .env << 'EOF'
+# Servidor
+PORT=3000
+NODE_ENV=development
+SITE_NAME="Mi Clasificados Platform"
+SITE_DESCRIPTION="Plataforma de clasificados en línea"
+
+# JWT - ¡IMPORTANTE! Cambia esto por una clave segura
+SESSION_SECRET=mi_clave_super_segura_para_jwt_123456789
+JWT_EXPIRES_IN=7d
+
+# Base de Datos (PostgreSQL)
+DATABASE_URL=postgresql://postgres:password@localhost:5432/clasificados_db
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=clasificados_db
+
+# Cloudinary (opcional por ahora)
+CLOUDINARY_CLOUD_NAME=test
+CLOUDINARY_API_KEY=test
+CLOUDINARY_API_SECRET=test
+
+# Límites
+MAX_FILE_SIZE=5242880
+MAX_FILES_PER_AD=5
+RATE_LIMIT_MAX_REQUESTS=100
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+EOF
