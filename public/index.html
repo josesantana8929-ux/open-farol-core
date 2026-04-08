@@ -1,3 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>El Farol Clasificados - Compra y Vende en Santo Domingo Este</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+        }
+        .logo { font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .logo span { color: #0A1F44; }
+        .nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .nav-link { color: #4a4a4a; text-decoration: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+        .nav-link:hover { color: #0A1F44; }
+        .lang-btn { background: transparent; border: 1px solid #ddd; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+        .btn-outline { background: transparent; border: 1px solid #0A1F44; padding: 8px 20px; border-radius: 30px; cursor: pointer; color: #0A1F44; font-weight: 500; }
+        .btn-outline:hover { background: #0A1F44; color: white; }
+        .btn-primary { background: #0A1F44; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: 500; }
+        .btn-primary:hover { background: #071635; }
+        
+        .hero { background: linear-gradient(135deg, #0A1F44 0%, #071635 100%); padding: 60px 32px; text-align: center; color: white; }
+        .hero h1 { font-size: 2.2rem; margin-bottom: 16px; }
+        .hero h1 span { color: #C9A87B; }
+        .hero p { font-size: 1rem; opacity: 0.8; margin-bottom: 30px; }
+        .search-box { max-width: 600px; margin: 0 auto; display: flex; gap: 0; border-radius: 50px; overflow: hidden; }
+        .search-box input { flex: 1; padding: 14px 20px; border: none; outline: none; font-size: 1rem; }
+        .search-box button { background: #C9A87B; border: none; padding: 0 28px; cursor: pointer; font-weight: 600; color: #0A1F44; }
+        
+        .filters-section { background: white; padding: 20px 32px; border-bottom: 1px solid #eee; }
+        .filters-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+        .filters-container select, .filters-container input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 100%; }
+        .verified-filter { display: flex; align-items: center; gap: 10px; }
+        
+        .ads-section { padding: 40px 32px; max-width: 1400px; margin: 0 auto; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-header h2 { font-size: 1.4rem; font-weight: 600; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        
+        .ad-card { background: white; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s; border: 1px solid #eee; }
+        .ad-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .ad-image { height: 180px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #999; position: relative; }
+        .ad-badge { position: absolute; top: 10px; left: 10px; padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
+        .badge-verified { background: #2E7D32; color: white; }
+        .badge-boost { background: #E65100; color: white; left: auto; right: 10px; }
+        .ad-body { padding: 16px; }
+        .ad-title { font-weight: 600; margin-bottom: 8px; }
+        .ad-price { font-size: 1.2rem; font-weight: 700; color: #0A1F44; margin: 8px 0; }
+        .ad-location { font-size: 0.7rem; color: #666; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .ad-seller { font-size: 0.7rem; color: #999; display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px; }
+        .status-sold { background: #C62828; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; }
+        
+        .footer { background: #0A1F44; color: rgba(255,255,255,0.7); text-align: center; padding: 30px; margin-top: 40px; font-size: 0.75rem; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; max-width: 500px; width: 90%; padding: 25px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .close { cursor: pointer; font-size: 1.5rem; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.8rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #4CAF50; color: white; padding: 12px 20px; border-radius: 8px; z-index: 1100; animation: slideIn 0.3s; }
+        .toast.error { background: #f44336; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .loading, .empty { text-align: center; padding: 60px; color: #999; background: white; border-radius: 12px; }
+        
+        @media (max-width: 768px) {
+            .header { padding: 12px 20px; }
+            .hero { padding: 40px 20px; }
+            .hero h1 { font-size: 1.5rem; }
+            .filters-section { padding: 16px 20px; }
+            .ads-section { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo" onclick="showHome()">El <span>Farol</span></div>
+    <div class="nav">
+        <a class="nav-link" onclick="showHome()">Inicio</a>
+        <a class="nav-link" onclick="showDashboard()" id="navDashboard" style="display:none;">Mis Anuncios</a>
+        <button class="lang-btn" onclick="toggleLanguage()"><span id="langText">🇺🇸 EN</span></button>
+        <button id="authBtn" class="btn-outline" onclick="showAuthModal()">Ingresar</button>
+        <button id="postAdBtn" class="btn-primary" onclick="showPostAdModal()" style="display:none;">+ Publicar</button>
+    </div>
+</div>
+
+<div class="hero">
+    <h1><span>Compra y Vende</span><br>Cerca de Ti</h1>
+    <p>El marketplace de confianza en Santo Domingo Este</p>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="¿Qué estás buscando?">
+        <button onclick="searchAds()">Buscar</button>
+    </div>
+</div>
+
+<div class="filters-section">
+    <div class="filters-container">
+        <select id="filterSector"><option value="">Todos los sectores</option></select>
+        <select id="filterCategory"><option value="">Todas las categorías</option></select>
+        <div class="verified-filter">
+            <input type="checkbox" id="filterVerified" onchange="filterAds()">
+            <label>Solo vendedores verificados</label>
+        </div>
+    </div>
+</div>
+
+<div class="ads-section">
+    <div class="section-header">
+        <h2>Anuncios destacados</h2>
+    </div>
+    <div id="adsGrid" class="ads-grid"><div class="loading">Cargando anuncios...</div></div>
+</div>
+
+<div class="footer">
+    <p>© 2025 El Farol Clasificados - Santo Domingo Este, RD</p>
+</div>
+
+<div id="adModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Detalle del producto</h2><span class="close" onclick="closeModal()">&times;</span></div><div id="modalBody"></div></div></div>
+<div id="authModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="authTitle">Ingresar</h2><span class="close" onclick="closeAuthModal()">&times;</span></div><div id="authBody"></div></div></div>
+<div id="postAdModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Publicar anuncio</h2><span class="close" onclick="closePostAdModal()">&times;</span></div><div id="postAdBody"></div></div></div>
+
 <script>
     let currentUser = null, token = null, currentLang = 'es';
     
@@ -60,7 +202,6 @@
                 updateUI();
                 closeAuthModal();
                 showToast(`Bienvenido ${currentUser.name}`);
-                // ✅ REDIRIGIR AL PERFIL
                 window.location.href = '/perfil';
             } else {
                 showToast(data.error, true);
@@ -91,7 +232,6 @@
                 updateUI();
                 closeAuthModal();
                 showToast('Registro exitoso');
-                // ✅ REDIRIGIR AL PERFIL
                 window.location.href = '/perfil';
             } else {
                 showToast(result.error, true);
@@ -112,7 +252,6 @@
         const authBtn = document.getElementById('authBtn');
         const postAdBtn = document.getElementById('postAdBtn');
         const navDashboard = document.getElementById('navDashboard');
-        
         if (currentUser) {
             authBtn.innerHTML = `${currentUser.name}`;
             authBtn.onclick = () => { if(confirm(`${currentUser.name}\n${currentUser.verified?'✅ Verificado':'❌ No verificado'}\n¿Cerrar sesión?`)) logout(); };
@@ -212,3 +351,5 @@
     
     loadSectores(); loadCategories(); filterAds();
 </script>
+</body>
+</html>
