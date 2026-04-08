@@ -15,7 +15,22 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 
-// Listar anuncios (público)
+// Validación simple para crear anuncio
+const validateAd = (req, res, next) => {
+  const { title, description } = req.body;
+  if (!title || !description) {
+    return res.status(400).json({ error: 'Título y descripción son requeridos' });
+  }
+  if (title.length < 5) {
+    return res.status(400).json({ error: 'El título debe tener al menos 5 caracteres' });
+  }
+  if (description.length < 10) {
+    return res.status(400).json({ error: 'La descripción debe tener al menos 10 caracteres' });
+  }
+  next();
+};
+
+// Listar anuncios
 router.get('/', async (req, res) => {
   try {
     const { category, search, limit = 20, page = 1 } = req.query;
@@ -55,7 +70,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT a.*, u.name as user_name, u.email as user_email, u.phone as user_phone
+      `SELECT a.*, u.name as user_name, u.email as user_email
        FROM ads a JOIN users u ON a.user_id = u.id
        WHERE a.id = $1 AND a.deleted_at IS NULL`,
       [req.params.id]
@@ -73,14 +88,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Crear anuncio (requiere auth)
-router.post('/', authMiddleware, async (req, res) => {
+// Crear anuncio
+router.post('/', authMiddleware, validateAd, async (req, res) => {
   try {
     const { title, description, price, category, location, contact_phone } = req.body;
-    
-    if (!title || !description) {
-      return res.status(400).json({ error: 'Título y descripción requeridos' });
-    }
     
     const result = await db.query(
       `INSERT INTO ads (user_id, title, description, price, category, location, contact_phone, status, created_at)
