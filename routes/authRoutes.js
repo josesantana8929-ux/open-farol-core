@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/authController');  // ✅ Debe existir
-const { authenticateToken } = require('../utils/jwtUtils');
-const { validateRegister, validateLogin, validateProfileUpdate } = require('../middleware/validators');
+const authController = require('../controllers/authController');
+const { 
+  registerValidation, 
+  loginValidation, 
+  profileUpdateValidation,
+  authMiddleware 
+} = require('../middleware/validators');
 
-// Rutas públicas
-router.post('/register', validateRegister, authController.register);
-router.post('/login', validateLogin, authController.login);
-
-// Rutas protegidas
-router.get('/profile', authenticateToken, authController.getProfile);
-router.put('/profile', authenticateToken, validateProfileUpdate, authController.updateProfile);
+router.post('/register', registerValidation, authController.register);
+router.post('/login', loginValidation, authController.login);
+router.get('/profile', authMiddleware, authController.getProfile);
+router.put('/profile', authMiddleware, profileUpdateValidation, authController.updateProfile);
+router.post('/change-password', authMiddleware, authController.changePassword);
 
 module.exports = router;
