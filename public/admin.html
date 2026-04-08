@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Panel de Asistencia - El Farol</title>
+    <title>Panel de Control - El Farol Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1a1a2e; }
         
-        .header {
+        .navbar {
             background: #0A1F44;
             color: white;
             padding: 15px 20px;
@@ -24,31 +24,41 @@
         }
         .logo { font-size: 1.3rem; font-weight: bold; }
         .logo span { color: #FFD600; }
-        .btn-back { background: #FFD600; color: #0A1F44; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-        .notification-badge {
-            position: relative;
-            display: inline-block;
-        }
-        .notification-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #f44336;
+        .nav-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-support { background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-logout { background: #C62828; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .admin-container { display: flex; min-height: calc(100vh - 60px); }
+        
+        .sidebar {
+            width: 260px;
+            background: #1a1a2e;
             color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
+            padding: 20px 0;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li {
+            padding: 12px 20px;
+            margin: 4px 0;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s;
         }
+        .sidebar-menu li:hover { background: #0A1F44; }
+        .sidebar-menu li.active { background: #0A1F44; border-left: 4px solid #FFD600; }
+        .sidebar-menu li i { width: 24px; color: #FFD600; }
         
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -56,119 +66,59 @@
             background: white;
             padding: 18px;
             border-radius: 12px;
-            text-align: center;
             border-left: 4px solid #0A1F44;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .stat-card h4 { color: #666; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; }
         .stat-number { font-size: 1.8rem; font-weight: bold; color: #0A1F44; }
-        .stat-label { color: #666; font-size: 0.75rem; margin-top: 5px; }
+        .stat-number-small { font-size: 1.2rem; font-weight: bold; color: #0A1F44; }
         
-        .tickets-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            min-height: 500px;
-        }
-        
-        .tickets-list {
-            background: #f8f9fa;
-            border-right: 1px solid #e0e0e0;
-            overflow-y: auto;
-            max-height: 600px;
-        }
-        .ticket-item {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .ticket-item:hover { background: #e8e8e8; }
-        .ticket-item.active { background: #e3f2fd; border-left: 3px solid #0A1F44; }
-        .ticket-subject { font-weight: bold; margin-bottom: 5px; }
-        .ticket-user { font-size: 0.8rem; color: #666; }
-        .ticket-status {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.65rem;
-            margin-top: 5px;
-        }
-        .status-pending { background: #FF9800; color: white; }
-        .status-in_progress { background: #2196F3; color: white; }
-        .status-resolved { background: #4CAF50; color: white; }
-        .ticket-time { font-size: 0.7rem; color: #999; margin-top: 5px; }
-        
-        .chat-area {
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
             display: flex;
-            flex-direction: column;
-            height: 600px;
-        }
-        .chat-header {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            background: white;
-        }
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background: #fafafa;
-        }
-        .message {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        .message-user {
-            align-items: flex-start;
-        }
-        .message-admin {
-            align-items: flex-end;
-        }
-        .message-bubble {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            margin-bottom: 5px;
-        }
-        .message-user .message-bubble {
-            background: #e0e0e0;
-            color: #333;
-        }
-        .message-admin .message-bubble {
-            background: #0A1F44;
-            color: white;
-        }
-        .message-time {
-            font-size: 0.7rem;
-            color: #999;
-        }
-        .chat-input {
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
             gap: 10px;
+        }
+        
+        .table-container {
             background: white;
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .chat-input textarea {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: none;
-            font-family: inherit;
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tr:hover { background: #f5f5f5; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
         }
-        .chat-input button {
-            background: #0A1F44;
-            color: white;
+        .badge-success { background: #4CAF50; color: white; }
+        .badge-warning { background: #FF9800; color: white; }
+        .badge-danger { background: #f44336; color: white; }
+        .badge-info { background: #2196F3; color: white; }
+        
+        .btn-icon {
+            background: none;
             border: none;
-            padding: 0 20px;
-            border-radius: 8px;
             cursor: pointer;
+            margin: 0 5px;
+            font-size: 1rem;
         }
+        .btn-approve { color: #4CAF50; }
+        .btn-reject { color: #f44336; }
+        .btn-delete { color: #f44336; }
+        .btn-restore { color: #2196F3; }
+        .btn-edit { color: #FF9800; }
         
         .modal {
             display: none;
@@ -185,290 +135,436 @@
         .modal-content {
             background: white;
             border-radius: 16px;
-            max-width: 500px;
+            max-width: 550px;
             width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
             padding: 25px;
         }
-        
-        .notification-panel {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            width: 320px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 200;
-            display: none;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .notification-item {
-            padding: 12px;
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 1px solid #eee;
-            cursor: pointer;
         }
-        .notification-item:hover { background: #f5f5f5; }
+        .close { cursor: pointer; font-size: 1.5rem; }
         
-        .empty-state { text-align: center; padding: 40px; color: #999; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+        .toast.error { background: #f44336; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
         
         @media (max-width: 768px) {
-            .tickets-container { grid-template-columns: 1fr; }
-            .tickets-list { max-height: 300px; }
-            .chat-area { height: 500px; }
+            .sidebar { width: 70px; }
+            .sidebar-menu li span { display: none; }
+            .main-content { padding: 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="logo">EL <span>FAROL</span> | Asistencia</div>
-    <div>
-        <button class="notification-badge" onclick="toggleNotifications()">
-            <i class="fas fa-bell fa-lg"></i>
-            <span class="notification-count" id="notifCount">0</span>
-        </button>
-        <button class="btn-back" onclick="window.location.href='/admin'"><i class="fas fa-arrow-left"></i> Admin</button>
+<div class="navbar">
+    <div class="logo"><i class="fas fa-building"></i> EL FAROL <span>ADMIN</span></div>
+    <div class="nav-buttons">
+        <button class="btn-support" onclick="window.location.href='/admin-support'"><i class="fas fa-headset"></i> Soporte</button>
+        <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
     </div>
 </div>
 
-<div class="container">
-    <!-- Estadísticas -->
-    <div class="stats-grid" id="statsGrid">
-        <div class="stat-card"><div class="stat-number" id="statPending">0</div><div class="stat-label">Pendientes</div></div>
-        <div class="stat-card"><div class="stat-number" id="statInProgress">0</div><div class="stat-label">En curso</div></div>
-        <div class="stat-card"><div class="stat-number" id="statResolved">0</div><div class="stat-label">Resueltos</div></div>
-        <div class="stat-card"><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total tickets</div></div>
+<div class="admin-container">
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li onclick="showSection('dashboard')" class="active" id="menu-dashboard">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </li>
+            <li onclick="showSection('earnings')" id="menu-earnings">
+                <i class="fas fa-chart-line"></i> <span>💰 Ganancias</span>
+            </li>
+            <li onclick="showSection('payments')" id="menu-payments">
+                <i class="fas fa-credit-card"></i> <span>💳 Pagos</span>
+            </li>
+            <li onclick="showSection('users')" id="menu-users">
+                <i class="fas fa-users"></i> <span>Usuarios</span>
+            </li>
+            <li onclick="showSection('sellers')" id="menu-sellers">
+                <i class="fas fa-store"></i> <span>Vendedores</span>
+            </li>
+            <li onclick="showSection('ads')" id="menu-ads">
+                <i class="fas fa-ad"></i> <span>Anuncios</span>
+            </li>
+            <li onclick="showSection('deleted')" id="menu-deleted">
+                <i class="fas fa-trash-alt"></i> <span>Eliminados</span>
+            </li>
+            <li onclick="showSection('verifications')" id="menu-verifications">
+                <i class="fas fa-id-card"></i> <span>Verificaciones</span>
+            </li>
+            <li onclick="showSection('audit')" id="menu-audit">
+                <i class="fas fa-history"></i> <span>Auditoría</span>
+            </li>
+        </ul>
     </div>
 
-    <!-- Panel de tickets y chat -->
-    <div class="tickets-container">
-        <div class="tickets-list" id="ticketsList">
-            <div class="empty-state">Cargando tickets...</div>
-        </div>
-        
-        <div class="chat-area" id="chatArea" style="display: none;">
-            <div class="chat-header">
-                <h3 id="chatSubject">Ticket #</h3>
-                <p id="chatUserInfo"></p>
-            </div>
-            <div class="chat-messages" id="chatMessages"></div>
-            <div class="chat-input">
-                <textarea id="replyMessage" rows="2" placeholder="Escribe tu respuesta..."></textarea>
-                <button onclick="sendReply()"><i class="fas fa-paper-plane"></i> Enviar</button>
+    <div class="main-content">
+        <!-- DASHBOARD -->
+        <div id="dashboardSection">
+            <div class="section-title"><i class="fas fa-chart-line"></i> Dashboard</div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><h4>Usuarios</h4><div class="stat-number" id="statUsers">0</div></div>
+                <div class="stat-card"><h4>Anuncios</h4><div class="stat-number" id="statAds">0</div></div>
+                <div class="stat-card"><h4>Activos</h4><div class="stat-number" id="statActiveAds">0</div></div>
+                <div class="stat-card"><h4>Eliminados</h4><div class="stat-number" id="statDeletedAds">0</div></div>
+                <div class="stat-card"><h4>Verificados</h4><div class="stat-number" id="statVerified">0</div></div>
+                <div class="stat-card"><h4>Verif. Pendientes</h4><div class="stat-number" id="statPendingVerif">0</div></div>
             </div>
         </div>
-        
-        <div class="empty-state" id="noTicketSelected" style="display: flex; align-items: center; justify-content: center;">
-            Selecciona un ticket para ver los detalles
+
+        <!-- SECCIÓN GANANCIAS -->
+        <div id="earningsSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-chart-line"></i> Ganancias</div>
+            <div class="stats-grid" id="earningsStats">
+                <div class="stat-card"><h4>Total Ganancias</h4><div class="stat-number" id="totalEarnings">RD$ 0</div></div>
+                <div class="stat-card"><h4>Ganancias este mes</h4><div class="stat-number" id="monthlyEarnings">RD$ 0</div></div>
+                <div class="stat-card"><h4>Total Boosts</h4><div class="stat-number" id="totalBoosts">0</div></div>
+            </div>
+            
+            <div class="section-title"><i class="fas fa-chart-pie"></i> Por método de pago</div>
+            <div class="table-container" id="paymentsByMethodTable">
+                <table><thead><tr><th>Método</th><th>Cantidad</th><th>Total</th></tr></thead><tbody id="paymentsByMethodList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN PAGOS -->
+        <div id="paymentsSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-credit-card"></i> Transacciones</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>ID</th><th>Usuario</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead>
+                    <tbody id="paymentsList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- USUARIOS -->
+        <div id="usersSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-users"></i> Usuarios</div>
+            <div class="table-container">
+                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Acciones</th></tr></thead><tbody id="usersList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- VENDEDORES -->
+        <div id="sellersSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-store"></i> Vendedores</div>
+            <div class="table-container">
+                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Verificado</th><th>Plan</th><th>PayPal</th><th>Acciones</th></tr></thead><tbody id="sellersList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- ANUNCIOS ACTIVOS -->
+        <div id="adsSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-ad"></i> Anuncios Activos</div>
+            <div class="table-container">
+                <table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Vendedor</th><th>Estado</th><th>Vistas</th><th>Acciones</th></tr></thead><tbody id="adsList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- ELIMINADOS -->
+        <div id="deletedSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-trash-alt"></i> Anuncios Eliminados</div>
+            <div class="table-container">
+                <table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Vendedor</th><th>Motivo</th><th>Eliminado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="deletedList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- VERIFICACIONES -->
+        <div id="verificationsSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-id-card"></i> Verificaciones Pendientes</div>
+            <div class="table-container">
+                <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="verificationsList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- AUDITORÍA -->
+        <div id="auditSection" style="display: none;">
+            <div class="section-title"><i class="fas fa-history"></i> Auditoría</div>
+            <div class="table-container">
+                <table><thead><tr><th>Fecha</th><th>Admin</th><th>Anuncio</th><th>Vendedor</th><th>Motivo</th></tr></thead><tbody id="auditList"></tbody></table>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Panel de notificaciones -->
-<div id="notificationPanel" class="notification-panel">
-    <div style="padding: 10px; background: #0A1F44; color: white;">Notificaciones</div>
-    <div id="notificationsList"></div>
+<!-- MODAL ELIMINAR -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3><i class="fas fa-exclamation-triangle"></i> Eliminar anuncio</h3><span class="close" onclick="closeDeleteModal()">&times;</span></div>
+        <div class="form-group"><label>Motivo</label><select id="deleteReason"><option>Contenido inapropiado</option><option>Producto prohibido</option><option>Información falsa</option><option>Spam o duplicado</option><option>Solicitud del vendedor</option><option>Otro</option></select></div>
+        <div class="form-group"><label>Comentario</label><textarea id="deleteComment" rows="2" placeholder="Explicación adicional..."></textarea></div>
+        <button class="btn-approve" style="width:100%; background:#f44336;" onclick="confirmDelete()">Eliminar anuncio</button>
+    </div>
 </div>
 
 <script>
     let token = localStorage.getItem('adminToken');
-    let currentTicketId = null;
-    let refreshInterval = null;
-    
     if (!token) window.location.href = '/admin';
     
-    // Cargar estadísticas
+    let currentDeleteId = null;
+    
+    function showToast(msg, isError) {
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (isError ? ' error' : '');
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function showSection(section) {
+        document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+        document.getElementById(`menu-${section}`).classList.add('active');
+        const sections = ['dashboard', 'earnings', 'payments', 'users', 'sellers', 'ads', 'deleted', 'verifications', 'audit'];
+        sections.forEach(s => { const el = document.getElementById(`${s}Section`); if (el) el.style.display = s === section ? 'block' : 'none'; });
+        if (section === 'dashboard') loadStats();
+        if (section === 'earnings') loadEarnings();
+        if (section === 'payments') loadPayments();
+        if (section === 'users') loadUsers();
+        if (section === 'sellers') loadSellers();
+        if (section === 'ads') loadAds();
+        if (section === 'deleted') loadDeleted();
+        if (section === 'verifications') loadVerifications();
+        if (section === 'audit') loadAudit();
+    }
+    
     async function loadStats() {
         try {
-            const res = await fetch('/api/support/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            document.getElementById('statPending').innerText = data.pending || 0;
-            document.getElementById('statInProgress').innerText = data.inProgress || 0;
-            document.getElementById('statResolved').innerText = data.resolved || 0;
-            document.getElementById('statTotal').innerText = data.total || 0;
+            document.getElementById('statUsers').innerText = data.totalUsers || 0;
+            document.getElementById('statAds').innerText = data.totalAds || 0;
+            document.getElementById('statActiveAds').innerText = data.activeAds || 0;
+            document.getElementById('statDeletedAds').innerText = data.deletedAds || 0;
+            document.getElementById('statVerified').innerText = data.verifiedUsers || 0;
+            document.getElementById('statPendingVerif').innerText = data.pendingVerifications || 0;
         } catch(e) { console.error(e); }
     }
     
-    // Cargar lista de tickets
-    async function loadTickets() {
+    async function loadEarnings() {
         try {
-            const res = await fetch('/api/support/tickets', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch('/api/admin/earnings', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            const tickets = data.tickets || [];
-            const container = document.getElementById('ticketsList');
+            document.getElementById('totalEarnings').innerHTML = `RD$ ${(data.total_earnings || 0).toLocaleString()}`;
+            document.getElementById('monthlyEarnings').innerHTML = `RD$ ${(data.monthly_earnings || 0).toLocaleString()}`;
+            document.getElementById('totalBoosts').innerText = data.total_boosts || 0;
             
-            if (!tickets.length) {
-                container.innerHTML = '<div class="empty-state">No hay tickets de soporte</div>';
-                return;
-            }
-            
-            container.innerHTML = tickets.map(t => `
-                <div class="ticket-item" onclick="selectTicket(${t.id})" data-id="${t.id}">
-                    <div class="ticket-subject">${t.subject.substring(0, 40)}${t.subject.length > 40 ? '...' : ''}</div>
-                    <div class="ticket-user"><i class="fas fa-user"></i> ${t.user_name || t.user_email}</div>
-                    <span class="ticket-status status-${t.status}">
-                        ${t.status === 'pending' ? '⏳ Pendiente' : t.status === 'in_progress' ? '📝 En curso' : '✅ Resuelto'}
-                    </span>
-                    <div class="ticket-time">${new Date(t.created_at).toLocaleString()}</div>
-                </div>
-            `).join('');
-            
-            // Mantener selección si existe
-            if (currentTicketId) {
-                const selected = document.querySelector(`.ticket-item[data-id="${currentTicketId}"]`);
-                if (selected) selected.classList.add('active');
-            }
-        } catch(e) { console.error(e); }
-    }
-    
-    // Seleccionar ticket
-    async function selectTicket(ticketId) {
-        currentTicketId = ticketId;
-        
-        // Actualizar UI de selección
-        document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.ticket-item[data-id="${ticketId}"]`).classList.add('active');
-        
-        // Mostrar chat area
-        document.getElementById('chatArea').style.display = 'flex';
-        document.getElementById('noTicketSelected').style.display = 'none';
-        
-        try {
-            const res = await fetch(`/api/support/tickets/${ticketId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            const data = await res.json();
-            const ticket = data.ticket;
-            const messages = data.messages || [];
-            
-            document.getElementById('chatSubject').innerHTML = `${ticket.subject}`;
-            document.getElementById('chatUserInfo').innerHTML = `<i class="fas fa-user"></i> ${ticket.user_name || ticket.user_email} | <i class="fas fa-envelope"></i> ${ticket.user_email}`;
-            
-            const messagesContainer = document.getElementById('chatMessages');
-            messagesContainer.innerHTML = `
-                <div class="message message-user">
-                    <div class="message-bubble">${ticket.message}</div>
-                    <div class="message-time">${new Date(ticket.created_at).toLocaleString()}</div>
-                </div>
-                ${messages.map(m => `
-                    <div class="message message-${m.sender_type === 'admin' ? 'admin' : 'user'}">
-                        <div class="message-bubble">${m.message}</div>
-                        <div class="message-time">${new Date(m.created_at).toLocaleString()}</div>
-                    </div>
-                `).join('')}
-                ${ticket.admin_response ? `
-                    <div class="message message-admin">
-                        <div class="message-bubble">${ticket.admin_response}</div>
-                        <div class="message-time">${new Date(ticket.responded_at).toLocaleString()}</div>
-                    </div>
-                ` : ''}
-            `;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            // Mostrar botón resolver si está pendiente
-            if (ticket.status !== 'resolved') {
-                const resolveBtn = document.createElement('button');
-                resolveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Marcar como resuelto';
-                resolveBtn.style.cssText = 'background:#4CAF50; color:white; border:none; padding:8px 16px; border-radius:8px; margin-top:10px; cursor:pointer;';
-                resolveBtn.onclick = () => resolveTicket(ticketId);
-                if (!document.getElementById('resolveBtn')) {
-                    resolveBtn.id = 'resolveBtn';
-                    document.querySelector('.chat-header').appendChild(resolveBtn);
-                }
+            const methodsBody = document.getElementById('paymentsByMethodList');
+            if (data.by_method && data.by_method.length) {
+                methodsBody.innerHTML = data.by_method.map(m => `
+                    <tr><td>${m.payment_method || 'No especificado'}</td><td>${m.count}</td><td>RD$ ${(m.total || 0).toLocaleString()}</td></tr>
+                `).join('');
             } else {
-                const existing = document.getElementById('resolveBtn');
-                if (existing) existing.remove();
+                methodsBody.innerHTML = '<tr><td colspan="3" class="empty-state">No hay datos</td></tr>';
             }
         } catch(e) { console.error(e); }
     }
     
-    // Enviar respuesta
-    async function sendReply() {
-        const message = document.getElementById('replyMessage').value;
-        if (!message || !currentTicketId) return;
-        
+    async function loadPayments() {
         try {
-            await fetch(`/api/support/tickets/${currentTicketId}/reply`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ message })
-            });
-            document.getElementById('replyMessage').value = '';
-            selectTicket(currentTicketId);
-            loadTickets();
-            loadNotifications();
-        } catch(e) { console.error(e); }
-    }
-    
-    // Resolver ticket
-    async function resolveTicket(ticketId) {
-        if (!confirm('¿Marcar este ticket como resuelto?')) return;
-        try {
-            await fetch(`/api/support/tickets/${ticketId}/resolve`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            selectTicket(ticketId);
-            loadTickets();
-            loadStats();
-        } catch(e) { console.error(e); }
-    }
-    
-    // Notificaciones
-    async function loadNotifications() {
-        try {
-            const res = await fetch('/api/support/notifications', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch('/api/admin/payments', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            const notifications = data.notifications || [];
-            document.getElementById('notifCount').innerText = notifications.length;
-            
-            const container = document.getElementById('notificationsList');
-            if (!notifications.length) {
-                container.innerHTML = '<div class="empty-state">No hay notificaciones</div>';
-                return;
-            }
-            container.innerHTML = notifications.map(n => `
-                <div class="notification-item" onclick="markNotificationRead(${n.id})">
-                    <strong>${n.type === 'new_ticket' ? '📢 Nuevo ticket' : '💬 Nuevo mensaje'}</strong>
-                    <div style="font-size:0.8rem;">${n.message}</div>
-                    <div style="font-size:0.7rem; color:#999;">${new Date(n.created_at).toLocaleString()}</div>
-                </div>
+            const tbody = document.getElementById('paymentsList');
+            if (!data.payments?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay transacciones</td></tr>'; return; }
+            tbody.innerHTML = data.payments.map(p => `
+                <tr>
+                    <td>${p.id}</td><td>${p.user_name || p.user_email}</td><td>${p.concept}</td>
+                    <td><strong>RD$ ${(p.amount || 0).toLocaleString()}</strong></td>
+                    <td><span class="badge badge-info">${p.payment_method || 'N/A'}</span></td>
+                    <td><span class="badge ${p.status === 'completed' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td>
+                    <td>${new Date(p.created_at).toLocaleString()}</td>
+                </tr>
             `).join('');
         } catch(e) { console.error(e); }
     }
     
-    async function markNotificationRead(id) {
-        await fetch(`/api/support/notifications/${id}/read`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        loadNotifications();
+    async function loadUsers() {
+        try {
+            const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('usersList');
+            if (!data.users?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay usuarios</td></tr>'; return; }
+            tbody.innerHTML = data.users.map(u => `
+                <tr>
+                    <td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td>
+                    <td><span class="badge ${u.user_type === 'seller' ? 'badge-warning' : 'badge-info'}">${u.user_type === 'seller' ? 'Vendedor' : 'Comprador'}</span></td>
+                    <td>${u.verified ? '<span class="badge badge-success">Verificado</span>' : '<span class="badge badge-warning">Pendiente</span>'}</td>
+                    <td><button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
     }
     
-    function toggleNotifications() {
-        const panel = document.getElementById('notificationPanel');
-        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    async function deleteUser(userId) {
+        if (!confirm('¿Eliminar este usuario?')) return;
+        try { await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); showToast('Usuario eliminado'); loadUsers(); loadStats(); } catch(e) { showToast('Error', true); }
     }
     
-    // Cerrar panel al hacer clic fuera
-    document.addEventListener('click', function(event) {
-        const panel = document.getElementById('notificationPanel');
-        const btn = document.querySelector('.notification-badge');
-        if (panel && panel.style.display === 'block' && !panel.contains(event.target) && !btn.contains(event.target)) {
-            panel.style.display = 'none';
-        }
-    });
+    async function loadSellers() {
+        try {
+            const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const sellers = (data.users || []).filter(u => u.user_type === 'seller');
+            const tbody = document.getElementById('sellersList');
+            if (!sellers.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay vendedores</td></tr>'; return; }
+            
+            // Obtener wallets
+            const walletsRes = await fetch('/api/admin/seller-wallets', { headers: { 'Authorization': `Bearer ${token}` } });
+            const wallets = await walletsRes.json();
+            const walletMap = {};
+            (wallets.wallets || []).forEach(w => { walletMap[w.user_id] = w.paypal_email || w.bank_account; });
+            
+            tbody.innerHTML = sellers.map(u => `
+                <tr>
+                    <td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td>
+                    <td>${u.verified ? '<span class="badge badge-success">Verificado</span>' : '<span class="badge badge-warning">Pendiente</span>'}</td>
+                    <td>${u.plan_type || 'Gratis'}</td>
+                    <td>${walletMap[u.id] || '-'}</td>
+                    <td><button class="btn-icon btn-approve" onclick="verifySeller(${u.id})"><i class="fas fa-check-circle"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
     
-    // Inicializar
+    async function verifySeller(userId) {
+        if (!confirm('¿Verificar este vendedor?')) return;
+        try { await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Verificado por admin' }) }); showToast('Vendedor verificado'); loadSellers(); loadStats(); } catch(e) { showToast('Error', true); }
+    }
+    
+    async function loadAds() {
+        try {
+            const res = await fetch('/api/admin/ads', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('adsList');
+            if (!data.ads?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay anuncios activos</td></tr>'; return; }
+            tbody.innerHTML = data.ads.map(ad => `
+                <tr>
+                    <td>${ad.id}</td><td>${ad.title}</td><td>RD$ ${Number(ad.price).toLocaleString()}</td>
+                    <td>${ad.user_name || ad.user_email}</td>
+                    <td><span class="badge ${ad.status === 'active' ? 'badge-success' : 'badge-warning'}">${ad.status}</span></td>
+                    <td>${ad.views || 0}</td>
+                    <td><button class="btn-icon btn-delete" onclick="openDeleteModal(${ad.id})"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    async function loadDeleted() {
+        try {
+            const res = await fetch('/api/admin/ads/deleted', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('deletedList');
+            if (!data.ads?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay anuncios eliminados</td></tr>'; return; }
+            tbody.innerHTML = data.ads.map(ad => `
+                <tr>
+                    <td>${ad.id}</td><td>${ad.title}</td><td>RD$ ${Number(ad.price).toLocaleString()}</td>
+                    <td>${ad.user_name || ad.user_email}</td><td>${ad.deleted_reason || '-'}</td><td>${ad.deleted_by || '-'}</td>
+                    <td>${new Date(ad.deleted_at).toLocaleDateString()}</td>
+                    <td><button class="btn-icon btn-restore" onclick="restoreAd(${ad.id})"><i class="fas fa-undo-alt"></i></button></td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    function openDeleteModal(adId) { currentDeleteId = adId; document.getElementById('deleteModal').style.display = 'flex'; }
+    function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; currentDeleteId = null; }
+    
+    async function confirmDelete() {
+        if (!currentDeleteId) return;
+        const reason = document.getElementById('deleteReason').value;
+        const comment = document.getElementById('deleteComment').value;
+        const fullReason = comment ? `${reason} - ${comment}` : reason;
+        try {
+            const res = await fetch(`/api/admin/ads/${currentDeleteId}/delete`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ reason: fullReason }) });
+            if (res.ok) { showToast('Anuncio eliminado'); closeDeleteModal(); loadAds(); loadDeleted(); loadStats(); loadAudit(); } else showToast('Error', true);
+        } catch(e) { showToast('Error', true); }
+    }
+    
+    async function restoreAd(adId) {
+        if (!confirm('¿Restaurar este anuncio?')) return;
+        try { await fetch(`/api/admin/ads/${adId}/restore`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); showToast('Anuncio restaurado'); loadAds(); loadDeleted(); loadStats(); loadAudit(); } catch(e) { showToast('Error', true); }
+    }
+    
+    async function loadVerifications() {
+        try {
+            const res = await fetch('/api/admin/verification-requests', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('verificationsList');
+            if (!data.requests?.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay solicitudes pendientes</td></tr>'; return; }
+            tbody.innerHTML = data.requests.map(req => `
+                <tr>
+                    <td>${req.id}</td><td>${req.name || '-'}</td><td>${req.email}</td><td>${req.phone || '-'}</td>
+                    <td>${new Date(req.requested_at).toLocaleDateString()}</td>
+                    <td><button class="btn-icon btn-approve" onclick="approveVerification(${req.user_id})"><i class="fas fa-check-circle"></i></button>
+                    <button class="btn-icon btn-reject" onclick="rejectVerification(${req.user_id})"><i class="fas fa-times-circle"></i></button></td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    async function approveVerification(userId) {
+        if (!confirm('¿Aprobar verificación?')) return;
+        try { await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Aprobado' }) }); showToast('Usuario verificado'); loadVerifications(); loadStats(); } catch(e) { showToast('Error', true); }
+    }
+    
+    async function rejectVerification(userId) {
+        const reason = prompt('Motivo del rechazo:');
+        if (!reason) return;
+        try { await fetch(`/api/admin/verify/${userId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: reason }) }); showToast('Solicitud rechazada'); loadVerifications(); } catch(e) { showToast('Error', true); }
+    }
+    
+    async function loadAudit() {
+        try {
+            const res = await fetch('/api/admin/audit', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const tbody = document.getElementById('auditList');
+            if (!data.audit?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros</td></tr>'; return; }
+            tbody.innerHTML = data.audit.map(a => `
+                <tr>
+                    <td>${new Date(a.created_at).toLocaleString()}</td><td>${a.admin_email || '-'}</td>
+                    <td>${a.ad_title || '-'}</td><td>${a.seller_email || '-'}</td><td>${a.reason || '-'}</td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    function logout() { localStorage.removeItem('adminToken'); window.location.href = '/admin'; }
+    
     loadStats();
-    loadTickets();
-    loadNotifications();
-    
-    // Recargar cada 30 segundos
-    refreshInterval = setInterval(() => {
-        loadStats();
-        loadTickets();
-        loadNotifications();
-    }, 30000);
 </script>
 </body>
 </html>
