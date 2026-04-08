@@ -22,13 +22,11 @@ const isProduction = process.env.NODE_ENV === 'production';
 // ============================================================
 // CONFIGURACIÓN DE SUBIDA DE IMÁGENES (MULTIMEDIA)
 // ============================================================
-// Crear carpeta de uploads si no existe
 const uploadDir = path.join(__dirname, 'public/uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configurar almacenamiento de imágenes
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
@@ -39,12 +37,10 @@ const storage = multer.diskStorage({
     }
 });
 
-// Filtrar solo imágenes
 const fileFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
     if (mimetype && extname) {
         cb(null, true);
     } else {
@@ -54,7 +50,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: fileFilter
 });
 
@@ -147,7 +143,7 @@ async function initDB() {
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS primary_image TEXT`);
 
-    // AD IMAGES (MULTIMEDIA)
+    // AD IMAGES
     await db.query(`
         CREATE TABLE IF NOT EXISTS ad_images (
             id SERIAL PRIMARY KEY,
@@ -360,39 +356,22 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 // IMÁGENES / MULTIMEDIA
 // ============================================================
 
-// Subir imágenes para un anuncio
 app.post('/api/upload-images/:adId', verifyToken, upload.array('images', 10), async (req, res) => {
     const { adId } = req.params;
     const files = req.files;
-    
-    if (!files || files.length === 0) {
-        return res.status(400).json({ error: 'No se subieron imágenes' });
-    }
-    
+    if (!files || files.length === 0) return res.status(400).json({ error: 'No se subieron imágenes' });
     try {
         const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND user_id = $2`, [adId, req.user.id]);
-        if (ad.rows.length === 0) {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-        
+        if (ad.rows.length === 0) return res.status(403).json({ error: 'No autorizado' });
         const imageUrls = [];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const imageUrl = `/uploads/${file.filename}`;
             const isPrimary = i === 0 && (ad.rows[0].primary_image === null || ad.rows[0].primary_image === '');
-            
-            const result = await db.query(
-                `INSERT INTO ad_images (ad_id, image_url, is_primary) VALUES ($1, $2, $3) RETURNING *`,
-                [adId, imageUrl, isPrimary]
-            );
-            
-            if (isPrimary) {
-                await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [imageUrl, adId]);
-            }
-            
+            const result = await db.query(`INSERT INTO ad_images (ad_id, image_url, is_primary) VALUES ($1, $2, $3) RETURNING *`, [adId, imageUrl, isPrimary]);
+            if (isPrimary) await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [imageUrl, adId]);
             imageUrls.push({ id: result.rows[0].id, url: imageUrl, is_primary: isPrimary });
         }
-        
         clearCache();
         res.json({ success: true, images: imageUrls });
     } catch (error) {
@@ -401,51 +380,23 @@ app.post('/api/upload-images/:adId', verifyToken, upload.array('images', 10), as
     }
 });
 
-// Obtener imágenes de un anuncio
 app.get('/api/ads/:id/images', async (req, res) => {
     const { id } = req.params;
-    const result = await db.query(
-        `SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`,
-        [id]
-    );
+    const result = await db.query(`SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`, [id]);
     res.json({ images: result.rows });
 });
 
-// Eliminar imagen
 app.delete('/api/images/:imageId', verifyToken, async (req, res) => {
     const { imageId } = req.params;
-    
     try {
-        const image = await db.query(`
-            SELECT ai.*, a.user_id, a.id as ad_id
-            FROM ad_images ai 
-            JOIN ads a ON ai.ad_id = a.id 
-            WHERE ai.id = $1
-        `, [imageId]);
-        
-        if (image.rows.length === 0) {
-            return res.status(404).json({ error: 'Imagen no encontrada' });
-        }
-        
-        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-        
-        // Eliminar archivo físico
+        const image = await db.query(`SELECT ai.*, a.user_id, a.id as ad_id FROM ad_images ai JOIN ads a ON ai.ad_id = a.id WHERE ai.id = $1`, [imageId]);
+        if (image.rows.length === 0) return res.status(404).json({ error: 'Imagen no encontrada' });
+        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
         const filePath = path.join(__dirname, 'public', image.rows[0].image_url);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        
-        // Eliminar de la base de datos
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         await db.query(`DELETE FROM ad_images WHERE id = $1`, [imageId]);
-        
-        // Si era la imagen principal, actualizar
         if (image.rows[0].is_primary) {
-            const newPrimary = await db.query(
-                `SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY created_at ASC LIMIT 1`,
-                [image.rows[0].ad_id]
-            );
+            const newPrimary = await db.query(`SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY created_at ASC LIMIT 1`, [image.rows[0].ad_id]);
             if (newPrimary.rows.length > 0) {
                 await db.query(`UPDATE ad_images SET is_primary = true WHERE id = $1`, [newPrimary.rows[0].id]);
                 await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [newPrimary.rows[0].image_url, image.rows[0].ad_id]);
@@ -453,119 +404,55 @@ app.delete('/api/images/:imageId', verifyToken, async (req, res) => {
                 await db.query(`UPDATE ads SET primary_image = NULL WHERE id = $1`, [image.rows[0].ad_id]);
             }
         }
-        
         clearCache();
         res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al eliminar imagen' });
-    }
+    } catch (error) { res.status(500).json({ error: 'Error al eliminar imagen' }); }
 });
 
-// Establecer imagen como principal
 app.put('/api/images/:imageId/primary', verifyToken, async (req, res) => {
     const { imageId } = req.params;
-    
     try {
-        const image = await db.query(`
-            SELECT ai.*, a.user_id, a.id as ad_id
-            FROM ad_images ai 
-            JOIN ads a ON ai.ad_id = a.id 
-            WHERE ai.id = $1
-        `, [imageId]);
-        
-        if (image.rows.length === 0) {
-            return res.status(404).json({ error: 'Imagen no encontrada' });
-        }
-        
-        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-        
-        // Quitar primary de todas las imágenes del anuncio
+        const image = await db.query(`SELECT ai.*, a.user_id, a.id as ad_id FROM ad_images ai JOIN ads a ON ai.ad_id = a.id WHERE ai.id = $1`, [imageId]);
+        if (image.rows.length === 0) return res.status(404).json({ error: 'Imagen no encontrada' });
+        if (image.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
         await db.query(`UPDATE ad_images SET is_primary = false WHERE ad_id = $1`, [image.rows[0].ad_id]);
-        
-        // Establecer esta como primary
         await db.query(`UPDATE ad_images SET is_primary = true WHERE id = $1`, [imageId]);
         await db.query(`UPDATE ads SET primary_image = $1 WHERE id = $2`, [image.rows[0].image_url, image.rows[0].ad_id]);
-        
         clearCache();
         res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al establecer imagen principal' });
-    }
+    } catch (error) { res.status(500).json({ error: 'Error al establecer imagen principal' }); }
 });
 
 // ============================================================
-// ANUNCIOS (CON IMAGEN PRINCIPAL)
+// ANUNCIOS
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
     const safeLimit = Math.min(parseInt(limit) || 20, 50);
     const safeOffset = parseInt(offset) || 0;
-    
-    let query = `
-        SELECT a.id, a.title, a.price, a.ubicacion_sector, a.status, a.views, 
-               a.created_at, a.boosted_expires, a.primary_image,
-               u.name as user_name, u.verified, u.plan_type
-        FROM ads a 
-        JOIN users u ON a.user_id = u.id 
-        WHERE a.deleted_at IS NULL AND a.status = 'active'
-    `;
+    let query = `SELECT a.id, a.title, a.price, a.ubicacion_sector, a.status, a.views, a.created_at, a.boosted_expires, a.primary_image, u.name as user_name, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL AND a.status = 'active'`;
     const params = [];
     let paramIndex = 1;
-    
     if (categoria) { query += ` AND a.category = $${paramIndex++}`; params.push(categoria); }
     if (sector) { query += ` AND a.ubicacion_sector = $${paramIndex++}`; params.push(sector); }
     if (search) { query += ` AND (a.title ILIKE $${paramIndex++} OR a.description ILIKE $${paramIndex++})`; params.push(`%${search}%`, `%${search}%`); }
     if (verified_only === 'true') { query += ` AND u.verified = true`; }
-    
     query += ` ORDER BY CASE WHEN a.boosted_expires > NOW() THEN 1 ELSE 0 END DESC, a.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(safeLimit, safeOffset);
-    
     const result = await db.query(query, params);
-    
-    const adsWithBadges = result.rows.map(ad => ({
-        id: ad.id,
-        title: ad.title,
-        price: ad.price,
-        ubicacion_sector: ad.ubicacion_sector,
-        status: ad.status,
-        views: ad.views,
-        created_at: ad.created_at,
-        user_name: ad.user_name,
-        primary_image: ad.primary_image,
-        badges: {
-            verified: ad.verified,
-            boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(),
-            pro: ad.plan_type === 'pro',
-            premium: ad.plan_type === 'premium'
-        }
-    }));
-    
+    const adsWithBadges = result.rows.map(ad => ({ id: ad.id, title: ad.title, price: ad.price, ubicacion_sector: ad.ubicacion_sector, status: ad.status, views: ad.views, created_at: ad.created_at, user_name: ad.user_name, primary_image: ad.primary_image, badges: { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' } }));
     res.json({ ads: adsWithBadges });
 });
 
 app.get('/api/ads/:id', async (req, res) => {
     const { id } = req.params;
     await db.query(`UPDATE ads SET views = views + 1 WHERE id = $1`, [id]);
-    const result = await db.query(`
-        SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type 
-        FROM ads a JOIN users u ON a.user_id = u.id 
-        WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
+    const result = await db.query(`SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     const ad = result.rows[0];
-    
-    // Obtener imágenes del anuncio
     const images = await db.query(`SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`, [id]);
-    
-    ad.badges = { 
-        verified: ad.verified, 
-        boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), 
-        pro: ad.plan_type === 'pro', 
-        premium: ad.plan_type === 'premium' 
-    };
+    ad.badges = { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' };
     ad.images = images.rows;
-    
     res.json({ ad });
 });
 
@@ -573,24 +460,13 @@ app.post('/api/ads', verifyToken, async (req, res) => {
     if (req.user.user_type !== 'seller' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo vendedores pueden publicar' });
     const { title, description, price, category, ubicacion_sector } = req.body;
     if (!title || !ubicacion_sector) return res.status(400).json({ error: 'Título y ubicación requeridos' });
-    const result = await db.query(
-        `INSERT INTO ads (user_id, title, description, price, category, ubicacion_sector, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
-        [req.user.id, title, description, price || 0, category, ubicacion_sector]
-    );
+    const result = await db.query(`INSERT INTO ads (user_id, title, description, price, category, ubicacion_sector, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`, [req.user.id, title, description, price || 0, category, ubicacion_sector]);
     clearCache();
     res.json({ success: true, ad: result.rows[0] });
 });
 
 app.get('/api/ads/my-ads', verifyToken, async (req, res) => {
-    const result = await db.query(
-        `SELECT a.*, 
-                CASE WHEN a.boosted_expires > NOW() THEN true ELSE false END as is_boosted,
-                (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count
-         FROM ads a 
-         WHERE a.user_id = $1 AND a.deleted_at IS NULL 
-         ORDER BY a.created_at DESC`,
-        [req.user.id]
-    );
+    const result = await db.query(`SELECT a.*, CASE WHEN a.boosted_expires > NOW() THEN true ELSE false END as is_boosted, (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count FROM ads a WHERE a.user_id = $1 AND a.deleted_at IS NULL ORDER BY a.created_at DESC`, [req.user.id]);
     res.json({ ads: result.rows });
 });
 
@@ -600,10 +476,7 @@ app.put('/api/ads/:id', verifyToken, async (req, res) => {
     const ad = await db.query(`SELECT * FROM ads WHERE id = $1`, [id]);
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     if (ad.rows[0].user_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
-    await db.query(
-        `UPDATE ads SET title = COALESCE($1, title), description = COALESCE($2, description), price = COALESCE($3, price), category = COALESCE($4, category), ubicacion_sector = COALESCE($5, ubicacion_sector), status = COALESCE($6, status), updated_at = NOW() WHERE id = $7`,
-        [title, description, price, category, ubicacion_sector, status, id]
-    );
+    await db.query(`UPDATE ads SET title = COALESCE($1, title), description = COALESCE($2, description), price = COALESCE($3, price), category = COALESCE($4, category), ubicacion_sector = COALESCE($5, ubicacion_sector), status = COALESCE($6, status), updated_at = NOW() WHERE id = $7`, [title, description, price, category, ubicacion_sector, status, id]);
     clearCache();
     res.json({ success: true });
 });
@@ -650,37 +523,31 @@ app.post('/api/ads/:id/offer', verifyToken, async (req, res) => {
     if (req.user.user_type !== 'buyer' && req.user.role !== 'admin') return res.status(403).json({ error: 'Solo compradores pueden hacer ofertas' });
     const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND deleted_at IS NULL`, [id]);
     if (ad.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
-    const result = await db.query(
-        `INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, payment_method, delivery_location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`,
-        [id, req.user.id, ad.rows[0].user_id, offered_price, message, payment_method, delivery_location]
-    );
+    const result = await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, payment_method, delivery_location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *`, [id, req.user.id, ad.rows[0].user_id, offered_price, message, payment_method, delivery_location]);
     res.json({ success: true, offer: result.rows[0] });
 });
 
 app.get('/api/offers/received', verifyToken, async (req, res) => {
-    const result = await db.query(`
-        SELECT o.*, a.title as ad_title, a.primary_image, u.name as buyer_name, u.phone as buyer_phone 
-        FROM offers o 
-        JOIN ads a ON o.ad_id = a.id 
-        JOIN users u ON o.buyer_id = u.id 
-        WHERE o.seller_id = $1 AND o.status = 'pending' 
-        ORDER BY o.created_at DESC`, [req.user.id]);
+    const result = await db.query(`SELECT o.*, a.title as ad_title, a.primary_image, u.name as buyer_name, u.phone as buyer_phone FROM offers o JOIN ads a ON o.ad_id = a.id JOIN users u ON o.buyer_id = u.id WHERE o.seller_id = $1 AND o.status = 'pending' ORDER BY o.created_at DESC`, [req.user.id]);
+    res.json({ offers: result.rows });
+});
+
+app.get('/api/offers/my-offers', verifyToken, async (req, res) => {
+    const result = await db.query(`SELECT o.*, a.title as ad_title FROM offers o JOIN ads a ON o.ad_id = a.id WHERE o.buyer_id = $1 ORDER BY o.created_at DESC`, [req.user.id]);
     res.json({ offers: result.rows });
 });
 
 app.put('/api/offers/:id/:action', verifyToken, async (req, res) => {
     const { id, action } = req.params;
     const { counter_price, message } = req.body;
-    if (action !== 'accept' && action !== 'reject' && action !== 'counter') return res.status(400).json({ error: 'Acción inválida' });
+    if (action !== 'accept' && action !== 'reject' && action !== 'counter' && action !== 'cancel') return res.status(400).json({ error: 'Acción inválida' });
     const offer = await db.query(`SELECT * FROM offers WHERE id = $1`, [id]);
     if (offer.rows.length === 0) return res.status(404).json({ error: 'Oferta no encontrada' });
-    let newStatus = action === 'accept' ? 'accepted' : (action === 'reject' ? 'rejected' : 'counter');
+    if (action === 'cancel' && offer.rows[0].buyer_id !== req.user.id) return res.status(403).json({ error: 'No autorizado' });
+    let newStatus = action === 'accept' ? 'accepted' : (action === 'reject' ? 'rejected' : (action === 'cancel' ? 'cancelled' : 'counter'));
     await db.query(`UPDATE offers SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]);
     if (action === 'counter' && counter_price) {
-        await db.query(
-            `INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, status, payment_method, delivery_location) VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`,
-            [offer.rows[0].ad_id, offer.rows[0].seller_id, offer.rows[0].buyer_id, counter_price, message, offer.rows[0].payment_method, offer.rows[0].delivery_location]
-        );
+        await db.query(`INSERT INTO offers (ad_id, buyer_id, seller_id, offered_price, message, status, payment_method, delivery_location) VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`, [offer.rows[0].ad_id, offer.rows[0].seller_id, offer.rows[0].buyer_id, counter_price, message, offer.rows[0].payment_method, offer.rows[0].delivery_location]);
     }
     res.json({ success: true });
 });
@@ -701,12 +568,7 @@ app.delete('/api/favorites/:adId', verifyToken, async (req, res) => {
 });
 
 app.get('/api/favorites', verifyToken, async (req, res) => {
-    const result = await db.query(`
-        SELECT a.*, u.name as user_name 
-        FROM ads a 
-        JOIN favorites f ON a.id = f.ad_id 
-        JOIN users u ON a.user_id = u.id
-        WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
+    const result = await db.query(`SELECT a.*, u.name as user_name FROM ads a JOIN favorites f ON a.id = f.ad_id JOIN users u ON a.user_id = u.id WHERE f.user_id = $1 AND a.deleted_at IS NULL`, [req.user.id]);
     res.json({ favorites: result.rows });
 });
 
@@ -724,10 +586,7 @@ app.get('/api/sectores', async (req, res) => {
 app.get('/api/categorias', async (req, res) => {
     let cached = getCache('categorias');
     if (cached) return res.json({ categorias: cached });
-    const result = await db.query(`
-        SELECT category, COUNT(*) as total FROM ads 
-        WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL 
-        GROUP BY category ORDER BY total DESC LIMIT 20`);
+    const result = await db.query(`SELECT category, COUNT(*) as total FROM ads WHERE deleted_at IS NULL AND status = 'active' AND category IS NOT NULL GROUP BY category ORDER BY total DESC LIMIT 20`);
     setCache('categorias', result.rows);
     res.json({ categorias: result.rows });
 });
@@ -756,25 +615,13 @@ app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
         db.query(`SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'`),
         db.query(`SELECT COUNT(*) FROM ad_images`)
     ]);
-    const stats = {
-        totalUsers: parseInt(users.rows[0].count),
-        totalAds: parseInt(ads.rows[0].count),
-        activeAds: parseInt(activeAds.rows[0].count),
-        verifiedUsers: parseInt(verifiedUsers.rows[0].count),
-        pendingVerifications: parseInt(pendingVerifications.rows[0].count),
-        totalImages: parseInt(totalImages.rows[0].count)
-    };
+    const stats = { totalUsers: parseInt(users.rows[0].count), totalAds: parseInt(ads.rows[0].count), activeAds: parseInt(activeAds.rows[0].count), verifiedUsers: parseInt(verifiedUsers.rows[0].count), pendingVerifications: parseInt(pendingVerifications.rows[0].count), totalImages: parseInt(totalImages.rows[0].count) };
     setCache('stats', stats);
     res.json(stats);
 });
 
 app.get('/api/admin/verification-requests', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`
-        SELECT vr.*, u.name, u.email, u.phone 
-        FROM verification_requests vr 
-        JOIN users u ON vr.user_id = u.id 
-        WHERE vr.status = 'pending' 
-        ORDER BY vr.requested_at ASC`);
+    const result = await db.query(`SELECT vr.*, u.name, u.email, u.phone FROM verification_requests vr JOIN users u ON vr.user_id = u.id WHERE vr.status = 'pending' ORDER BY vr.requested_at ASC`);
     res.json({ requests: result.rows });
 });
 
@@ -796,33 +643,37 @@ app.post('/api/admin/verify/:userId/reject', verifyToken, verifyAdmin, async (re
 });
 
 app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`
-        SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at, avatar 
-        FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at, avatar FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
     res.json({ users: result.rows });
 });
 
+app.put('/api/admin/users/:id/role', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [role, id]);
+    clearCache();
+    res.json({ success: true });
+});
+
+app.delete('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    await db.query(`UPDATE users SET deleted_at = NOW() WHERE id = $1`, [id]);
+    await db.query(`UPDATE ads SET deleted_at = NOW() WHERE user_id = $1`, [id]);
+    clearCache();
+    res.json({ success: true });
+});
+
 app.get('/api/admin/ads', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`
-        SELECT a.*, u.email as user_email, u.name as user_name,
-               (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count
-        FROM ads a 
-        JOIN users u ON a.user_id = u.id 
-        WHERE a.deleted_at IS NULL 
-        ORDER BY a.created_at DESC LIMIT 100`);
+    const result = await db.query(`SELECT a.*, u.email as user_email, u.name as user_name, (SELECT COUNT(*) FROM ad_images WHERE ad_id = a.id) as image_count FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 100`);
     res.json({ ads: result.rows });
 });
 
 app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
     const { id } = req.params;
-    
-    // Eliminar imágenes asociadas
     const images = await db.query(`SELECT image_url FROM ad_images WHERE ad_id = $1`, [id]);
     for (const img of images.rows) {
         const filePath = path.join(__dirname, 'public', img.image_url);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     await db.query(`DELETE FROM ad_images WHERE ad_id = $1`, [id]);
     await db.query(`UPDATE ads SET deleted_at = NOW() WHERE id = $1`, [id]);
@@ -831,27 +682,44 @@ app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
-// SERVIDOR DE ARCHIVOS ESTÁTICOS (IMÁGENES)
+// SERVIDOR DE ARCHIVOS ESTÁTICOS
 // ============================================================
 const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
-// Servir archivos estáticos (CSS, JS, imágenes, uploads)
 app.use(express.static(publicDir));
-
-// Ruta específica para uploads
 app.use('/uploads', express.static(path.join(publicDir, 'uploads')));
 
 // ============================================================
-// FRONTEND (Rutas)
+// RUTAS DEL FRONTEND (TODAS LAS PÁGINAS)
 // ============================================================
 
-// 1. Ruta específica para el Panel de Administración
+// 1. Página principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// 2. Panel de Administración
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// 2. Ruta para todo lo demás (Página principal)
+// 3. Perfil del Comprador
+app.get('/perfil/comprador', (req, res) => {
+    res.sendFile(path.join(publicDir, 'profile-buyer.html'));
+});
+
+// 4. Perfil del Vendedor
+app.get('/perfil/vendedor', (req, res) => {
+    res.sendFile(path.join(publicDir, 'profile-seller.html'));
+});
+
+// 5. Ver producto individual (dinámico)
+app.get('/producto/:id', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// 6. Cualquier otra ruta → página principal
 app.get('*', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
@@ -865,8 +733,9 @@ async function start() {
         app.listen(PORT, () => {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
             console.log(`👑 Admin: http://localhost:${PORT}/admin`);
+            console.log(`👤 Comprador: http://localhost:${PORT}/perfil/comprador`);
+            console.log(`💰 Vendedor: http://localhost:${PORT}/perfil/vendedor`);
             console.log(`🔐 Credenciales: admin@elfarol.com.do / admin123`);
-            console.log(`📸 Uploads: http://localhost:${PORT}/uploads`);
             console.log(`✅ Base de datos optimizada con índices\n`);
         });
     } catch (error) {
