@@ -1,25 +1,43 @@
 const jwt = require('jsonwebtoken');
 
-const SECRET = process.env.SESSION_SECRET || 'dev_secret_key_123456789';
+const JWT_SECRET = process.env.JWT_SECRET || 'mxl_secret_2026';
+const JWT_EXPIRES_IN = '7d';
 
-const generateToken = (userId, email) => {
-  return jwt.sign(
-    { id: userId, email: email, iat: Math.floor(Date.now() / 1000) },
-    SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+function generateToken(user) {
+    return jwt.sign(
+        {
+            id: user.id,
+            email: user.email,
+            role: user.role || 'user',
+            user_type: user.user_type,
+            verified: user.verified || false,
+            plan_type: user.plan_type || 'free'
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+    );
+}
+
+function verifyToken(token) {
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return { valid: true, decoded };
+    } catch (error) {
+        return { valid: false, error: error.message };
+    }
+}
+
+function decodeToken(token) {
+    try {
+        return jwt.decode(token);
+    } catch {
+        return null;
+    }
+}
+
+module.exports = {
+    generateToken,
+    verifyToken,
+    decodeToken,
+    JWT_SECRET
 };
-
-const verifyToken = (token) => {
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    return { valid: true, decoded };
-  } catch (error) {
-    let message = 'Token inválido';
-    if (error.name === 'TokenExpiredError') message = 'Token expirado';
-    if (error.name === 'JsonWebTokenError') message = 'Token malformado';
-    return { valid: false, error: message };
-  }
-};
-
-module.exports = { generateToken, verifyToken };
