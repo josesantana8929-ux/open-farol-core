@@ -3,67 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="description" content="El Farol Clasificados - El marketplace de confianza en Santo Domingo Este. Compra y vende propiedades, vehículos y servicios de alto valor.">
-    <meta name="keywords" content="clasificados RD, bienes raíces, vehículos, Santo Domingo Este, Los Mina, Invivienda, San Vicente">
-    <meta name="author" content="El Farol Clasificados">
-    <meta name="theme-color" content="#0A1F44">
-    <title>El Farol Clasificados - Marketplace de Confianza en Santo Domingo Este</title>
-    
-    <!-- Font Awesome -->
+    <title>El Farol Clasificados - Compra y Vende en Santo Domingo Este</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    
     <style>
-        /* ============================================
-           RESET Y VARIABLES - ESTILO CORPORATIVO
-        ============================================ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         
-        :root {
-            --primary: #0A1F44;
-            --primary-dark: #071635;
-            --primary-light: #1a3a6e;
-            --accent: #C9A87B;
-            --accent-dark: #B8925A;
-            --text-primary: #1A1A1A;
-            --text-secondary: #4A4A4A;
-            --text-muted: #6C757D;
-            --bg-white: #FFFFFF;
-            --bg-light: #F8F9FA;
-            --bg-gray: #F0F2F5;
-            --border: #E5E7EB;
-            --success: #2E7D32;
-            --warning: #E65100;
-            --danger: #C62828;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 16px;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-light);
-            color: var(--text-primary);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* ============================================
-           HEADER CORPORATIVO
-        ============================================ */
         .header {
-            background: var(--bg-white);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 32px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -72,894 +22,123 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(10px);
             background: rgba(255,255,255,0.95);
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-        
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--primary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .logo-icon i {
-            color: var(--accent);
-            font-size: 1.2rem;
-        }
-        
-        .logo-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.3px;
-        }
-        
-        .logo-text span {
-            color: var(--primary);
-        }
-        
-        .nav {
-            display: flex;
-            gap: 32px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        
-        .nav-link:hover {
-            color: var(--primary);
-        }
-        
-        .lang-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-        
-        .lang-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            padding: 8px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            color: var(--primary);
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        
-        .btn-outline:hover {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-        
-        /* ============================================
-           HERO CORPORATIVO
-        ============================================ */
-        .hero {
-            background: linear-gradient(135deg, #0A1F44 0%, #071635 100%);
-            padding: 80px 32px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M20,20 L80,20 L80,80 L20,80 Z"/></svg>') repeat;
-            opacity: 0.1;
-        }
-        
-        .hero h1 {
-            font-size: clamp(2rem, 5vw, 3.2rem);
-            font-weight: 700;
-            color: white;
-            margin-bottom: 16px;
-            letter-spacing: -0.5px;
-            position: relative;
-        }
-        
-        .hero h1 span {
-            color: var(--accent);
-        }
-        
-        .hero p {
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            position: relative;
-        }
-        
-        .search-container {
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-        }
-        
-        .search-box {
-            display: flex;
-            gap: 0;
-            background: white;
-            border-radius: 60px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        }
-        
-        .search-box input {
-            flex: 1;
-            padding: 16px 24px;
-            border: none;
-            font-size: 1rem;
-            outline: none;
-            font-family: inherit;
-        }
-        
-        .search-box input::placeholder {
-            color: var(--text-muted);
-        }
-        
-        .search-box button {
-            background: var(--accent);
-            border: none;
-            padding: 0 32px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--primary);
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .search-box button:hover {
-            background: var(--accent-dark);
-        }
-        
-        /* ============================================
-           CATEGORÍAS DESTACADAS
-        ============================================ */
-        .categories {
-            background: var(--bg-white);
-            padding: 60px 32px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .section-label {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-        
-        .section-label h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-        }
-        
-        .section-label p {
-            color: var(--text-muted);
-            font-size: 1rem;
-        }
-        
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 24px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .category-card {
-            text-align: center;
-            padding: 24px 16px;
-            background: var(--bg-light);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid var(--border);
-        }
-        
-        .category-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--accent);
-        }
-        
-        .category-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--bg-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .category-icon i {
-            font-size: 1.8rem;
-            color: var(--primary);
-        }
-        
-        .category-card h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        
-        .category-card p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        /* ============================================
-           FILTROS
-        ============================================ */
-        .filters-section {
-            background: var(--bg-white);
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .filters-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .filters-container select,
-        .filters-container input {
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 0.85rem;
-            font-family: inherit;
-            background: var(--bg-white);
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        .filters-container select:focus,
-        .filters-container input:focus {
-            border-color: var(--primary);
-        }
-        
-        .verified-filter {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 8px;
-        }
-        
-        .verified-filter label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-        
-        /* ============================================
-           ANUNCIOS DESTACADOS
-        ============================================ */
-        .ads-section {
-            padding: 48px 32px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        
-        .section-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .section-header h2 i {
-            color: var(--accent);
-            margin-right: 10px;
-        }
-        
-        .ads-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-        }
-        
-        .ad-card {
-            background: var(--bg-white);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .ad-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--accent);
-        }
-        
-        .ad-image {
-            height: 200px;
-            background: var(--bg-gray);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 2rem;
-            position: relative;
-        }
-        
-        .ad-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            padding: 4px 12px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            border-radius: 30px;
-            z-index: 2;
-        }
-        
-        .badge-verified {
-            background: var(--success);
-            color: white;
-        }
-        
-        .badge-boost {
-            background: var(--warning);
-            color: white;
-            left: auto;
-            right: 12px;
-        }
-        
-        .ad-body {
-            padding: 20px;
-        }
-        
-        .ad-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            line-height: 1.4;
-            color: var(--text-primary);
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .ad-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 12px 0;
-        }
-        
-        .ad-location {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-        
-        .ad-seller {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-            margin-top: 8px;
-        }
-        
-        .status-sold {
-            background: var(--danger);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 0.6rem;
-            font-weight: 600;
-        }
-        
-        /* ============================================
-           ESTADÍSTICAS
-        ============================================ */
-        .stats-section {
-            background: var(--primary);
-            padding: 48px 32px;
-            color: white;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 32px;
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        
-        .stat-item .number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        
-        .stat-item .label {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-top: 8px;
-        }
-        
-        /* ============================================
-           FOOTER
-        ============================================ */
-        .footer {
-            background: var(--primary-dark);
-            color: rgba(255,255,255,0.7);
-            padding: 48px 32px 24px;
-        }
-        
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .footer-col h4 {
-            color: white;
-            font-size: 1rem;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-        
-        .footer-col a {
-            display: block;
-            color: rgba(255,255,255,0.6);
-            text-decoration: none;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            transition: color 0.2s;
-        }
-        
-        .footer-col a:hover {
-            color: var(--accent);
-        }
-        
-        .footer-bottom {
-            text-align: center;
-            padding-top: 32px;
-            margin-top: 32px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.7rem;
-        }
-        
-        /* ============================================
-           MODALES
-        ============================================ */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal-content {
-            background: var(--bg-white);
-            border-radius: var(--radius-lg);
-            max-width: 600px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 28px;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .modal-header h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-        
-        .close {
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-muted);
-            transition: color 0.2s;
-        }
-        
-        .close:hover {
-            color: var(--danger);
-        }
-        
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 0.85rem;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        /* ============================================
-           TOAST
-        ============================================ */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--text-primary);
-            color: white;
-            padding: 12px 20px;
-            border-radius: var(--radius-md);
-            z-index: 1100;
-            animation: slideIn 0.3s ease;
-            font-size: 0.85rem;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .toast.error {
-            background: var(--danger);
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .loading, .empty {
-            text-align: center;
-            padding: 60px;
-            color: var(--text-muted);
-            background: var(--bg-white);
-            border-radius: var(--radius-lg);
-        }
+            backdrop-filter: blur(10px);
+        }
+        .logo { font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .logo span { color: #0A1F44; }
+        .nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .nav-link { color: #4a4a4a; text-decoration: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+        .nav-link:hover { color: #0A1F44; }
+        .lang-btn { background: transparent; border: 1px solid #ddd; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+        .btn-outline { background: transparent; border: 1px solid #0A1F44; padding: 8px 20px; border-radius: 30px; cursor: pointer; color: #0A1F44; font-weight: 500; }
+        .btn-outline:hover { background: #0A1F44; color: white; }
+        .btn-primary { background: #0A1F44; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: 500; }
+        .btn-primary:hover { background: #071635; }
+        
+        .hero { background: linear-gradient(135deg, #0A1F44 0%, #071635 100%); padding: 60px 32px; text-align: center; color: white; }
+        .hero h1 { font-size: 2.2rem; margin-bottom: 16px; }
+        .hero h1 span { color: #C9A87B; }
+        .hero p { font-size: 1rem; opacity: 0.8; margin-bottom: 30px; }
+        .search-box { max-width: 600px; margin: 0 auto; display: flex; gap: 0; border-radius: 50px; overflow: hidden; }
+        .search-box input { flex: 1; padding: 14px 20px; border: none; outline: none; font-size: 1rem; }
+        .search-box button { background: #C9A87B; border: none; padding: 0 28px; cursor: pointer; font-weight: 600; color: #0A1F44; }
+        
+        .filters-section { background: white; padding: 20px 32px; border-bottom: 1px solid #eee; }
+        .filters-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+        .filters-container select, .filters-container input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 100%; }
+        .verified-filter { display: flex; align-items: center; gap: 10px; }
+        
+        .ads-section { padding: 40px 32px; max-width: 1400px; margin: 0 auto; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-header h2 { font-size: 1.4rem; font-weight: 600; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+        
+        .ad-card { background: white; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s; border: 1px solid #eee; }
+        .ad-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .ad-image { height: 180px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #999; position: relative; }
+        .ad-badge { position: absolute; top: 10px; left: 10px; padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
+        .badge-verified { background: #2E7D32; color: white; }
+        .badge-boost { background: #E65100; color: white; left: auto; right: 10px; }
+        .ad-body { padding: 16px; }
+        .ad-title { font-weight: 600; margin-bottom: 8px; }
+        .ad-price { font-size: 1.2rem; font-weight: 700; color: #0A1F44; margin: 8px 0; }
+        .ad-location { font-size: 0.7rem; color: #666; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .ad-seller { font-size: 0.7rem; color: #999; display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px; }
+        .status-sold { background: #C62828; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; }
+        
+        .footer { background: #0A1F44; color: rgba(255,255,255,0.7); text-align: center; padding: 30px; margin-top: 40px; font-size: 0.75rem; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; max-width: 500px; width: 90%; padding: 25px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .close { cursor: pointer; font-size: 1.5rem; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.8rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #4CAF50; color: white; padding: 12px 20px; border-radius: 8px; z-index: 1100; animation: slideIn 0.3s; }
+        .toast.error { background: #f44336; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .loading, .empty { text-align: center; padding: 60px; color: #999; background: white; border-radius: 12px; }
         
-        /* ============================================
-           RESPONSIVE
-        ============================================ */
         @media (max-width: 768px) {
-            .header {
-                padding: 12px 20px;
-            }
-            
-            .hero {
-                padding: 48px 20px;
-            }
-            
-            .hero h1 {
-                font-size: 1.6rem;
-            }
-            
-            .hero p {
-                font-size: 0.9rem;
-            }
-            
-            .search-box {
-                flex-direction: column;
-                border-radius: var(--radius-lg);
-            }
-            
-            .search-box input {
-                padding: 14px 18px;
-            }
-            
-            .search-box button {
-                padding: 12px;
-                justify-content: center;
-            }
-            
-            .categories, .ads-section, .filters-section {
-                padding: 32px 20px;
-            }
-            
-            .section-label h2 {
-                font-size: 1.4rem;
-            }
-            
-            .categories-grid {
-                gap: 16px;
-            }
-            
-            .category-card {
-                padding: 16px 12px;
-            }
-            
-            .ads-grid {
-                gap: 16px;
-            }
-            
-            .stats-grid {
-                gap: 20px;
-            }
-            
-            .stat-item .number {
-                font-size: 1.8rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .nav {
-                gap: 12px;
-            }
-            
-            .nav-link {
-                font-size: 0.8rem;
-            }
-            
-            .btn-outline, .btn-primary {
-                padding: 6px 14px;
-                font-size: 0.75rem;
-            }
-            
-            .section-header h2 {
-                font-size: 1.2rem;
-            }
+            .header { padding: 12px 20px; }
+            .hero { padding: 40px 20px; }
+            .hero h1 { font-size: 1.5rem; }
+            .filters-section { padding: 16px 20px; }
+            .ads-section { padding: 24px 20px; }
         }
     </style>
 </head>
 <body>
 
-<!-- HEADER CORPORATIVO -->
+<!-- HEADER -->
 <div class="header">
-    <div class="logo" onclick="showHome()">
-        <div class="logo-icon">
-            <i class="fas fa-lightbulb"></i>
-        </div>
-        <div class="logo-text">El <span>Farol</span></div>
-    </div>
+    <div class="logo" onclick="showHome()">El <span>Farol</span></div>
     <div class="nav">
-        <a class="nav-link" onclick="showHome()"><i class="fas fa-home"></i> Inicio</a>
-        <a class="nav-link" onclick="showDashboard()" id="navDashboard" style="display:none;"><i class="fas fa-chart-line"></i> Mis Anuncios</a>
-        <button class="lang-btn" onclick="toggleLanguage()"><i class="fas fa-globe"></i> <span id="langText">🇺🇸 EN</span></button>
-        <button id="authBtn" class="btn-outline" onclick="showAuthModal()"><i class="fas fa-user"></i> Ingresar</button>
-        <button id="postAdBtn" class="btn-primary" onclick="showPostAdModal()" style="display:none;"><i class="fas fa-plus"></i> Publicar</button>
+        <a class="nav-link" onclick="showHome()">Inicio</a>
+        <a class="nav-link" onclick="showDashboard()" id="navDashboard" style="display:none;">Mis Anuncios</a>
+        <button class="lang-btn" onclick="toggleLanguage()"><span id="langText">🇺🇸 EN</span></button>
+        <button id="authBtn" class="btn-outline" onclick="showAuthModal()">Ingresar</button>
+        <button id="postAdBtn" class="btn-primary" onclick="showPostAdModal()" style="display:none;">+ Publicar</button>
     </div>
 </div>
 
-<!-- HERO CORPORATIVO -->
-<div class="hero" id="heroSection">
-    <h1><span>Compra y Vende</span><br>con Confianza en Santo Domingo Este</h1>
-    <p>El marketplace que conecta compradores y vendedores en Los Mina, Invivienda, San Vicente y más</p>
-    <div class="search-container">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="¿Qué estás buscando? (ej: apartamento, carro, iPhone...)">
-            <button onclick="searchAds()"><i class="fas fa-search"></i> Buscar</button>
-        </div>
-    </div>
-</div>
-
-<!-- CATEGORÍAS DESTACADAS -->
-<div class="categories">
-    <div class="section-label">
-        <h2>Categorías destacadas</h2>
-        <p>Encuentra lo que necesitas en las categorías más populares</p>
-    </div>
-    <div class="categories-grid">
-        <div class="category-card" onclick="filterByCategory('Vehículos')">
-            <div class="category-icon"><i class="fas fa-car"></i></div>
-            <h3>Vehículos</h3>
-            <p>Autos, motos, camionetas</p>
-        </div>
-        <div class="category-card" onclick="filterByCategory('Inmuebles')">
-            <div class="category-icon"><i class="fas fa-building"></i></div>
-            <h3>Inmuebles</h3>
-            <p>Casas, apartamentos, terrenos</p>
-        </div>
-        <div class="category-card" onclick="filterByCategory('Electrónica')">
-            <div class="category-icon"><i class="fas fa-mobile-alt"></i></div>
-            <h3>Electrónica</h3>
-            <p>Celulares, laptops, tablets</p>
-        </div>
-        <div class="category-card" onclick="filterByCategory('Hogar')">
-            <div class="category-icon"><i class="fas fa-couch"></i></div>
-            <h3>Hogar</h3>
-            <p>Muebles, electrodomésticos</p>
-        </div>
-        <div class="category-card" onclick="filterByCategory('Empleos')">
-            <div class="category-icon"><i class="fas fa-briefcase"></i></div>
-            <h3>Empleos</h3>
-            <p>Ofertas de trabajo</p>
-        </div>
-        <div class="category-card" onclick="filterByCategory('Servicios')">
-            <div class="category-icon"><i class="fas fa-wrench"></i></div>
-            <h3>Servicios</h3>
-            <p>Profesionales, reparaciones</p>
-        </div>
+<!-- HERO -->
+<div class="hero">
+    <h1><span>Compra y Vende</span><br>Cerca de Ti</h1>
+    <p>El marketplace de confianza en Santo Domingo Este</p>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="¿Qué estás buscando?">
+        <button onclick="searchAds()">Buscar</button>
     </div>
 </div>
 
 <!-- FILTROS -->
 <div class="filters-section">
     <div class="filters-container">
-        <select id="filterSector" onchange="filterAds()">
-            <option value="">Todos los sectores</option>
-        </select>
-        <select id="filterCategory" onchange="filterAds()">
-            <option value="">Todas las categorías</option>
-        </select>
+        <select id="filterSector"><option value="">Todos los sectores</option></select>
+        <select id="filterCategory"><option value="">Todas las categorías</option></select>
         <div class="verified-filter">
             <input type="checkbox" id="filterVerified" onchange="filterAds()">
-            <label><i class="fas fa-check-circle"></i> Solo vendedores verificados</label>
+            <label>Solo vendedores verificados</label>
         </div>
     </div>
 </div>
 
-<!-- ANUNCIOS DESTACADOS -->
+<!-- ANUNCIOS -->
 <div class="ads-section">
     <div class="section-header">
-        <h2><i class="fas fa-fire"></i> Anuncios destacados</h2>
-        <button class="btn-outline" onclick="loadMoreProducts()" id="loadMoreBtn" style="display:none;">Ver más <i class="fas fa-arrow-right"></i></button>
+        <h2>Anuncios destacados</h2>
     </div>
-    <div id="adsGrid" class="ads-grid">
-        <div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando anuncios...</div>
-    </div>
-</div>
-
-<!-- ESTADÍSTICAS -->
-<div class="stats-section">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <div class="number" id="statUsers">0</div>
-            <div class="label">Usuarios activos</div>
-        </div>
-        <div class="stat-item">
-            <div class="number" id="statAds">0</div>
-            <div class="label">Anuncios publicados</div>
-        </div>
-        <div class="stat-item">
-            <div class="number" id="statSectors">16</div>
-            <div class="label">Sectores cubiertos</div>
-        </div>
-        <div class="stat-item">
-            <div class="number" id="statVerified">0</div>
-            <div class="label">Vendedores verificados</div>
-        </div>
-    </div>
+    <div id="adsGrid" class="ads-grid"><div class="loading">Cargando anuncios...</div></div>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-    <div class="footer-content">
-        <div class="footer-col">
-            <h4>El Farol</h4>
-            <a href="/">Inicio</a>
-            <a href="#" onclick="showDashboard()">Mi cuenta</a>
-            <a href="#" onclick="showPostAdModal()">Publicar anuncio</a>
-        </div>
-        <div class="footer-col">
-            <h4>Ayuda</h4>
-            <a href="/help-faq.html">Preguntas frecuentes</a>
-            <a href="/help-faq.html">Contacto</a>
-            <a href="#">Términos y condiciones</a>
-        </div>
-        <div class="footer-col">
-            <h4>Sectores</h4>
-            <a href="#">Los Mina</a>
-            <a href="#">Invivienda</a>
-            <a href="#">San Vicente</a>
-            <a href="#">Ver todos</a>
-        </div>
-        <div class="footer-col">
-            <h4>Síguenos</h4>
-            <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-            <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-            <a href="#"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>&copy; 2025 El Farol Clasificados - Santo Domingo Este, República Dominicana</p>
-    </div>
+    <p>© 2025 El Farol Clasificados - Santo Domingo Este, RD</p>
 </div>
 
 <!-- MODALES -->
@@ -968,39 +147,22 @@
 <div id="postAdModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Publicar anuncio</h2><span class="close" onclick="closePostAdModal()">&times;</span></div><div id="postAdBody"></div></div></div>
 
 <script>
-    // ============================================================
-    // ESTADO GLOBAL
-    // ============================================================
-    let currentUser = null;
-    let token = null;
-    let currentLang = 'es';
+    let currentUser = null, token = null, currentLang = 'es';
     
-    function formatPrice(p) { 
-        if (!p && p !== 0) return 'Precio no especificado';
-        return `RD$ ${Number(p).toLocaleString('es-DO')}`; 
-    }
+    function formatPrice(p) { return p ? `RD$ ${Number(p).toLocaleString('es-DO')}` : 'Precio no especificado'; }
+    function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ return m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'; }); }
     
-    function escapeHtml(s) { 
-        if (!s) return ''; 
-        return s.replace(/[&<>]/g, function(m){
-            return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;';
-        }); 
-    }
-    
-    // ============================================================
-    // IDIOMA
-    // ============================================================
     function toggleLanguage() {
         currentLang = currentLang === 'es' ? 'en' : 'es';
         document.getElementById('langText').innerHTML = currentLang === 'es' ? '🇺🇸 EN' : '🇪🇸 ES';
-        document.getElementById('searchInput').placeholder = currentLang === 'es' ? '¿Qué estás buscando? (ej: apartamento, carro, iPhone...)' : 'What are you looking for? (apartment, car, iPhone...)';
         filterAds();
     }
     
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
-    function showAuthModal() { showLogin(); document.getElementById('authModal').style.display = 'flex'; }
+    // Mostrar modal de autenticación
+    function showAuthModal() { 
+        showLogin(); 
+        document.getElementById('authModal').style.display = 'flex'; 
+    }
     function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
     
     function showLogin() {
@@ -1021,7 +183,10 @@
             <div class="form-group"><label>Teléfono</label><input type="tel" id="regPhone" placeholder="809-555-1234"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" placeholder="********"></div>
             <div class="form-group"><label>Tipo de cuenta</label>
-                <select id="regType"><option value="buyer">📦 Solo quiero comprar</option><option value="seller">💰 Quiero vender también</option></select>
+                <select id="regType">
+                    <option value="buyer">📦 Solo quiero comprar</option>
+                    <option value="seller">💰 Quiero vender también</option>
+                </select>
             </div>
             <button class="btn-primary" style="width:100%;" onclick="register()">Registrarme</button>
             <hr style="margin:20px 0;"><p style="text-align:center">¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Ingresar</a></p>
@@ -1047,7 +212,6 @@
                 closeAuthModal();
                 showToast(`Bienvenido ${currentUser.name}`);
                 filterAds();
-                loadStats();
             } else {
                 showToast(data.error, true);
             }
@@ -1078,7 +242,6 @@
                 closeAuthModal();
                 showToast('Registro exitoso');
                 filterAds();
-                loadStats();
             } else {
                 showToast(result.error, true);
             }
@@ -1086,14 +249,12 @@
     }
     
     function logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.clear();
         currentUser = null;
         token = null;
         updateUI();
-        showHome();
         showToast('Sesión cerrada');
-        loadStats();
+        filterAds();
     }
     
     function updateUI() {
@@ -1102,56 +263,41 @@
         const navDashboard = document.getElementById('navDashboard');
         
         if (currentUser) {
-            authBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
-            authBtn.onclick = () => {
-                if(confirm(`${currentUser.name}\n${currentUser.verified ? '✅ Verificado' : '❌ No verificado'}\nPlan: ${currentUser.plan_type || 'Gratis'}\n\n¿Cerrar sesión?`)) logout();
-            };
+            authBtn.innerHTML = `${currentUser.name}`;
+            authBtn.onclick = () => { if(confirm(`${currentUser.name}\n${currentUser.verified?'✅ Verificado':'❌ No verificado'}\n¿Cerrar sesión?`)) logout(); };
             if (currentUser.user_type === 'seller' || currentUser.role === 'admin') {
                 postAdBtn.style.display = 'block';
             }
             navDashboard.style.display = 'block';
         } else {
-            authBtn.innerHTML = `<i class="fas fa-user"></i> Ingresar`;
+            authBtn.innerHTML = 'Ingresar';
             authBtn.onclick = () => showAuthModal();
             postAdBtn.style.display = 'none';
             navDashboard.style.display = 'none';
         }
     }
     
-    // ============================================================
-    // ESTADÍSTICAS
-    // ============================================================
-    async function loadStats() {
-        try {
-            const res = await fetch('/api/stats');
-            const data = await res.json();
-            document.getElementById('statUsers').innerText = data.totalUsers || 0;
-            document.getElementById('statAds').innerText = data.totalAds || 0;
-            document.getElementById('statVerified').innerText = data.verifiedUsers || 0;
-        } catch(e) { console.error(e); }
+    function showDashboard() {
+        if(!currentUser) { showToast('Inicia sesión primero', true); showAuthModal(); return; }
+        if(currentUser.user_type === 'seller') window.location.href = '/perfil/vendedor';
+        else window.location.href = '/perfil/comprador';
     }
     
-    // ============================================================
-    // ANUNCIOS
-    // ============================================================
+    function showHome() { window.location.href = '/'; }
+    function showPostAdModal() { if(currentUser && currentUser.user_type === 'seller') window.location.href = '/perfil/vendedor'; else { showToast('Debes ser vendedor', true); showAuthModal(); } }
+    function closePostAdModal() {}
+    
     async function filterAds() {
         const sector = document.getElementById('filterSector').value;
         const category = document.getElementById('filterCategory').value;
         const search = document.getElementById('searchInput').value;
         const verifiedOnly = document.getElementById('filterVerified').checked;
-        
-        let url = `/api/ads?${sector ? `sector=${encodeURIComponent(sector)}&` : ''}${category ? `category=${encodeURIComponent(category)}&` : ''}${search ? `search=${encodeURIComponent(search)}&` : ''}${verifiedOnly ? `verified_only=true` : ''}`;
-        
+        let url = `/api/ads?${sector?`sector=${encodeURIComponent(sector)}&`:''}${category?`category=${encodeURIComponent(category)}&`:''}${search?`search=${encodeURIComponent(search)}&`:''}${verifiedOnly?`verified_only=true`:''}`;
         try {
             const res = await fetch(url);
             const data = await res.json();
             const grid = document.getElementById('adsGrid');
-            
-            if (!data.ads || data.ads.length === 0) {
-                grid.innerHTML = '<div class="empty"><i class="fas fa-search"></i> No hay anuncios aún. ¡Sé el primero en publicar!</div>';
-                return;
-            }
-            
+            if(!data.ads?.length){ grid.innerHTML='<div class="empty">No hay anuncios aún</div>'; return; }
             grid.innerHTML = data.ads.map(ad => `
                 <div class="ad-card" onclick="showAdDetail(${ad.id})">
                     ${ad.badges?.verified ? '<div class="ad-badge badge-verified"><i class="fas fa-check-circle"></i> Verificado</div>' : ''}
@@ -1161,129 +307,48 @@
                         <div class="ad-title">${escapeHtml(ad.title)}</div>
                         <div class="ad-price">${formatPrice(ad.price)}</div>
                         <div class="ad-location"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
-                        <div class="ad-seller">
-                            <span><i class="fas fa-user"></i> ${ad.user_name || 'Usuario'}</span>
-                            ${ad.status === 'sold' ? '<span class="status-sold">VENDIDO</span>' : ''}
-                        </div>
+                        <div class="ad-seller"><span>${ad.user_name || 'Usuario'}</span>${ad.status==='sold'?'<span class="status-sold">VENDIDO</span>':''}</div>
                     </div>
-                </div>
-            `).join('');
-        } catch(e) {
-            console.error(e);
-            document.getElementById('adsGrid').innerHTML = '<div class="empty">Error al cargar anuncios</div>';
-        }
+                </div>`).join('');
+        } catch(e){ console.error(e); }
     }
     
     function searchAds() { filterAds(); }
-    function filterByCategory(cat) { document.getElementById('filterCategory').value = cat; filterAds(); }
-    function loadMoreProducts() { filterAds(); }
     
     async function showAdDetail(id) {
-        try {
-            const res = await fetch(`/api/ads/${id}`);
-            const ad = (await res.json()).ad;
-            
-            document.getElementById('modalBody').innerHTML = `
-                <div class="ad-image" style="height:220px; margin-bottom:20px;"><i class="fas fa-image fa-3x"></i></div>
-                <h2 style="margin-bottom:12px;">${escapeHtml(ad.title)}</h2>
-                <div class="ad-price" style="font-size:1.8rem;">${formatPrice(ad.price)}</div>
-                <div class="ad-location" style="margin:12px 0;"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
-                <p style="margin:16px 0; line-height:1.6;">${escapeHtml(ad.description || 'Sin descripción')}</p>
-                <div style="background:#F8F9FA; padding:20px; border-radius:12px; margin:20px 0;">
-                    <p><strong><i class="fas fa-user"></i> Contactar al vendedor</strong></p>
-                    <p style="margin-top:8px;">${ad.user_name || 'Usuario'}</p>
-                    <p><i class="fas fa-phone"></i> ${ad.user_phone || 'Teléfono no disponible'}</p>
-                    ${ad.badges?.verified ? '<p style="color:#2E7D32; margin-top:8px;"><i class="fas fa-check-circle"></i> Cuenta verificada</p>' : ''}
-                </div>
-                ${currentUser && currentUser.user_type === 'buyer' ? `
-                <div style="margin-top:20px; padding-top:20px; border-top:1px solid #E0E0E0;">
-                    <h4 style="margin-bottom:16px;"><i class="fas fa-hand-holding-usd"></i> Hacer una oferta</h4>
-                    <div class="form-group"><label>Tu oferta (RD$)</label><input type="number" id="offerPrice" placeholder="Ej: ${ad.price - 500}"></div>
-                    <div class="form-group"><label>Mensaje</label><textarea id="offerMsg" rows="2" placeholder="¿Puedes hacer mejor precio?"></textarea></div>
-                    <div class="form-group"><label>Método de pago</label><select id="offerPayment"><option>Efectivo</option><option>Transferencia bancaria</option><option>Yappy</option></select></div>
-                    <div class="form-group"><label>Lugar de entrega</label><input type="text" id="offerLocation" placeholder="Ej: Los Mina, cerca del metro"></div>
-                    <button class="btn-primary" style="width:100%;" onclick="makeOffer(${ad.id})">Enviar oferta</button>
-                </div>` : ''}
-                <button class="btn-outline" style="width:100%; margin-top:20px;" onclick="closeModal()">Cerrar</button>
-            `;
-            document.getElementById('adModal').style.display = 'flex';
-        } catch(e) { showToast('Error al cargar detalle', true); }
-    }
-    
-    async function makeOffer(adId) {
-        if(!currentUser){ showToast('Inicia sesión para hacer ofertas',true); showAuthModal(); return; }
-        const data = {
-            offered_price: document.getElementById('offerPrice').value,
-            message: document.getElementById('offerMsg').value,
-            payment_method: document.getElementById('offerPayment').value,
-            delivery_location: document.getElementById('offerLocation').value
-        };
-        if(!data.offered_price){ showToast('Ingresa un precio',true); return; }
-        try {
-            const res = await fetch(`/api/ads/${adId}/offer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(data)
-            });
-            const result = await res.json();
-            if(result.success){ showToast('Oferta enviada al vendedor'); closeModal(); }
-            else showToast(result.error, true);
-        } catch(e) { showToast('Error', true); }
+        const res = await fetch(`/api/ads/${id}`);
+        const ad = (await res.json()).ad;
+        document.getElementById('modalBody').innerHTML = `
+            <h2>${escapeHtml(ad.title)}</h2>
+            <div class="ad-price" style="font-size:1.8rem;">${formatPrice(ad.price)}</div>
+            <div class="ad-location"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
+            <p style="margin:16px 0;">${escapeHtml(ad.description || 'Sin descripción')}</p>
+            <div style="background:#f5f5f5;padding:15px;border-radius:8px;margin:15px 0;">
+                <p><strong>Contactar al vendedor</strong></p>
+                <p>${ad.user_name || 'Usuario'}</p>
+                <p><i class="fas fa-phone"></i> ${ad.user_phone || 'Teléfono no disponible'}</p>
+            </div>
+            <button class="btn-primary" style="width:100%;" onclick="closeModal()">Cerrar</button>
+        `;
+        document.getElementById('adModal').style.display = 'flex';
     }
     
     function closeModal() { document.getElementById('adModal').style.display = 'none'; }
     
-    // ============================================================
-    // DASHBOARD VENDEDOR (redirige a perfil)
-    // ============================================================
-    function showDashboard() {
-        if(!currentUser){ showToast('Inicia sesión primero',true); showAuthModal(); return; }
-        if(currentUser.user_type === 'seller') {
-            window.location.href = '/perfil/vendedor';
-        } else {
-            window.location.href = '/perfil/comprador';
-        }
-    }
-    
-    function showHome() {
-        window.location.href = '/';
-    }
-    
-    // ============================================================
-    // PUBLICAR ANUNCIO (redirige)
-    // ============================================================
-    function showPostAdModal() {
-        if(!currentUser){ showToast('Inicia sesión para publicar',true); showAuthModal(); return; }
-        if(currentUser.user_type !== 'seller'){ showToast('Debes ser vendedor para publicar',true); return; }
-        window.location.href = '/perfil/vendedor';
-    }
-    
-    function closePostAdModal() {}
-    
-    // ============================================================
-    // SECTORES Y CATEGORÍAS
-    // ============================================================
     async function loadSectores() {
-        try {
-            const res = await fetch('/api/sectores');
-            const data = await res.json();
-            const select = document.getElementById('filterSector');
-            select.innerHTML = '<option value="">Todos los sectores</option>' + (data.sectores || []).map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
-        } catch(e) { console.error(e); }
+        const res = await fetch('/api/sectores');
+        const data = await res.json();
+        const select = document.getElementById('filterSector');
+        select.innerHTML = '<option value="">Todos los sectores</option>' + (data.sectores || []).map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
     }
     
     async function loadCategories() {
-        try {
-            const res = await fetch('/api/categorias');
-            const data = await res.json();
-            const select = document.getElementById('filterCategory');
-            select.innerHTML = '<option value="">Todas las categorías</option>' + (data.categorias || []).map(c => `<option value="${c.category}">${c.category}</option>`).join('');
-        } catch(e) { console.error(e); }
+        const res = await fetch('/api/categorias');
+        const data = await res.json();
+        const select = document.getElementById('filterCategory');
+        select.innerHTML = '<option value="">Todas las categorías</option>' + (data.categorias || []).map(c => `<option value="${c.category}">${c.category}</option>`).join('');
     }
     
-    // ============================================================
-    // TOAST
-    // ============================================================
     function showToast(msg, isErr = false) {
         const toast = document.createElement('div');
         toast.className = 'toast' + (isErr ? ' error' : '');
@@ -1292,109 +357,10 @@
         setTimeout(() => toast.remove(), 3000);
     }
     
-    // ============================================================
-    // WIDGET DE AYUDA
-    // ============================================================
-    (function() {
-        const styles = `
-            .help-fab {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 52px;
-                height: 52px;
-                background: var(--accent, #C9A87B);
-                color: var(--primary, #0A1F44);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 1000;
-                transition: all 0.3s;
-                border: none;
-            }
-            .help-fab:hover { transform: scale(1.05); background: var(--accent-dark, #B8925A); }
-            .help-fab i { font-size: 1.3rem; }
-            .help-menu {
-                position: fixed;
-                bottom: 85px;
-                right: 20px;
-                width: 280px;
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-                z-index: 1001;
-                display: none;
-                overflow: hidden;
-                animation: slideUp 0.3s ease;
-            }
-            .help-menu.show { display: block; }
-            @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-            .help-menu-header {
-                background: var(--primary, #0A1F44);
-                color: white;
-                padding: 12px 15px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-weight: bold;
-            }
-            .help-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 12px 15px;
-                border-bottom: 1px solid #eee;
-                text-decoration: none;
-                color: #333;
-                transition: background 0.2s;
-            }
-            .help-item:hover { background: #f5f5f5; }
-            .help-item i { width: 20px; color: var(--primary, #0A1F44); }
-        `;
-        const styleSheet = document.createElement('style');
-        styleSheet.textContent = styles;
-        document.head.appendChild(styleSheet);
-        
-        const fab = document.createElement('button');
-        fab.className = 'help-fab';
-        fab.innerHTML = '<i class="fas fa-headset"></i>';
-        fab.onclick = () => document.getElementById('helpMenu').classList.toggle('show');
-        document.body.appendChild(fab);
-        
-        const menu = document.createElement('div');
-        menu.className = 'help-menu';
-        menu.id = 'helpMenu';
-        menu.innerHTML = `
-            <div class="help-menu-header"><span><i class="fas fa-life-ring"></i> Centro de Ayuda</span><span onclick="document.getElementById('helpMenu').classList.remove('show')">✕</span></div>
-            <a href="/help-faq.html" class="help-item"><i class="fas fa-question-circle"></i><span>Preguntas frecuentes</span></a>
-            <a href="/help-faq.html" class="help-item"><i class="fas fa-ticket-alt"></i><span>Reportar problema</span></a>
-            <a href="https://wa.me/18091234567?text=Hola%2C%20necesito%20ayuda%20en%20El%20Farol" class="help-item" target="_blank"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
-            <a href="/help-faq.html#seguridad" class="help-item"><i class="fas fa-shield-alt"></i><span>Consejos de seguridad</span></a>
-        `;
-        document.body.appendChild(menu);
-        
-        document.addEventListener('click', function(event) {
-            const menuEl = document.getElementById('helpMenu');
-            if (menuEl && menuEl.classList.contains('show') && !menuEl.contains(event.target) && !fab.contains(event.target)) {
-                menuEl.classList.remove('show');
-            }
-        });
-    })();
-    
-    // ============================================================
-    // INICIALIZACIÓN
-    // ============================================================
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('token'), savedUser = localStorage.getItem('user');
     if(savedToken && savedUser){ token = savedToken; currentUser = JSON.parse(savedUser); updateUI(); }
     
-    loadSectores();
-    loadCategories();
-    filterAds();
-    loadStats();
+    loadSectores(); loadCategories(); filterAds();
 </script>
 </body>
 </html>
