@@ -1,226 +1,379 @@
-const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { generateToken } = require('../utils/jwtUtils');
+const { uploadMultipleImages, deleteMultipleImages } = require('../services/uploadService');
 
-const SALT_ROUNDS = 10;
-
-const register = async (req, res) => {
+const getAds = async (req, res) => {
   try {
-    const { email, password, name, phone, location } = req.body;
-    
-    const existingUser = await db.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'El email ya está registrado' });
-    }
-    
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    
-    const result = await db.query(
-      `INSERT INTO users (email, password_hash, name, phone, location, role, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
-       RETURNING id, email, name, phone, location, role, created_at`,
-      [email.toLowerCase(), hashedPassword, name || null, phone || null, location || null, 'user']
-    );
-    
-    const user = result.rows[0];
-    const token = generateToken(user.id, user.email);
-    
-    res.status(201).json({
-      message: 'Usuario registrado exitosamente',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        location: user.location,
-        role: user.role,
-        createdAt: user.created_at,
-      },
-    });
-  } catch (error) {
-    console.error('❌ Error en registro:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
-  }
-};
+    const {
+      page = 1,
+      limit = 20,
+      category,
+      minPrice,
+      maxPrice,
+      search,
+      location,
+      userId,
+      status = 'active',
+    } = req.query;
 
-const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    const result = await db.query(
-      `SELECT id, email, password_hash, name, phone, location, role, 
-              last_login, created_at
-       FROM users 
-       WHERE email = $1 AND deleted_at IS NULL`,
-      [email.toLowerCase()]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+    const offset = (page - 1) * limit;
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    conditions.push(`a.status = $${paramIndex++}`);
+    params.push(status);
+
+    if (category && category !== 'all') {
+      conditions.push(`a.category = $${paramIndex++}`);
+      params.push(category);
     }
-    
-    const user = result.rows[0];
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    if (minPrice !== undefined) {
+      conditions.push(`a.price >= $${paramIndex++}`);
+      params.push(minPrice);
     }
-    
-    await db.query(
-      'UPDATE users SET last_login = NOW() WHERE id = $1',
-      [user.id]
-    );
-    
-    const token = generateToken(user.id, user.email);
-    
+
+    if (maxPrice !== undefined) {
+      conditions.push(`a.price <= $${paramIndex++}`);
+      params.push(maxPrice);
+    }
+
+    if (search) {
+      conditions.push(`(a.title ILIKE $${paramIndex++} OR a.description ILIKE $${paramIndex++})`);
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (location) {
+      conditions.push(`a.location ILIKE $${paramIndex++}`);
+      params.push(`%${location}%`);
+    }
+
+    if (userId) {
+      conditions.push(`a.user_id = $${paramIndex++}`);
+      params.push(userId);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM ads a
+      ${whereClause}
+    `;
+
+    const countResult = await db.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
+
+    const dataQuery = `
+      SELECT 
+        a.*,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone,
+        COALESCE(
+          (SELECT json_agg(json_build_object('url', ai.image_url, 'order', ai.display_order))
+           FROM ad_images ai 
+           WHERE ai.ad_id = a.id AND ai.deleted_at IS NULL),
+          '[]'::json
+        ) as images
+      FROM ads a
+      JOIN users u ON a.user_id = u.id
+      ${whereClause}
+      ORDER BY a.created_at DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+    `;
+
+    params.push(limit, offset);
+    const result = await db.query(dataQuery, params);
+
     res.json({
-      message: 'Inicio de sesión exitoso',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        location: user.location,
-        role: user.role,
-        lastLogin: user.last_login,
-        createdAt: user.created_at,
+      data: result.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error) {
-    console.error('❌ Error en login:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' });
+    console.error('❌ Error obteniendo anuncios:', error);
+    res.status(500).json({ error: 'Error al obtener anuncios' });
   }
 };
 
-const getProfile = async (req, res) => {
+const getAdById = async (req, res) => {
   try {
-    const userId = req.user.id;
-    
-    const result = await db.query(
-      `SELECT id, email, name, phone, location, role, 
-              last_login, created_at, updated_at
-       FROM users 
-       WHERE id = $1 AND deleted_at IS NULL`,
-      [userId]
-    );
-    
+    const { id } = req.params;
+
+    const query = `
+      SELECT 
+        a.*,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone,
+        u.location as user_location,
+        COALESCE(
+          (SELECT json_agg(json_build_object('url', ai.image_url, 'order', ai.display_order))
+           FROM ad_images ai 
+           WHERE ai.ad_id = a.id AND ai.deleted_at IS NULL
+           ORDER BY ai.display_order),
+          '[]'::json
+        ) as images
+      FROM ads a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.id = $1 AND a.deleted_at IS NULL
+    `;
+
+    const result = await db.query(query, [id]);
+
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: 'Anuncio no encontrado' });
     }
-    
-    res.json({ user: result.rows[0] });
+
+    await db.query(
+      'UPDATE ads SET views = views + 1 WHERE id = $1',
+      [id]
+    );
+
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error('❌ Error obteniendo perfil:', error);
-    res.status(500).json({ error: 'Error al obtener perfil' });
+    console.error('❌ Error obteniendo anuncio:', error);
+    res.status(500).json({ error: 'Error al obtener el anuncio' });
   }
 };
 
-const updateProfile = async (req, res) => {
+const createAd = async (req, res) => {
   try {
+    const {
+      title,
+      description,
+      price,
+      category,
+      condition,
+      location,
+      contact_phone,
+    } = req.body;
+
     const userId = req.user.id;
-    const { name, phone, location } = req.body;
-    
+
+    const result = await db.query(
+      `INSERT INTO ads (user_id, title, description, price, category, condition, location, contact_phone, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', NOW())
+       RETURNING *`,
+      [userId, title, description, price || null, category || 'otros', condition || null, location || null, contact_phone || null]
+    );
+
+    const ad = result.rows[0];
+
+    if (req.files && req.files.length > 0) {
+      try {
+        const uploadedImages = await uploadMultipleImages(req.files);
+        
+        for (let i = 0; i < uploadedImages.length; i++) {
+          const image = uploadedImages[i];
+          await db.query(
+            `INSERT INTO ad_images (ad_id, image_url, public_id, display_order, created_at)
+             VALUES ($1, $2, $3, $4, NOW())`,
+            [ad.id, image.url, image.publicId, i]
+          );
+        }
+        
+        const imagesResult = await db.query(
+          `SELECT image_url, display_order FROM ad_images 
+           WHERE ad_id = $1 AND deleted_at IS NULL 
+           ORDER BY display_order`,
+          [ad.id]
+        );
+        ad.images = imagesResult.rows;
+      } catch (uploadError) {
+        console.error('❌ Error subiendo imágenes:', uploadError);
+        await db.query('DELETE FROM ads WHERE id = $1', [ad.id]);
+        return res.status(400).json({ error: uploadError.message });
+      }
+    } else {
+      ad.images = [];
+    }
+
+    res.status(201).json({
+      message: 'Anuncio creado exitosamente',
+      ad,
+    });
+  } catch (error) {
+    console.error('❌ Error creando anuncio:', error);
+    res.status(500).json({ error: 'Error al crear el anuncio' });
+  }
+};
+
+const updateAd = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const {
+      title,
+      description,
+      price,
+      category,
+      condition,
+      location,
+      contact_phone,
+      status,
+    } = req.body;
+
+    const adCheck = await db.query(
+      'SELECT user_id FROM ads WHERE id = $1 AND deleted_at IS NULL',
+      [id]
+    );
+
+    if (adCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Anuncio no encontrado' });
+    }
+
+    if (adCheck.rows[0].user_id !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'No tienes permiso para editar este anuncio' });
+    }
+
     const updates = [];
     const values = [];
     let valueIndex = 1;
-    
-    if (name !== undefined) {
-      updates.push(`name = $${valueIndex++}`);
-      values.push(name);
+
+    if (title !== undefined) {
+      updates.push(`title = $${valueIndex++}`);
+      values.push(title);
     }
-    
-    if (phone !== undefined) {
-      updates.push(`phone = $${valueIndex++}`);
-      values.push(phone);
+    if (description !== undefined) {
+      updates.push(`description = $${valueIndex++}`);
+      values.push(description);
     }
-    
+    if (price !== undefined) {
+      updates.push(`price = $${valueIndex++}`);
+      values.push(price);
+    }
+    if (category !== undefined) {
+      updates.push(`category = $${valueIndex++}`);
+      values.push(category);
+    }
+    if (condition !== undefined) {
+      updates.push(`condition = $${valueIndex++}`);
+      values.push(condition);
+    }
     if (location !== undefined) {
       updates.push(`location = $${valueIndex++}`);
       values.push(location);
     }
-    
+    if (contact_phone !== undefined) {
+      updates.push(`contact_phone = $${valueIndex++}`);
+      values.push(contact_phone);
+    }
+    if (status !== undefined && req.user.role === 'admin') {
+      updates.push(`status = $${valueIndex++}`);
+      values.push(status);
+    }
+
     if (updates.length === 0) {
       return res.status(400).json({ error: 'No hay datos para actualizar' });
     }
-    
+
     updates.push(`updated_at = NOW()`);
-    values.push(userId);
-    
+    values.push(id);
+
     const query = `
-      UPDATE users 
+      UPDATE ads 
       SET ${updates.join(', ')} 
-      WHERE id = $${valueIndex} AND deleted_at IS NULL
-      RETURNING id, email, name, phone, location, role, created_at, updated_at
+      WHERE id = $${valueIndex}
+      RETURNING *
     `;
-    
+
     const result = await db.query(query, values);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    
+
     res.json({
-      message: 'Perfil actualizado exitosamente',
-      user: result.rows[0],
+      message: 'Anuncio actualizado exitosamente',
+      ad: result.rows[0],
     });
   } catch (error) {
-    console.error('❌ Error actualizando perfil:', error);
-    res.status(500).json({ error: 'Error al actualizar perfil' });
+    console.error('❌ Error actualizando anuncio:', error);
+    res.status(500).json({ error: 'Error al actualizar el anuncio' });
   }
 };
 
-const changePassword = async (req, res) => {
+const deleteAd = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const adCheck = await db.query(
+      'SELECT user_id FROM ads WHERE id = $1 AND deleted_at IS NULL',
+      [id]
+    );
+
+    if (adCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Anuncio no encontrado' });
+    }
+
+    if (adCheck.rows[0].user_id !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar este anuncio' });
+    }
+
+    const imagesResult = await db.query(
+      'SELECT public_id FROM ad_images WHERE ad_id = $1 AND deleted_at IS NULL',
+      [id]
+    );
+
+    if (imagesResult.rows.length > 0) {
+      const publicIds = imagesResult.rows.map(row => row.public_id).filter(id => id);
+      if (publicIds.length > 0) {
+        await deleteMultipleImages(publicIds);
+      }
+    }
+
+    await db.query(
+      'UPDATE ads SET deleted_at = NOW(), status = \'deleted\' WHERE id = $1',
+      [id]
+    );
+
+    await db.query(
+      'UPDATE ad_images SET deleted_at = NOW() WHERE ad_id = $1',
+      [id]
+    );
+
+    res.json({ message: 'Anuncio eliminado exitosamente' });
+  } catch (error) {
+    console.error('❌ Error eliminando anuncio:', error);
+    res.status(500).json({ error: 'Error al eliminar el anuncio' });
+  }
+};
+
+const getUserAds = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
     
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Se requieren contraseña actual y nueva' });
-    }
-    
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
-    }
-    
-    const result = await db.query(
-      'SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL',
-      [userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    
-    const isValidPassword = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
-    
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Contraseña actual incorrecta' });
-    }
-    
-    const newHashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    
-    await db.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [newHashedPassword, userId]
-    );
-    
-    res.json({ message: 'Contraseña actualizada exitosamente' });
+    const query = `
+      SELECT 
+        a.*,
+        COALESCE(
+          (SELECT json_agg(json_build_object('url', ai.image_url, 'order', ai.display_order))
+           FROM ad_images ai 
+           WHERE ai.ad_id = a.id AND ai.deleted_at IS NULL
+           ORDER BY ai.display_order),
+          '[]'::json
+        ) as images
+      FROM ads a
+      WHERE a.user_id = $1 AND a.deleted_at IS NULL
+      ORDER BY a.created_at DESC
+    `;
+
+    const result = await db.query(query, [userId]);
+    res.json({ ads: result.rows });
   } catch (error) {
-    console.error('❌ Error cambiando contraseña:', error);
-    res.status(500).json({ error: 'Error al cambiar contraseña' });
+    console.error('❌ Error obteniendo anuncios del usuario:', error);
+    res.status(500).json({ error: 'Error al obtener tus anuncios' });
   }
 };
 
 module.exports = {
-  register,
-  login,
-  getProfile,
-  updateProfile,
-  changePassword,
+  getAds,
+  getAdById,
+  createAd,
+  updateAd,
+  deleteAd,
+  getUserAds,
 };
