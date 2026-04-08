@@ -1,7 +1,7 @@
 {
   "name": "el-farol-clasificados",
   "version": "3.0.0",
-  "description": "El Farol Clasificados - Marketplace de República Dominicana estilo Corotos",
+  "description": "El Farol Clasificados - Marketplace de República Dominicana",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
