@@ -76,7 +76,6 @@ async function initDB() {
         )
     `);
 
-    // Agregar columnas faltantes a users
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT FALSE`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status VARCHAR(20) DEFAULT 'pending'`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_date TIMESTAMP`);
@@ -100,7 +99,6 @@ async function initDB() {
         )
     `);
 
-    // Agregar columnas faltantes a ads
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0`);
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS boosted_at TIMESTAMP`);
     await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS boosted_expires TIMESTAMP`);
@@ -605,12 +603,19 @@ app.delete('/api/admin/ads/:id', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
-// FRONTEND
+// FRONTEND (Rutas del Jefe mxl)
 // ============================================================
 const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
 app.use(express.static(publicDir));
+
+// 1. Ruta específica para el Panel de Administración
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin.html'));
+});
+
+// 2. Ruta para todo lo demás (Página principal)
 app.get('*', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
@@ -623,7 +628,8 @@ async function start() {
         await initDB();
         app.listen(PORT, () => {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
-            console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
+            console.log(`👑 Admin: http://localhost:${PORT}/admin`);
+            console.log(`🔐 Credenciales: admin@elfarol.com.do / admin123`);
             console.log(`✅ Base de datos optimizada con índices\n`);
         });
     } catch (error) {
