@@ -123,10 +123,8 @@
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             align-items: center;
@@ -154,10 +152,7 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
         }
         
         .bot-status {
@@ -174,8 +169,7 @@
         }
         .bot-status i { font-size: 1.5rem; margin-right: 10px; }
         .bot-pulse {
-            width: 12px;
-            height: 12px;
+            width: 12px; height: 12px;
             background: #4CAF50;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
@@ -184,30 +178,15 @@
         }
         @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
         
-        .filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            background: #e0e0e0;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        .filter-btn.active {
-            background: #0A1F44;
-            color: white;
-        }
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { background: #e0e0e0; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; }
+        .filter-btn.active { background: #0A1F44; color: white; }
         
         .empty-state { text-align: center; padding: 40px; color: #999; }
         
         .toast {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 20px; right: 20px;
             background: #4CAF50;
             color: white;
             padding: 12px 20px;
@@ -273,10 +252,11 @@
     </div>
 
     <div class="main-content">
+
         <!-- DASHBOARD -->
         <div id="dashboardSection">
-            <div class="section-title"><i class="fas fa-chart-line"></i> Dashboard</div>
-            <div class="stats-grid" id="statsGrid">
+            <div class="section-title"><span><i class="fas fa-chart-line"></i> Dashboard</span></div>
+            <div class="stats-grid">
                 <div class="stat-card"><h4>Usuarios</h4><div class="stat-number" id="statUsers">0</div></div>
                 <div class="stat-card"><h4>Anuncios</h4><div class="stat-number" id="statAds">0</div></div>
                 <div class="stat-card"><h4>Activos</h4><div class="stat-number" id="statActiveAds">0</div></div>
@@ -286,100 +266,120 @@
             </div>
         </div>
 
-        <!-- SECCIÓN BOT CONTABLE -->
-        <div id="botcontableSection" style="display: none;">
+        <!-- BOT CONTABLE -->
+        <div id="botcontableSection" style="display:none;">
             <div class="bot-status">
                 <div><i class="fas fa-robot"></i> <strong>🤖 BOT CONTABLE ACTIVO</strong><br><small>Registrando cada transacción automáticamente</small></div>
                 <div><span class="bot-pulse"></span> En línea</div>
             </div>
             <div class="filters">
-                <button class="filter-btn active" onclick="loadContabilidad('dia')">📅 Hoy</button>
-                <button class="filter-btn" onclick="loadContabilidad('semana')">📆 Esta semana</button>
-                <button class="filter-btn" onclick="loadContabilidad('mes')">📊 Este mes</button>
+                <button class="filter-btn active" onclick="loadContabilidad('dia', event)">📅 Hoy</button>
+                <button class="filter-btn" onclick="loadContabilidad('semana', event)">📆 Esta semana</button>
+                <button class="filter-btn" onclick="loadContabilidad('mes', event)">📊 Este mes</button>
             </div>
-            <div class="stats-grid" id="contabilidadStats">
+            <div class="stats-grid">
                 <div class="stat-card"><h4>Total Ingresos</h4><div class="stat-number" id="totalIngresos">RD$ 0</div></div>
                 <div class="stat-card"><h4>Total Egresos</h4><div class="stat-number" id="totalEgresos">RD$ 0</div></div>
                 <div class="stat-card"><h4>Balance Neto</h4><div class="stat-number" id="balanceNeto">RD$ 0</div></div>
             </div>
-            <div class="section-title"><i class="fas fa-chart-bar"></i> Resumen por día</div>
+            <div class="section-title"><span><i class="fas fa-chart-bar"></i> Resumen por día</span></div>
             <div class="table-container"><table><thead><tr><th>Fecha</th><th>Ingresos</th><th>Egresos</th><th>Boosts</th><th>Verificaciones</th><th>Ventas</th></tr></thead><tbody id="resumenDiarioList"></tbody></table></div>
-            <div class="section-title"><i class="fas fa-history"></i> Últimos movimientos</div>
+            <div class="section-title"><span><i class="fas fa-history"></i> Últimos movimientos</span></div>
             <div class="table-container"><table><thead><tr><th>Fecha</th><th>Acción</th><th>Usuario</th><th>Monto</th><th>Concepto</th><th>Tipo</th></tr></thead><tbody id="movimientosList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN GANANCIAS -->
-        <div id="earningsSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-chart-line"></i> Ganancias</div>
+        <!-- GANANCIAS -->
+        <div id="earningsSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-chart-line"></i> Ganancias</span></div>
             <div class="stats-grid">
                 <div class="stat-card"><h4>Total Ganancias</h4><div class="stat-number" id="totalEarnings">RD$ 0</div></div>
-                <div class="stat-card"><h4>Ganancias este mes</h4><div class="stat-number" id="monthlyEarnings">RD$ 0</div></div>
+                <div class="stat-card"><h4>Este mes</h4><div class="stat-number" id="monthlyEarnings">RD$ 0</div></div>
                 <div class="stat-card"><h4>Total Boosts</h4><div class="stat-number" id="totalBoosts">0</div></div>
             </div>
-            <div class="section-title"><i class="fas fa-chart-pie"></i> Por método de pago</div>
+            <div class="section-title"><span><i class="fas fa-chart-pie"></i> Por método de pago</span></div>
             <div class="table-container"><table><thead><tr><th>Método</th><th>Cantidad</th><th>Total</th></tr></thead><tbody id="paymentsByMethodList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN PAGOS -->
-        <div id="paymentsSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-credit-card"></i> Transacciones</div>
+        <!-- PAGOS -->
+        <div id="paymentsSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-credit-card"></i> Transacciones</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Usuario</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="paymentsList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN USUARIOS -->
-        <div id="usersSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-users"></i> Todos los Usuarios</div>
+        <!-- USUARIOS -->
+        <div id="usersSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-users"></i> Todos los Usuarios</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Calificación</th><th>Acciones</th></tr></thead><tbody id="usersList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN VENDEDORES -->
-        <div id="sellersSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-store"></i> Vendedores</div>
+        <!-- VENDEDORES -->
+        <div id="sellersSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-store"></i> Vendedores</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Verificado</th><th>Plan</th><th>Calificación</th><th>Acciones</th></tr></thead><tbody id="sellersList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN ANUNCIOS -->
-        <div id="adsSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-ad"></i> Anuncios Activos</div>
+        <!-- ANUNCIOS -->
+        <div id="adsSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-ad"></i> Anuncios Activos</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Vendedor</th><th>Estado</th><th>Vistas</th><th>Acciones</th></tr></thead><tbody id="adsList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN ELIMINADOS -->
-        <div id="deletedSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-trash-alt"></i> Anuncios Eliminados</div>
+        <!-- ELIMINADOS -->
+        <div id="deletedSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-trash-alt"></i> Anuncios Eliminados</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Vendedor</th><th>Motivo</th><th>Eliminado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="deletedList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN VERIFICACIONES -->
-        <div id="verificationsSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-id-card"></i> Verificaciones Pendientes</div>
+        <!-- VERIFICACIONES -->
+        <div id="verificationsSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-id-card"></i> Verificaciones Pendientes</span></div>
             <div class="table-container"><table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="verificationsList"></tbody></table></div>
         </div>
 
-        <!-- SECCIÓN AUDITORÍA -->
-        <div id="auditSection" style="display: none;">
-            <div class="section-title"><i class="fas fa-history"></i> Auditoría</div>
+        <!-- AUDITORÍA -->
+        <div id="auditSection" style="display:none;">
+            <div class="section-title"><span><i class="fas fa-history"></i> Auditoría</span></div>
             <div class="table-container"><table><thead><tr><th>Fecha</th><th>Admin</th><th>Anuncio</th><th>Vendedor</th><th>Motivo</th></tr></thead><tbody id="auditList"></tbody></table></div>
         </div>
+
     </div>
 </div>
 
 <!-- MODAL ELIMINAR -->
 <div id="deleteModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header"><h3><i class="fas fa-exclamation-triangle"></i> Eliminar anuncio</h3><span class="close" onclick="closeDeleteModal()">&times;</span></div>
-        <div class="form-group"><label>Motivo</label><select id="deleteReason"><option>Contenido inapropiado</option><option>Producto prohibido</option><option>Información falsa</option><option>Spam o duplicado</option><option>Solicitud del vendedor</option><option>Otro</option></select></div>
-        <div class="form-group"><label>Comentario</label><textarea id="deleteComment" rows="2" placeholder="Explicación adicional..."></textarea></div>
-        <button class="btn-approve" style="width:100%; background:#f44336;" onclick="confirmDelete()">Eliminar anuncio</button>
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Eliminar anuncio</h3>
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="form-group">
+            <label>Motivo</label>
+            <select id="deleteReason">
+                <option>Contenido inapropiado</option>
+                <option>Producto prohibido</option>
+                <option>Información falsa</option>
+                <option>Spam o duplicado</option>
+                <option>Solicitud del vendedor</option>
+                <option>Otro</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Comentario</label>
+            <textarea id="deleteComment" rows="2" placeholder="Explicación adicional..."></textarea>
+        </div>
+        <button style="width:100%; background:#f44336; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-size:1rem;" onclick="confirmDelete()">
+            <i class="fas fa-trash"></i> Eliminar anuncio
+        </button>
     </div>
 </div>
 
 <script>
     let token = localStorage.getItem('adminToken');
     let currentPeriodo = 'mes';
-    
+    let currentDeleteId = null;
+
     if (!token) window.location.href = '/admin';
-    
+
     function showToast(msg, isError) {
         const toast = document.createElement('div');
         toast.className = 'toast' + (isError ? ' error' : '');
@@ -387,206 +387,349 @@
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
-    
+
     function showSection(section) {
-        // Actualizar menú activo
         document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
         document.getElementById(`menu-${section}`).classList.add('active');
-        
-        // Ocultar todas las secciones
-        const sections = ['dashboard', 'botcontable', 'earnings', 'payments', 'users', 'sellers', 'ads', 'deleted', 'verifications', 'audit'];
+
+        const sections = ['dashboard','botcontable','earnings','payments','users','sellers','ads','deleted','verifications','audit'];
         sections.forEach(s => {
             const el = document.getElementById(`${s}Section`);
             if (el) el.style.display = s === section ? 'block' : 'none';
         });
-        
-        // Cargar datos según la sección
-        if (section === 'dashboard') loadStats();
-        if (section === 'botcontable') loadContabilidad(currentPeriodo);
-        if (section === 'earnings') loadEarnings();
-        if (section === 'payments') loadPayments();
-        if (section === 'users') loadUsers();
-        if (section === 'sellers') loadSellers();
-        if (section === 'ads') loadAds();
-        if (section === 'deleted') loadDeleted();
+
+        if (section === 'dashboard')     loadStats();
+        if (section === 'botcontable')   loadContabilidad(currentPeriodo, null);
+        if (section === 'earnings')      loadEarnings();
+        if (section === 'payments')      loadPayments();
+        if (section === 'users')         loadUsers();
+        if (section === 'sellers')       loadSellers();
+        if (section === 'ads')           loadAds();
+        if (section === 'deleted')       loadDeleted();
         if (section === 'verifications') loadVerifications();
-        if (section === 'audit') loadAudit();
+        if (section === 'audit')         loadAudit();
     }
-    
+
     async function loadStats() {
         try {
             const res = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            document.getElementById('statUsers').innerText = data.totalUsers || 0;
-            document.getElementById('statAds').innerText = data.totalAds || 0;
-            document.getElementById('statActiveAds').innerText = data.activeAds || 0;
+            document.getElementById('statUsers').innerText      = data.totalUsers || 0;
+            document.getElementById('statAds').innerText        = data.totalAds || 0;
+            document.getElementById('statActiveAds').innerText  = data.activeAds || 0;
             document.getElementById('statDeletedAds').innerText = data.deletedAds || 0;
-            document.getElementById('statVerified').innerText = data.verifiedUsers || 0;
+            document.getElementById('statVerified').innerText   = data.verifiedUsers || 0;
             document.getElementById('statPendingVerif').innerText = data.pendingVerifications || 0;
         } catch(e) { console.error(e); }
     }
-    
-    async function loadContabilidad(periodo) {
+
+    async function loadContabilidad(periodo, evt) {
         currentPeriodo = periodo;
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        if (evt) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            evt.target.classList.add('active');
+        }
         try {
             const res = await fetch(`/api/admin/contabilidad?periodo=${periodo}`, { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            document.getElementById('totalIngresos').innerHTML = `RD$ ${(data.totales?.total_ingresos || 0).toLocaleString()}`;
-            document.getElementById('totalEgresos').innerHTML = `RD$ ${(data.totales?.total_egresos || 0).toLocaleString()}`;
-            document.getElementById('balanceNeto').innerHTML = `RD$ ${(data.totales?.balance || 0).toLocaleString()}`;
-            
+            document.getElementById('totalIngresos').innerHTML = `RD$ ${Number(data.totales?.total_ingresos || 0).toLocaleString()}`;
+            document.getElementById('totalEgresos').innerHTML  = `RD$ ${Number(data.totales?.total_egresos || 0).toLocaleString()}`;
+            document.getElementById('balanceNeto').innerHTML   = `RD$ ${Number(data.totales?.balance || 0).toLocaleString()}`;
+
             const resumenBody = document.getElementById('resumenDiarioList');
-            if (data.resumen_diario?.length) {
-                resumenBody.innerHTML = data.resumen_diario.map(r => `<tr><td>${new Date(r.fecha).toLocaleDateString()}</td><td class="badge-success" style="padding:4px 8px; border-radius:8px;">RD$ ${(r.total_ingresos || 0).toLocaleString()}</td><td class="badge-danger" style="padding:4px 8px; border-radius:8px;">RD$ ${(r.total_egresos || 0).toLocaleString()}</td><td>RD$ ${(r.total_boosts || 0).toLocaleString()}</td><td>RD$ ${(r.total_verificaciones || 0).toLocaleString()}</td><td>RD$ ${(r.total_ventas || 0).toLocaleString()}</td></tr>`).join('');
-            } else {
-                resumenBody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay datos</td></tr>';
-            }
-            
+            resumenBody.innerHTML = data.resumen_diario?.length
+                ? data.resumen_diario.map(r => `
+                    <tr>
+                        <td>${new Date(r.fecha).toLocaleDateString()}</td>
+                        <td><span class="badge badge-success">RD$ ${Number(r.total_ingresos||0).toLocaleString()}</span></td>
+                        <td><span class="badge badge-danger">RD$ ${Number(r.total_egresos||0).toLocaleString()}</span></td>
+                        <td>RD$ ${Number(r.total_boosts||0).toLocaleString()}</td>
+                        <td>RD$ ${Number(r.total_verificaciones||0).toLocaleString()}</td>
+                        <td>RD$ ${Number(r.total_ventas||0).toLocaleString()}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="6" class="empty-state">No hay datos</td></tr>';
+
             const movimientosBody = document.getElementById('movimientosList');
-            if (data.ultimos_movimientos?.length) {
-                movimientosBody.innerHTML = data.ultimos_movimientos.map(m => `<tr><td>${new Date(m.fecha).toLocaleString()}</td><td><span class="badge badge-bot">${m.accion}</span></td><td>${m.usuario_email || m.usuario_id || 'Sistema'}</td><td><strong>RD$ ${(m.monto || 0).toLocaleString()}</strong></td><td>${m.concepto || '-'}</td><td><span class="badge ${m.tipo === 'ingreso' ? 'badge-success' : 'badge-danger'}">${m.tipo === 'ingreso' ? '💰 Ingreso' : '💸 Egreso'}</span></td></tr>`).join('');
-            } else {
-                movimientosBody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay movimientos</td></tr>';
-            }
+            movimientosBody.innerHTML = data.ultimos_movimientos?.length
+                ? data.ultimos_movimientos.map(m => `
+                    <tr>
+                        <td>${new Date(m.fecha).toLocaleString()}</td>
+                        <td><span class="badge badge-bot">${m.accion}</span></td>
+                        <td>${m.usuario_email || m.usuario_id || 'Sistema'}</td>
+                        <td><strong>RD$ ${Number(m.monto||0).toLocaleString()}</strong></td>
+                        <td>${m.concepto || '-'}</td>
+                        <td><span class="badge ${m.tipo === 'ingreso' ? 'badge-success' : 'badge-danger'}">${m.tipo === 'ingreso' ? '💰 Ingreso' : '💸 Egreso'}</span></td>
+                    </tr>`).join('')
+                : '<tr><td colspan="6" class="empty-state">No hay movimientos</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function loadEarnings() {
         try {
             const res = await fetch('/api/admin/earnings', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            document.getElementById('totalEarnings').innerHTML = `RD$ ${(data.total_earnings || 0).toLocaleString()}`;
-            document.getElementById('monthlyEarnings').innerHTML = `RD$ ${(data.monthly_earnings || 0).toLocaleString()}`;
-            document.getElementById('totalBoosts').innerText = data.total_boosts || 0;
-            
+            document.getElementById('totalEarnings').innerHTML   = `RD$ ${Number(data.total_earnings||0).toLocaleString()}`;
+            document.getElementById('monthlyEarnings').innerHTML = `RD$ ${Number(data.monthly_earnings||0).toLocaleString()}`;
+            document.getElementById('totalBoosts').innerText     = data.total_boosts || 0;
+
             const methodsBody = document.getElementById('paymentsByMethodList');
-            if (data.by_method?.length) {
-                methodsBody.innerHTML = data.by_method.map(m => `<tr><td>${m.payment_method || 'No especificado'}</td><td>${m.count}</td><td>RD$ ${(m.total || 0).toLocaleString()}</td></tr>`).join('');
-            } else {
-                methodsBody.innerHTML = '<tr><td colspan="3" class="empty-state">No hay datos</td></tr>';
-            }
+            methodsBody.innerHTML = data.by_method?.length
+                ? data.by_method.map(m => `<tr><td>${m.payment_method||'N/A'}</td><td>${m.count}</td><td>RD$ ${Number(m.total||0).toLocaleString()}</td></tr>`).join('')
+                : '<tr><td colspan="3" class="empty-state">No hay datos</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function loadPayments() {
         try {
             const res = await fetch('/api/admin/payments', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('paymentsList');
-            if (!data.payments?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay transacciones</td></tr>'; return; }
-            tbody.innerHTML = data.payments.map(p => `<tr><td>${p.id}</td><td>${p.user_name || p.user_email}</td><td>${p.concept}</td><td><strong>RD$ ${(p.amount || 0).toLocaleString()}</strong></td><td><span class="badge badge-info">${p.payment_method || 'N/A'}</span></td><td><span class="badge ${p.status === 'completed' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td><td>${new Date(p.created_at).toLocaleString()}</td></tr>`).join('');
+            tbody.innerHTML = data.payments?.length
+                ? data.payments.map(p => `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.user_name || p.user_email}</td>
+                        <td>${p.concept}</td>
+                        <td><strong>RD$ ${Number(p.amount||0).toLocaleString()}</strong></td>
+                        <td><span class="badge badge-info">${p.payment_method||'N/A'}</span></td>
+                        <td><span class="badge ${p.status==='completed'?'badge-success':'badge-warning'}">${p.status}</span></td>
+                        <td>${new Date(p.created_at).toLocaleString()}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="7" class="empty-state">No hay transacciones</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function loadUsers() {
         try {
             const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('usersList');
-            if (!data.users?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay usuarios</td></tr>'; return; }
-            tbody.innerHTML = data.users.map(u => `<tr><td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td><td><span class="badge ${u.user_type === 'seller' ? 'badge-warning' : 'badge-info'}">${u.user_type === 'seller' ? '💰 Vendedor' : '📦 Comprador'}</span></td><td>${u.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td><td>⭐ ${u.rating || 0} (${u.rating_count || 0})</td><td><button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            tbody.innerHTML = data.users?.length
+                ? data.users.map(u => `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td>${u.name||'-'}</td>
+                        <td>${u.email}</td>
+                        <td><span class="badge ${u.user_type==='seller'?'badge-warning':'badge-info'}">${u.user_type==='seller'?'💰 Vendedor':'📦 Comprador'}</span></td>
+                        <td>${u.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td>
+                        <td>⭐ ${u.rating||0} (${u.rating_count||0})</td>
+                        <td><button class="btn-icon btn-delete" onclick="deleteUser(${u.id})" title="Eliminar"><i class="fas fa-trash"></i></button></td>
+                    </tr>`).join('')
+                : '<tr><td colspan="7" class="empty-state">No hay usuarios</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function deleteUser(userId) {
-        if (!confirm('¿Eliminar este usuario?')) return;
-        try { await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); showToast('Usuario eliminado'); loadUsers(); loadStats(); } catch(e) { showToast('Error', true); }
+        if (!confirm('¿Eliminar este usuario y sus anuncios?')) return;
+        try {
+            await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            showToast('Usuario eliminado');
+            loadUsers();
+            loadStats();
+        } catch(e) { showToast('Error', true); }
     }
-    
+
     async function loadSellers() {
         try {
             const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
-            const sellers = (data.users || []).filter(u => u.user_type === 'seller');
+            const sellers = (data.users||[]).filter(u => u.user_type === 'seller');
             const tbody = document.getElementById('sellersList');
-            if (!sellers.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay vendedores</td></tr>'; return; }
-            tbody.innerHTML = sellers.map(u => `<tr><td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td><td>${u.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td><td>${u.plan_type || 'Gratis'}</td><td>⭐ ${u.rating || 0} (${u.rating_count || 0})</td><td><button class="btn-icon btn-approve" onclick="verifySeller(${u.id})"><i class="fas fa-check-circle"></i></button><button class="btn-icon btn-delete" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            tbody.innerHTML = sellers.length
+                ? sellers.map(u => `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td>${u.name||'-'}</td>
+                        <td>${u.email}</td>
+                        <td>${u.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td>
+                        <td>${u.plan_type||'Gratis'}</td>
+                        <td>⭐ ${u.rating||0} (${u.rating_count||0})</td>
+                        <td>
+                            <button class="btn-icon btn-approve" onclick="verifySeller(${u.id})" title="Verificar"><i class="fas fa-check-circle"></i></button>
+                            <button class="btn-icon btn-delete" onclick="deleteUser(${u.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`).join('')
+                : '<tr><td colspan="7" class="empty-state">No hay vendedores</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function verifySeller(userId) {
         if (!confirm('¿Verificar este vendedor?')) return;
-        try { await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Verificado por admin' }) }); showToast('Vendedor verificado'); loadSellers(); loadStats(); } catch(e) { showToast('Error', true); }
+        try {
+            await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Verificado por admin' }) });
+            showToast('Vendedor verificado');
+            loadSellers();
+            loadStats();
+        } catch(e) { showToast('Error', true); }
     }
-    
+
     async function loadAds() {
         try {
             const res = await fetch('/api/admin/ads', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('adsList');
-            if (!data.ads?.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay anuncios activos</td></tr>'; return; }
-            tbody.innerHTML = data.ads.map(ad => `<tr><td>${ad.id}</td><td>${ad.title}</td><td>RD$ ${Number(ad.price).toLocaleString()}</td><td>${ad.user_name || ad.user_email}</td><td><span class="badge ${ad.status === 'active' ? 'badge-success' : 'badge-warning'}">${ad.status}</span></td><td>${ad.views || 0}</td><td><button class="btn-icon btn-delete" onclick="openDeleteModal(${ad.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            tbody.innerHTML = data.ads?.length
+                ? data.ads.map(ad => `
+                    <tr>
+                        <td>${ad.id}</td>
+                        <td>${ad.title}</td>
+                        <td>RD$ ${Number(ad.price||0).toLocaleString()}</td>
+                        <td>${ad.user_name||ad.user_email}</td>
+                        <td><span class="badge ${ad.status==='active'?'badge-success':'badge-warning'}">${ad.status}</span></td>
+                        <td>${ad.views||0}</td>
+                        <td><button class="btn-icon btn-delete" onclick="openDeleteModal(${ad.id})" title="Eliminar"><i class="fas fa-trash"></i></button></td>
+                    </tr>`).join('')
+                : '<tr><td colspan="7" class="empty-state">No hay anuncios activos</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
+
     async function loadDeleted() {
         try {
             const res = await fetch('/api/admin/ads/deleted', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('deletedList');
-            if (!data.ads?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay anuncios eliminados</td></tr>'; return; }
-            tbody.innerHTML = data.ads.map(ad => `<tr><td>${ad.id}</td><td>${ad.title}</td><td>RD$ ${Number(ad.price).toLocaleString()}</td><td>${ad.user_name || ad.user_email}</td><td>${ad.deleted_reason || '-'}</td><td>${ad.deleted_by || '-'}</td><td>${new Date(ad.deleted_at).toLocaleDateString()}</td><td><button class="btn-icon btn-restore" onclick="restoreAd(${ad.id})"><i class="fas fa-undo-alt"></i></button></td></tr>`).join('');
+            tbody.innerHTML = data.ads?.length
+                ? data.ads.map(ad => `
+                    <tr>
+                        <td>${ad.id}</td>
+                        <td>${ad.title}</td>
+                        <td>RD$ ${Number(ad.price||0).toLocaleString()}</td>
+                        <td>${ad.user_name||ad.user_email}</td>
+                        <td>${ad.deleted_reason||'-'}</td>
+                        <td>${ad.deleted_by||'-'}</td>
+                        <td>${new Date(ad.deleted_at).toLocaleDateString()}</td>
+                        <td><button class="btn-icon btn-restore" onclick="restoreAd(${ad.id})" title="Restaurar"><i class="fas fa-undo-alt"></i></button></td>
+                    </tr>`).join('')
+                : '<tr><td colspan="8" class="empty-state">No hay anuncios eliminados</td></tr>';
         } catch(e) { console.error(e); }
     }
-    
-    function openDeleteModal(adId) { currentDeleteId = adId; document.getElementById('deleteModal').style.display = 'flex'; }
-    function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; currentDeleteId = null; }
-    
-    async function confirmDelete() {
-        if (!currentDeleteId) return;
-        const reason = document.getElementById('deleteReason').value;
-        const comment = document.getElementById('deleteComment').value;
-        const fullReason = comment ? `${reason} - ${comment}` : reason;
-        try {
-            const res = await fetch(`/api/admin/ads/${currentDeleteId}/delete`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ reason: fullReason }) });
-            if (res.ok) { showToast('Anuncio eliminado'); closeDeleteModal(); loadAds(); loadDeleted(); loadStats(); loadAudit(); } else showToast('Error', true);
-        } catch(e) { showToast('Error', true); }
-    }
-    
-    async function restoreAd(adId) {
-        if (!confirm('¿Restaurar este anuncio?')) return;
-        try { await fetch(`/api/admin/ads/${adId}/restore`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); showToast('Anuncio restaurado'); loadAds(); loadDeleted(); loadStats(); loadAudit(); } catch(e) { showToast('Error', true); }
-    }
-    
+
+    // ── VERIFICACIONES (CORREGIDO) ──
     async function loadVerifications() {
         try {
             const res = await fetch('/api/admin/verification-requests', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             const tbody = document.getElementById('verificationsList');
-            if (!data.requests?.length) { tbody.innerHTML = '<td><td colspan="6" class="empty-state">No hay solicitudes pendientes</td></tr>'; return; }
-            tbody.innerHTML = data.requests.map(req => `<tr><td>${req.id}${req.name || '-'}${req.email}${req.phone || '-'}${new Date(req.requested_at).toLocaleDateString()}<td><button class="btn-icon btn-approve" onclick="approveVerification(${req.user_id})"><i class="fas fa-check-circle"></i></button><button class="btn-icon btn-reject" onclick="rejectVerification(${req.user_id})"><i class="fas fa-times-circle"></i></button></td></tr>`).join('');
+            if (!data.requests?.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">✅ No hay solicitudes pendientes</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.requests.map(req => `
+                <tr>
+                    <td>${req.id}</td>
+                    <td>${req.name || '-'}</td>
+                    <td>${req.email}</td>
+                    <td>${req.phone || '-'}</td>
+                    <td>${new Date(req.requested_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-icon btn-approve" onclick="approveVerification(${req.user_id})" title="Aprobar">
+                            <i class="fas fa-check-circle" style="font-size:1.3rem;"></i>
+                        </button>
+                        <button class="btn-icon btn-reject" onclick="rejectVerification(${req.user_id})" title="Rechazar">
+                            <i class="fas fa-times-circle" style="font-size:1.3rem;"></i>
+                        </button>
+                    </td>
+                </tr>`).join('');
         } catch(e) { console.error(e); }
     }
-    
+
     async function approveVerification(userId) {
-        if (!confirm('¿Aprobar verificación?')) return;
-        try { await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Aprobado' }) }); showToast('Usuario verificado'); loadVerifications(); loadStats(); } catch(e) { showToast('Error', true); }
+        if (!confirm('¿Aprobar verificación de este usuario?')) return;
+        try {
+            await fetch(`/api/admin/verify/${userId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: 'Aprobado' }) });
+            showToast('✅ Usuario verificado');
+            loadVerifications();
+            loadStats();
+        } catch(e) { showToast('Error', true); }
     }
-    
+
     async function rejectVerification(userId) {
         const reason = prompt('Motivo del rechazo:');
         if (!reason) return;
-        try { await fetch(`/api/admin/verify/${userId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: reason }) }); showToast('Solicitud rechazada'); loadVerifications(); } catch(e) { showToast('Error', true); }
+        try {
+            await fetch(`/api/admin/verify/${userId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notes: reason }) });
+            showToast('Solicitud rechazada', true);
+            loadVerifications();
+        } catch(e) { showToast('Error', true); }
     }
-    
+
+    // ── AUDITORÍA (CORREGIDO) ──
     async function loadAudit() {
         try {
             const res = await fetch('/api/admin/audit', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!res.ok) {
+                // El endpoint puede no existir aún — mostrar log desde contabilidad
+                document.getElementById('auditList').innerHTML = '<tr><td colspan="5" class="empty-state">Endpoint de auditoría no disponible</td></tr>';
+                return;
+            }
             const data = await res.json();
             const tbody = document.getElementById('auditList');
-            if (!data.audit?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros</td></tr>'; return; }
-            tbody.innerHTML = data.audit.map(a => `<tr><td>${new Date(a.created_at).toLocaleString()}${a.admin_email || '-'}${a.ad_title || '-'}${a.seller_email || '-'}${a.reason || '-'}</td></tr>`).join('');
-        } catch(e) { console.error(e); }
+            tbody.innerHTML = data.audit?.length
+                ? data.audit.map(a => `
+                    <tr>
+                        <td>${new Date(a.created_at).toLocaleString()}</td>
+                        <td>${a.admin_email||'-'}</td>
+                        <td>${a.ad_title||'-'}</td>
+                        <td>${a.seller_email||'-'}</td>
+                        <td>${a.reason||'-'}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="5" class="empty-state">No hay registros</td></tr>';
+        } catch(e) {
+            document.getElementById('auditList').innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros aún</td></tr>';
+        }
     }
-    
-    function logout() { localStorage.removeItem('adminToken'); window.location.href = '/admin'; }
-    
+
+    // ── ELIMINAR CON MOTIVO ──
+    function openDeleteModal(adId) {
+        currentDeleteId = adId;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        currentDeleteId = null;
+    }
+    async function confirmDelete() {
+        if (!currentDeleteId) return;
+        const reason  = document.getElementById('deleteReason').value;
+        const comment = document.getElementById('deleteComment').value;
+        const fullReason = comment ? `${reason} - ${comment}` : reason;
+        try {
+            const res = await fetch(`/api/admin/ads/${currentDeleteId}/delete`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ reason: fullReason })
+            });
+            if (res.ok) {
+                showToast('Anuncio eliminado');
+                closeDeleteModal();
+                loadAds();
+                loadDeleted();
+                loadStats();
+                loadAudit();
+            } else showToast('Error al eliminar', true);
+        } catch(e) { showToast('Error', true); }
+    }
+
+    async function restoreAd(adId) {
+        if (!confirm('¿Restaurar este anuncio?')) return;
+        try {
+            await fetch(`/api/admin/ads/${adId}/restore`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            showToast('Anuncio restaurado');
+            loadAds();
+            loadDeleted();
+            loadStats();
+        } catch(e) { showToast('Error', true); }
+    }
+
+    function logout() {
+        localStorage.removeItem('adminToken');
+        window.location.href = '/admin';
+    }
+
     // Auto-refresh cada 30 segundos
     setInterval(() => {
         if (document.getElementById('dashboardSection').style.display !== 'none') loadStats();
-        if (document.getElementById('botcontableSection').style.display !== 'none') loadContabilidad(currentPeriodo);
+        if (document.getElementById('botcontableSection').style.display !== 'none') loadContabilidad(currentPeriodo, null);
         if (document.getElementById('earningsSection').style.display !== 'none') loadEarnings();
         if (document.getElementById('paymentsSection').style.display !== 'none') loadPayments();
         if (document.getElementById('usersSection').style.display !== 'none') loadUsers();
@@ -596,7 +739,7 @@
         if (document.getElementById('verificationsSection').style.display !== 'none') loadVerifications();
         if (document.getElementById('auditSection').style.display !== 'none') loadAudit();
     }, 30000);
-    
+
     loadStats();
 </script>
 </body>
