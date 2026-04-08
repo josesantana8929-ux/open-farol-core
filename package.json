@@ -1,6 +1,6 @@
 {
   "name": "el-farol-clasificados",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "El Farol Clasificados - Marketplace de República Dominicana",
   "main": "server.js",
   "scripts": {
@@ -16,7 +16,8 @@
     "dotenv": "^16.3.1",
     "pg": "^8.11.3",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
