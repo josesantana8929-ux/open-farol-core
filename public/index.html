@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MXL Clasificados - Compra y Vende en Santo Domingo Este</title>
+    <title>El Farol Clasificados - Compra y Vende en Santo Domingo Este</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;}
@@ -16,7 +16,8 @@
         .lang-btn{background:#FFD600;color:#1A237E;border:none;padding:5px 12px;border-radius:20px;cursor:pointer;font-weight:bold;}
         .btn-outline{border:1px solid white;background:transparent;padding:8px 20px;border-radius:25px;cursor:pointer;color:white;}
         .btn-primary{background:#FFD600;color:#1A237E;border:none;padding:10px 25px;border-radius:25px;cursor:pointer;font-weight:bold;}
-        .btn-secondary{background:#4CAF50;color:white;border:none;padding:8px 20px;border-radius:25px;cursor:pointer;}
+        .btn-verify{background:#4CAF50;color:white;border:none;padding:8px 20px;border-radius:25px;cursor:pointer;}
+        .btn-boost{background:#FF9800;color:white;border:none;padding:5px 15px;border-radius:20px;cursor:pointer;font-size:0.75rem;}
         
         .hero{background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-align:center;padding:60px 20px;}
         .hero h1{font-size:2.5rem;margin-bottom:20px;}
@@ -27,10 +28,14 @@
         .filters{background:white;padding:20px;margin:20px;border-radius:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
         .filters-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;}
         .filters select,.filters input{padding:10px;border:1px solid #ddd;border-radius:8px;width:100%;}
+        .verified-filter{display:flex;align-items:center;gap:10px;margin-top:10px;}
         
-        .ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;padding:20px;}
-        .ad-card{background:white;border-radius:15px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.2s;}
+        .ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;padding:20px;}
+        .ad-card{background:white;border-radius:15px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.2s;position:relative;}
         .ad-card:hover{transform:translateY(-4px);}
+        .boost-badge{position:absolute;top:10px;right:10px;background:#FF9800;color:white;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:bold;}
+        .verified-badge{position:absolute;top:10px;left:10px;background:#4CAF50;color:white;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:bold;}
+        .premium-badge{position:absolute;bottom:10px;right:10px;background:#9C27B0;color:white;padding:3px 10px;border-radius:20px;font-size:0.6rem;}
         .ad-img{height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;}
         .ad-body{padding:15px;}
         .ad-title{font-size:1.1rem;font-weight:bold;margin-bottom:8px;}
@@ -38,7 +43,6 @@
         .ad-location{color:#666;font-size:0.8rem;display:flex;align-items:center;gap:5px;}
         .ad-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.7rem;margin-top:8px;}
         .status-sold{background:#f44336;color:white;}
-        .status-active{background:#4CAF50;color:white;}
         
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;}
         .modal-content{background:white;border-radius:20px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;padding:25px;}
@@ -61,6 +65,8 @@
         .toast.error{background:#f44336;}
         @keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
         
+        .verification-panel{background:#e8f5e9;border:1px solid #4CAF50;border-radius:10px;padding:15px;margin-bottom:20px;}
+        
         @media(max-width:768px){.hero h1{font-size:1.5rem;}.ads-grid{grid-template-columns:1fr;}}
     </style>
 </head>
@@ -68,9 +74,9 @@
 
 <div id="app">
     <div class="header">
-        <div class="logo">MXL <span>Clasificados</span></div>
+        <div class="logo">El <span>Farol</span></div>
         <div class="nav">
-            <a onclick="showHome()" id="navHome">🏠 Inicio</a>
+            <a onclick="showHome()">🏠 Inicio</a>
             <a onclick="showDashboard()" id="navDashboard" style="display:none;">📊 Mis Anuncios</a>
             <button class="lang-btn" onclick="toggleLanguage()">🇺🇸 EN</button>
             <button id="authBtn" class="btn-outline" onclick="showAuthModal()">Ingresar</button>
@@ -78,9 +84,9 @@
         </div>
     </div>
 
-    <div class="hero" id="heroSection">
-        <h1 id="heroTitle">Compra y Vende<br>Cerca de Ti</h1>
-        <p id="heroSubtitle">Encuentra lo que buscas en Santo Domingo Este</p>
+    <div class="hero">
+        <h1>Compra y Vende<br>Cerca de Ti</h1>
+        <p>Encuentra lo que buscas en Santo Domingo Este</p>
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="¿Qué estás buscando?" onkeypress="if(event.key==='Enter')searchAds()">
             <button onclick="searchAds()">Buscar</button>
@@ -96,6 +102,10 @@
                 <option value="">Todas las categorías</option>
             </select>
         </div>
+        <div class="verified-filter">
+            <input type="checkbox" id="filterVerified" onchange="filterAds()">
+            <label>🔒 Solo vendedores verificados</label>
+        </div>
     </div>
 
     <div id="adsGrid" class="ads-grid">Cargando anuncios...</div>
@@ -105,7 +115,7 @@
 <div id="adModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="modalTitle">Detalle del producto</h2>
+            <h2>Detalle del producto</h2>
             <span class="close" onclick="closeModal()">&times;</span>
         </div>
         <div id="modalBody"></div>
@@ -141,6 +151,17 @@
     </div>
 </div>
 
+<!-- Modal Verificación -->
+<div id="verifyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Verificar tu cuenta</h2>
+            <span class="close" onclick="closeVerifyModal()">&times;</span>
+        </div>
+        <div id="verifyBody"></div>
+    </div>
+</div>
+
 <script>
 // ============================================================
 // ESTADO GLOBAL
@@ -153,57 +174,37 @@ let sectoresList = [];
 const translations = {
     es: {
         heroTitle: 'Compra y Vende<br>Cerca de Ti',
-        heroSubtitle: 'Encuentra lo que buscas en Santo Domingo Este',
-        navHome: '🏠 Inicio',
-        navDashboard: '📊 Mis Anuncios',
-        login: 'Ingresar',
-        postAd: '+ Publicar',
         searchPlaceholder: '¿Qué estás buscando?',
         allSectors: 'Todos los sectores',
         allCategories: 'Todas las categorías',
+        verifiedOnly: '🔒 Solo vendedores verificados',
+        login: 'Ingresar',
+        postAd: '+ Publicar',
+        myAds: '📊 Mis Anuncios',
+        verifyAccount: 'Verificar cuenta',
+        boost: 'Destacar',
         sold: 'Vendido',
         delete: 'Eliminar',
-        markAsSold: 'Marcar como vendido',
-        confirmDelete: '¿Eliminar este anuncio?',
-        confirmSold: '¿Marcar como vendido?',
-        loginTitle: 'Ingresar',
-        registerTitle: 'Registrarse',
-        registerNow: 'Regístrate',
-        haveAccount: '¿Ya tienes cuenta?',
-        userTypeBuyer: '📦 Solo quiero comprar',
-        userTypeSeller: '💰 Quiero vender también',
-        nameLabel: 'Nombre',
-        emailLabel: 'Email',
-        phoneLabel: 'Teléfono',
-        passwordLabel: 'Contraseña',
-        accountTypeLabel: 'Tipo de cuenta'
+        verified: 'Verificado',
+        boosted: 'Destacado',
+        premium: 'Premium'
     },
     en: {
         heroTitle: 'Buy & Sell<br>Near You',
-        heroSubtitle: 'Find what you need in Santo Domingo Este',
-        navHome: '🏠 Home',
-        navDashboard: '📊 My Ads',
-        login: 'Login',
-        postAd: '+ Post Ad',
         searchPlaceholder: 'What are you looking for?',
         allSectors: 'All sectors',
         allCategories: 'All categories',
+        verifiedOnly: '🔒 Verified sellers only',
+        login: 'Login',
+        postAd: '+ Post Ad',
+        myAds: '📊 My Ads',
+        verifyAccount: 'Verify account',
+        boost: 'Boost',
         sold: 'Sold',
         delete: 'Delete',
-        markAsSold: 'Mark as sold',
-        confirmDelete: 'Delete this ad?',
-        confirmSold: 'Mark as sold?',
-        loginTitle: 'Login',
-        registerTitle: 'Register',
-        registerNow: 'Register',
-        haveAccount: 'Already have an account?',
-        userTypeBuyer: '📦 I just want to buy',
-        userTypeSeller: '💰 I want to sell too',
-        nameLabel: 'Name',
-        emailLabel: 'Email',
-        phoneLabel: 'Phone',
-        passwordLabel: 'Password',
-        accountTypeLabel: 'Account type'
+        verified: 'Verified',
+        boosted: 'Boosted',
+        premium: 'Premium'
     }
 };
 
@@ -212,44 +213,451 @@ function t(key) { return translations[currentLang][key] || translations.es[key];
 function toggleLanguage() {
     currentLang = currentLang === 'es' ? 'en' : 'es';
     document.querySelector('.lang-btn').textContent = currentLang === 'es' ? '🇺🇸 EN' : '🇪🇸 ES';
-    document.getElementById('heroTitle').innerHTML = t('heroTitle');
-    document.getElementById('heroSubtitle').innerHTML = t('heroSubtitle');
-    document.getElementById('navHome').innerHTML = t('navHome');
-    document.getElementById('navDashboard').innerHTML = t('navDashboard');
-    document.getElementById('authBtn').innerHTML = t('login');
-    document.getElementById('postAdBtn').innerHTML = t('postAd');
     document.getElementById('searchInput').placeholder = t('searchPlaceholder');
     document.querySelector('#filterSector option:first-child').textContent = t('allSectors');
     document.querySelector('#filterCategory option:first-child').textContent = t('allCategories');
-    filterAds();
-    if (currentUser && document.getElementById('dashboardPanel')?.style.display === 'block') {
-        loadMyAds();
+    document.querySelector('.verified-filter label').innerHTML = t('verifiedOnly');
+    if (currentUser) {
+        document.getElementById('authBtn').innerHTML = currentUser.name;
+        document.getElementById('postAdBtn').innerHTML = t('postAd');
+        document.getElementById('navDashboard').innerHTML = t('myAds');
+    } else {
+        document.getElementById('authBtn').innerHTML = t('login');
     }
+    filterAds();
 }
 
 // ============================================================
 // AUTENTICACIÓN
 // ============================================================
-function showAuthModal() { 
-    showLogin();
-    document.getElementById('authModal').style.display = 'flex'; 
-}
-
+function showAuthModal() { showLogin(); document.getElementById('authModal').style.display = 'flex'; }
 function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
 function showLogin() {
-    document.getElementById('authTitle').innerHTML = t('loginTitle');
+    document.getElementById('authTitle').innerHTML = 'Ingresar';
     document.getElementById('authBody').innerHTML = `
-        <div class="form-group"><label>${t('emailLabel')}</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
-        <div class="form-group"><label>${t('passwordLabel')}</label><input type="password" id="loginPassword" placeholder="********"></div>
-        <button class="btn-primary" style="width:100%;" onclick="login()">${t('loginTitle')}</button>
-        <hr style="margin:20px 0;"><p style="text-align:center">${t('registerNow')} <a href="#" onclick="showRegister()">${t('registerNow')}</a></p>
+        <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="********"></div>
+        <button class="btn-primary" style="width:100%;" onclick="login()">Ingresar</button>
+        <hr style="margin:20px 0;"><p style="text-align:center">¿No tienes cuenta? <a href="#" onclick="showRegister()">Regístrate</a></p>
     `;
 }
 
 function showRegister() {
-    document.getElementById('authTitle').innerHTML = t('registerTitle');
+    document.getElementById('authTitle').innerHTML = 'Registrarse';
     document.getElementById('authBody').innerHTML = `
-        <div class="form-group"><label>${t('nameLabel')}</label><input type="text" id="regName" placeholder="Tu nombre"></div>
-        <div class="form-group"><label>${t('emailLabel')}</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
-        <div class="form-group"><label>${t('phoneLabel')}</label><input type
+        <div class="form-group"><label>Nombre</label><input type="text" id="regName" placeholder="Tu nombre"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
+        <div class="form-group"><label>Teléfono</label><input type="tel" id="regPhone" placeholder="809-555-1234"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" placeholder="********"></div>
+        <div class="form-group"><label>Tipo de cuenta</label>
+            <select id="regType"><option value="buyer">📦 Solo quiero comprar</option><option value="seller">💰 Quiero vender también</option></select>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="register()">Registrarme</button>
+        <hr style="margin:20px 0;"><p style="text-align:center">¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Ingresar</a></p>
+    `;
+}
+
+async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            token = data.token;
+            currentUser = data.user;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            updateUIForUser();
+            closeAuthModal();
+            showToast(`Bienvenido ${currentUser.name}`);
+            filterAds();
+        } else {
+            showToast(data.error, true);
+        }
+    } catch(e) { showToast('Error de conexión', true); }
+}
+
+async function register() {
+    const data = {
+        name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        phone: document.getElementById('regPhone').value,
+        password: document.getElementById('regPassword').value,
+        user_type: document.getElementById('regType').value
+    };
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+            token = result.token;
+            currentUser = result.user;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            updateUIForUser();
+            closeAuthModal();
+            showToast('Registro exitoso');
+            filterAds();
+        } else {
+            showToast(result.error, true);
+        }
+    } catch(e) { showToast('Error de conexión', true); }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    currentUser = null;
+    token = null;
+    updateUIForUser();
+    showHome();
+    showToast('Sesión cerrada');
+}
+
+function updateUIForUser() {
+    const authBtn = document.getElementById('authBtn');
+    const postAdBtn = document.getElementById('postAdBtn');
+    const navDashboard = document.getElementById('navDashboard');
+    
+    if (currentUser) {
+        authBtn.innerHTML = currentUser.name;
+        authBtn.onclick = () => showUserMenu();
+        if (currentUser.user_type === 'seller' || currentUser.role === 'admin') {
+            postAdBtn.style.display = 'block';
+        }
+        navDashboard.style.display = 'block';
+    } else {
+        authBtn.innerHTML = t('login');
+        authBtn.onclick = () => showAuthModal();
+        postAdBtn.style.display = 'none';
+        navDashboard.style.display = 'none';
+    }
+}
+
+function showUserMenu() {
+    const menu = confirm(`Usuario: ${currentUser.name}\n${currentUser.verified ? '✅ Verificado' : '❌ No verificado'}\nPlan: ${currentUser.plan_type || 'Gratis'}\n\n¿Cerrar sesión?`);
+    if (menu) logout();
+}
+
+// ============================================================
+// VERIFICACIÓN DE CUENTA
+// ============================================================
+function showVerifyModal() {
+    document.getElementById('verifyBody').innerHTML = `
+        <div class="verification-panel">
+            <p><strong>¿Por qué verificar tu cuenta?</strong></p>
+            <p>✅ Los compradores confían más en vendedores verificados</p>
+            <p>✅ Tus anuncios aparecen primero en las búsquedas</p>
+            <p>✅ Acceso a Boost (destacar anuncios)</p>
+            <p>✅ Insignia de verificación en tu perfil</p>
+        </div>
+        <div class="form-group"><label>Foto frontal de cédula</label><input type="file" id="idFront" accept="image/*"></div>
+        <div class="form-group"><label>Foto trasera de cédula</label><input type="file" id="idBack" accept="image/*"></div>
+        <div class="form-group"><label>Selfie (opcional)</label><input type="file" id="selfie" accept="image/*"></div>
+        <button class="btn-primary" style="width:100%;" onclick="submitVerification()">Solicitar verificación</button>
+    `;
+    document.getElementById('verifyModal').style.display = 'flex';
+}
+
+function closeVerifyModal() { document.getElementById('verifyModal').style.display = 'none'; }
+
+async function submitVerification() {
+    const frontFile = document.getElementById('idFront').files[0];
+    const backFile = document.getElementById('idBack').files[0];
+    
+    if (!frontFile || !backFile) {
+        showToast('Debes subir ambas fotos de la cédula', true);
+        return;
+    }
+    
+    const toBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+    
+    const id_photo_front = await toBase64(frontFile);
+    const id_photo_back = await toBase64(backFile);
+    let selfie_photo = null;
+    if (document.getElementById('selfie').files[0]) {
+        selfie_photo = await toBase64(document.getElementById('selfie').files[0]);
+    }
+    
+    try {
+        const res = await fetch('/api/verify/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ id_photo_front, id_photo_back, selfie_photo })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Solicitud enviada. Espera revisión del administrador.');
+            closeVerifyModal();
+        } else {
+            showToast(data.error, true);
+        }
+    } catch(e) { showToast('Error al enviar', true); }
+}
+
+// ============================================================
+// BOOST (Destacar anuncio)
+// ============================================================
+async function boostAd(adId) {
+    if (!confirm('¿Destacar este anuncio por 24 horas? (Costo: RD$199)')) return;
+    try {
+        const res = await fetch(`/api/ads/${adId}/boost`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Anuncio destacado por 24 horas');
+            loadMyAds();
+            filterAds();
+        } else {
+            showToast(data.error, true);
+        }
+    } catch(e) { showToast('Error', true); }
+}
+
+// ============================================================
+// ANUNCIOS
+// ============================================================
+async function filterAds() {
+    const sector = document.getElementById('filterSector').value;
+    const category = document.getElementById('filterCategory').value;
+    const search = document.getElementById('searchInput').value;
+    const verifiedOnly = document.getElementById('filterVerified').checked;
+    
+    let url = `/api/ads?${sector ? `sector=${sector}&` : ''}${category ? `category=${category}&` : ''}${search ? `search=${search}&` : ''}${verifiedOnly ? `verified_only=true&` : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    const grid = document.getElementById('adsGrid');
+    if (!data.ads.length) {
+        grid.innerHTML = '<div style="text-align:center;padding:60px;">No hay anuncios aún</div>';
+        return;
+    }
+    
+    grid.innerHTML = data.ads.map(ad => `
+        <div class="ad-card" onclick="showAdDetail(${ad.id})">
+            ${ad.badges?.boosted ? '<div class="boost-badge">🔥 Destacado</div>' : ''}
+            ${ad.badges?.verified ? '<div class="verified-badge">✅ Verificado</div>' : ''}
+            ${ad.badges?.premium ? '<div class="premium-badge">👑 Premium</div>' : ''}
+            <div class="ad-img">📷 Imagen</div>
+            <div class="ad-body">
+                <div class="ad-title">${ad.title}</div>
+                <div class="ad-price">RD$ ${Number(ad.price).toLocaleString()}</div>
+                <div class="ad-location">📍 ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
+                ${ad.status === 'sold' ? '<div class="ad-status status-sold">VENDIDO</div>' : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function searchAds() { filterAds(); }
+
+async function showAdDetail(id) {
+    const res = await fetch(`/api/ads/${id}`);
+    const data = await res.json();
+    const ad = data.ad;
+    
+    document.getElementById('modalBody').innerHTML = `
+        <div style="text-align:center;">
+            <div class="ad-img" style="height:250px;">📷 Imagen del producto</div>
+            <h2>${ad.title}</h2>
+            <div class="ad-price" style="font-size:2rem;">RD$ ${Number(ad.price).toLocaleString()}</div>
+            <p>${ad.description || 'Sin descripción'}</p>
+            <div class="ad-location">📍 ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
+            <div style="margin:20px 0;padding:15px;background:#f5f5f5;border-radius:10px;">
+                <p><strong>📞 Contactar al vendedor</strong></p>
+                <p>${ad.user_name || 'Usuario'}</p>
+                <p>${ad.user_phone || 'Teléfono no disponible'}</p>
+                ${ad.badges?.verified ? '<p style="color:#4CAF50;">✅ Cuenta verificada</p>' : ''}
+            </div>
+            ${ad.status === 'sold' ? '<div class="status-sold" style="padding:10px;text-align:center;">VENDIDO</div>' : ''}
+        </div>
+    `;
+    document.getElementById('adModal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('adModal').style.display = 'none'; }
+
+// ============================================================
+// DASHBOARD VENDEDOR
+// ============================================================
+async function showDashboard() {
+    document.getElementById('heroSection').style.display = 'none';
+    document.querySelector('.filters').style.display = 'none';
+    document.getElementById('adsGrid').style.display = 'none';
+    
+    if (!document.getElementById('dashboardPanel')) {
+        const panel = document.createElement('div');
+        panel.id = 'dashboardPanel';
+        panel.className = 'dashboard';
+        document.getElementById('app').appendChild(panel);
+    }
+    
+    const panel = document.getElementById('dashboardPanel');
+    panel.style.display = 'block';
+    await loadMyAds();
+}
+
+function showHome() {
+    document.getElementById('heroSection').style.display = 'block';
+    document.querySelector('.filters').style.display = 'block';
+    document.getElementById('adsGrid').style.display = 'grid';
+    const panel = document.getElementById('dashboardPanel');
+    if (panel) panel.style.display = 'none';
+    filterAds();
+}
+
+async function loadMyAds() {
+    const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    
+    const panel = document.getElementById('dashboardPanel');
+    panel.innerHTML = `
+        <div class="dashboard-header">
+            <h2>Mis Anuncios</h2>
+            <div>
+                ${!currentUser?.verified ? `<button class="btn-verify" onclick="showVerifyModal()">✅ Verificar cuenta</button>` : '<span style="color:#4CAF50;">✅ Cuenta verificada</span>'}
+            </div>
+        </div>
+        <div class="my-ads">
+            ${data.ads.map(ad => `
+                <div class="my-ad">
+                    <div>
+                        <strong>${ad.title}</strong><br>
+                        <small>RD$ ${Number(ad.price).toLocaleString()} | ${ad.ubicacion_sector} | Vistas: ${ad.views || 0}</small>
+                        ${ad.is_boosted ? '<span style="color:#FF9800;"> 🔥 Destacado</span>' : ''}
+                    </div>
+                    <div class="ad-actions">
+                        ${!ad.is_boosted && currentUser.verified ? `<button class="btn-boost" onclick="boostAd(${ad.id})">⚡ Destacar</button>` : ''}
+                        ${ad.status !== 'sold' ? `<button class="btn-sold" onclick="markAsSold(${ad.id})">✓ Vendido</button>` : ''}
+                        <button class="btn-delete" onclick="deleteAd(${ad.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('')}
+            ${data.ads.length === 0 ? '<p style="text-align:center;">No tienes anuncios aún. ¡Publica tu primero!</p>' : ''}
+        </div>
+    `;
+}
+
+async function markAsSold(id) {
+    if (!confirm('¿Marcar este anuncio como vendido?')) return;
+    await fetch(`/api/ads/${id}/sold`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
+    showToast('Anuncio marcado como vendido');
+    loadMyAds();
+    filterAds();
+}
+
+async function deleteAd(id) {
+    if (!confirm('¿Eliminar este anuncio?')) return;
+    await fetch(`/api/ads/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    showToast('Anuncio eliminado');
+    loadMyAds();
+    filterAds();
+}
+
+// ============================================================
+// PUBLICAR ANUNCIO
+// ============================================================
+function showPostAdModal() {
+    loadSectoresForSelect();
+    document.getElementById('postAdModal').style.display = 'flex';
+}
+
+function closePostAdModal() { document.getElementById('postAdModal').style.display = 'none'; }
+
+async function loadSectoresForSelect() {
+    const res = await fetch('/api/sectores');
+    const data = await res.json();
+    const select = document.getElementById('adSector');
+    select.innerHTML = '<option value="">Selecciona un sector</option>' + data.sectores.map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
+}
+
+async function createAd() {
+    const ad = {
+        title: document.getElementById('adTitle').value,
+        description: document.getElementById('adDesc').value,
+        price: document.getElementById('adPrice').value,
+        category: document.getElementById('adCategory').value,
+        ubicacion_sector: document.getElementById('adSector').value
+    };
+    
+    if (!ad.title || !ad.ubicacion_sector) {
+        showToast('Título y sector requeridos', true);
+        return;
+    }
+    
+    const res = await fetch('/api/ads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(ad)
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast('Anuncio publicado');
+        closePostAdModal();
+        if (document.getElementById('dashboardPanel')?.style.display === 'block') {
+            loadMyAds();
+        } else {
+            filterAds();
+        }
+    } else {
+        showToast(data.error, true);
+    }
+}
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+async function loadSectores() {
+    const res = await fetch('/api/sectores');
+    const data = await res.json();
+    sectoresList = data.sectores;
+    const select = document.getElementById('filterSector');
+    select.innerHTML = '<option value="">Todos los sectores</option>' + data.sectores.map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
+}
+
+async function loadCategories() {
+    const res = await fetch('/api/categorias');
+    const data = await res.json();
+    const select = document.getElementById('filterCategory');
+    select.innerHTML = '<option value="">Todas las categorías</option>' + (data.categorias || []).map(c => `<option value="${c.category}">${c.category}</option>`).join('');
+}
+
+function showToast(msg, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = 'toast' + (isError ? ' error' : '');
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Cargar datos guardados
+const savedToken = localStorage.getItem('token');
+const savedUser = localStorage.getItem('user');
+if (savedToken && savedUser) {
+    token = savedToken;
+    currentUser = JSON.parse(savedUser);
+    updateUIForUser();
+}
+
+loadSectores();
+loadCategories();
+filterAds();
+</script>
+</body>
+</html>
