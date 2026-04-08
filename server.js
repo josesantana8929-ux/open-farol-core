@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const http = require('http');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -117,14 +118,12 @@ h1{font-size:3rem}
 }
 
 console.log(`✅ Carpeta public lista en: ${publicDir}`);
-console.log(`   - admin.html: ${fs.existsSync(adminFile) ? '✅' : '❌'}`);
-console.log(`   - index.html: ${fs.existsSync(indexFile) ? '✅' : '❌'}`);
-console.log(`   - 404.html: ${fs.existsSync(notFoundFile) ? '✅' : '❌'}`);
 
 // Configuración
 const PORT = process.env.PORT || 8080;
 const SITE_NAME = process.env.SITE_NAME || 'MXL Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // Validar SESSION_SECRET
 if (!process.env.SESSION_SECRET) {
@@ -140,6 +139,7 @@ if (!process.env.SESSION_SECRET) {
 console.log(`\n🚀 Iniciando ${SITE_NAME}...`);
 console.log(`📡 Puerto: ${PORT}`);
 console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+console.log(`📍 Base URL: ${BASE_URL}`);
 console.log(`📁 Archivos estáticos: ${publicDir}\n`);
 
 const app = express();
@@ -180,7 +180,7 @@ const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
     message: 'Demasiadas solicitudes',
-    skip: (req) => req.path === '/' || req.path === '/admin',
+    skip: (req) => req.path === '/' || req.path === '/admin' || req.path === '/ping',
 });
 app.use('/api/', limiter);
 
@@ -214,9 +214,20 @@ if (!isProduction) {
     });
 }
 
+// ============ RUTA PING PARA KEEP ALIVE ============
+app.get('/ping', (req, res) => {
+    res.status(200).json({
+        status: 'pong',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: process.version
+    });
+});
+
 // ============ RUTAS DE API ============
 
-// Health check
+// Health check mejorado
 app.get('/health', async (req, res) => {
     try {
         const dbStatus = await db.testConnection();
@@ -228,6 +239,7 @@ app.get('/health', async (req, res) => {
             environment: process.env.NODE_ENV || 'development',
             database: dbStatus ? 'connected' : 'disconnected',
             port: PORT,
+            memory: process.memoryUsage(),
         });
     } catch (error) {
         res.status(503).json({ status: 'ERROR', error: error.message });
@@ -383,7 +395,9 @@ if (!isProduction) {
             dbConfigured: !!process.env.DATABASE_URL,
             sessionSecretConfigured: !!process.env.SESSION_SECRET,
             publicPath: publicDir,
-            files: fs.readdirSync(publicDir)
+            files: fs.readdirSync(publicDir),
+            uptime: process.uptime(),
+            memory: process.memoryUsage()
         });
     });
 }
@@ -400,7 +414,7 @@ app.use('/api/*', (req, res) => {
 
 // 404 handler para archivos estáticos
 app.use((req, res) => {
-    if (!req.path.startsWith('/api') && req.path !== '/health') {
+    if (!req.path.startsWith('/api') && req.path !== '/health' && req.path !== '/ping') {
         res.status(404).sendFile(path.join(publicDir, '404.html'), (err) => {
             if (err) {
                 res.status(404).send(`
@@ -451,6 +465,99 @@ app.use((err, req, res, next) => {
     });
 });
 
+// ============ SELF-PING - KEEP ALIVE ============
+let pingInterval = null;
+let consecutiveFails = 0;
+const MAX_CONSECUTIVE_FAILS = 3;
+
+function startSelfPing() {
+    // Obtener la URL base (en Railway usa la URL de la app)
+    const selfUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : `http://localhost:${PORT}`;
+    
+    console.log(`🔄 Iniciando Self-Ping cada 10 minutos a: ${selfUrl}/ping`);
+    
+    // Función para hacer ping a sí mismo
+    const ping = () => {
+        const options = {
+            hostname: process.env.RAILWAY_PUBLIC_DOMAIN ? process.env.RAILWAY_PUBLIC_DOMAIN : 'localhost',
+            port: process.env.RAILWAY_PUBLIC_DOMAIN ? 443 : PORT,
+            path: '/ping',
+            method: 'GET',
+            ...(process.env.RAILWAY_PUBLIC_DOMAIN && { protocol: 'https:' })
+        };
+        
+        const req = http.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    consecutiveFails = 0;
+                    const timestamp = new Date().toISOString();
+                    console.log(`💓 Self-Ping exitoso [${timestamp}] - Status: ${res.statusCode}`);
+                } else {
+                    consecutiveFails++;
+                    console.warn(`⚠️ Self-Ping respondió con status: ${res.statusCode} (Fallo ${consecutiveFails}/${MAX_CONSECUTIVE_FAILS})`);
+                }
+            });
+        });
+        
+        req.on('error', (error) => {
+            consecutiveFails++;
+            console.error(`❌ Self-Ping falló: ${error.message} (Fallo ${consecutiveFails}/${MAX_CONSECUTIVE_FAILS})`);
+            
+            if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
+                console.error('🚨 Demasiados fallos consecutivos en Self-Ping. Verificando estado del servidor...');
+                consecutiveFails = 0;
+            }
+        });
+        
+        req.end();
+    };
+    
+    // Ejecutar ping inmediatamente al iniciar
+    setTimeout(ping, 5000);
+    
+    // Configurar intervalo cada 10 minutos (600,000 ms)
+    pingInterval = setInterval(ping, 10 * 60 * 1000);
+}
+
+// ============ MONITOREO DE MEMORIA ============
+function startMemoryMonitoring() {
+    console.log('📊 Iniciando monitoreo de memoria...');
+    
+    // Monitorear cada 5 minutos
+    setInterval(() => {
+        const memoryUsage = process.memoryUsage();
+        const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+        const heapTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+        const rssMB = Math.round(memoryUsage.rss / 1024 / 1024);
+        
+        console.log(`📊 Memoria: Heap: ${heapUsedMB}/${heapTotalMB}MB | RSS: ${rssMB}MB`);
+        
+        // Advertencia si la memoria está alta (> 80% del límite)
+        if (heapUsedMB > heapTotalMB * 0.8) {
+            console.warn(`⚠️ ALERTA: Uso de memoria alto: ${heapUsedMB}/${heapTotalMB}MB`);
+        }
+    }, 5 * 60 * 1000);
+}
+
+// ============ MANEJAR SEÑALES DE CIERRE ============
+function handleShutdown(signal) {
+    console.log(`\n🛑 Recibida señal ${signal}`);
+    console.log(`📊 Estadísticas finales - Uptime: ${Math.floor(process.uptime())}s`);
+    console.log(`📊 Memoria final: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+    
+    if (pingInterval) {
+        clearInterval(pingInterval);
+        console.log('⏹️ Self-Ping detenido');
+    }
+    
+    console.log('👋 Servidor cerrando...');
+    process.exit(0);
+}
+
 // ============ INICIAR SERVIDOR ============
 const startServer = async () => {
     try {
@@ -470,61 +577,43 @@ const startServer = async () => {
 ║  📡 Puerto: ${PORT}                                                          ║
 ║  🌍 Entorno: ${(process.env.NODE_ENV || 'development').padEnd(35)}║
 ║  🗄️  Base Datos: ${dbConnected ? '✅ CONECTADA' : '⚠️ SIN CONEXIÓN'}                                          ║
-║  📁 Archivos: ${publicDir}                              ║
+║  💓 Ping: /ping                                                          ║
+║  💚 Health: /health                                                      ║
 ║  🌐 Web: http://localhost:${PORT}                                           ║
-║  🔐 Auth API: http://localhost:${PORT}/api/auth                             ║
-║  📦 Ads API: http://localhost:${PORT}/api/ads                               ║
-║  👑 Admin Panel: http://localhost:${PORT}/admin                             ║
-║  💚 Health: http://localhost:${PORT}/health                                 ║
+║  👑 Admin: http://localhost:${PORT}/admin                                  ║
 ╚══════════════════════════════════════════════════════════════════════════╝
             `);
             
             if (!dbConnected && !isProduction) {
                 console.warn('\n⚠️  Modo desarrollo: Base de datos no conectada');
-                console.warn('   Algunas funciones pueden no estar disponibles');
-                console.warn('   Asegúrate de configurar DATABASE_URL en .env\n');
+                console.warn('   Algunas funciones pueden no estar disponibles\n');
             }
+            
+            // Iniciar Self-Ping para mantener el servidor activo
+            startSelfPing();
+            
+            // Iniciar monitoreo de memoria
+            startMemoryMonitoring();
         });
         
         // Graceful shutdown
-        const gracefulShutdown = async (signal) => {
-            console.log(`\n🛑 Recibida señal ${signal}, cerrando servidor...`);
-            
-            server.close(async () => {
-                console.log('📦 Cerrando conexiones de base de datos...');
-                if (db.pool) {
-                    try {
-                        await db.pool.end();
-                        console.log('✅ Conexiones de base de datos cerradas');
-                    } catch (err) {
-                        console.error('❌ Error cerrando conexiones:', err.message);
-                    }
-                }
-                console.log('✅ Servidor cerrado correctamente');
-                process.exit(0);
-            });
-            
-            setTimeout(() => {
-                console.error('⚠️ Timeout cerrando conexiones, forzando salida');
-                process.exit(1);
-            }, 10000);
-        };
-        
-        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+        process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+        process.on('SIGINT', () => handleShutdown('SIGINT'));
         
         process.on('uncaughtException', (error) => {
             console.error('❌ Excepción no capturada:', error);
-            gracefulShutdown('uncaughtException');
+            console.error('Stack:', error.stack);
+            handleShutdown('uncaughtException');
         });
         
         process.on('unhandledRejection', (reason, promise) => {
             console.error('❌ Promesa rechazada no manejada:', reason);
-            gracefulShutdown('unhandledRejection');
+            handleShutdown('unhandledRejection');
         });
         
     } catch (error) {
         console.error('❌ Error fatal al iniciar el servidor:', error.message);
+        console.error(error.stack);
         if (isProduction) process.exit(1);
     }
 };
