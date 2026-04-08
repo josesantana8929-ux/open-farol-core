@@ -37,13 +37,19 @@
         .btn-reject{background:#f44336;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;margin-left:5px;}
         .logout-btn{background:#f44336;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;}
         .toast{position:fixed;bottom:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:1000;}
+        .toast.error{background:#f44336;}
+        
+        @media(max-width:768px){
+            .sidebar{width:100%;position:relative;height:auto;}
+            .main-content{margin-left:0;}
+        }
     </style>
 </head>
 <body>
 
 <div id="loginPanel" class="login-container">
     <div class="login-box">
-        <h2>🔐 El Farol - Admin</h2>
+        <h2>🏮 El Farol - Admin</h2>
         <input type="email" id="adminEmail" placeholder="Email" value="admin@elfarol.com.do">
         <input type="password" id="adminPassword" placeholder="Contraseña" value="admin123">
         <button class="btn-primary" onclick="login()">Ingresar</button>
@@ -55,16 +61,16 @@
     <div class="sidebar">
         <h3>🏮 El Farol Admin</h3>
         <hr style="margin:10px 0;border-color:#2d2d44;">
-        <button onclick="loadStats()">📊 Dashboard</button>
-        <button onclick="loadVerificationRequests()">✅ Verificaciones</button>
-        <button onclick="loadUsers()">👥 Usuarios</button>
-        <button onclick="loadAds()">📢 Anuncios</button>
-        <button onclick="logout()" style="background:#f44336;">🚪 Salir</button>
+        <button onclick="loadStats()"><i class="fas fa-chart-line"></i> 📊 Dashboard</button>
+        <button onclick="loadVerificationRequests()"><i class="fas fa-check-circle"></i> ✅ Verificaciones</button>
+        <button onclick="loadUsers()"><i class="fas fa-users"></i> 👥 Usuarios</button>
+        <button onclick="loadAds()"><i class="fas fa-ad"></i> 📢 Anuncios</button>
+        <button onclick="logout()" style="background:#f44336;"><i class="fas fa-sign-out-alt"></i> 🚪 Salir</button>
     </div>
     <div class="main-content">
         <div class="topbar">
             <h1 id="pageTitle">Dashboard</h1>
-            <button class="logout-btn" onclick="logout()">Salir</button>
+            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
         </div>
         <div id="contentArea"></div>
     </div>
@@ -92,7 +98,7 @@
                 document.getElementById('dashboardPanel').style.display = 'block';
                 loadStats();
             } else {
-                document.getElementById('errorMsg').innerText = 'Acceso denegado';
+                document.getElementById('errorMsg').innerText = 'Acceso denegado. Solo administradores.';
             }
         } catch(e) {
             document.getElementById('errorMsg').innerText = 'Error de conexión';
@@ -100,7 +106,7 @@
     }
     
     async function loadStats() {
-        document.getElementById('pageTitle').innerText = 'Dashboard';
+        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
         try {
             const res = await fetch('/api/admin/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -109,24 +115,26 @@
             
             document.getElementById('contentArea').innerHTML = `
                 <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-number">${data.totalUsers || 0}</div><div class="stat-label">Usuarios</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.totalAds || 0}</div><div class="stat-label">Anuncios totales</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.activeAds || 0}</div><div class="stat-label">Activos</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.verifiedUsers || 0}</div><div class="stat-label">Verificados</div></div>
-                    <div class="stat-card"><div class="stat-number">${data.pendingAds || 0}</div><div class="stat-label">Pendientes</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.totalUsers || 0}</div><div class="stat-label">👥 Usuarios</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.totalAds || 0}</div><div class="stat-label">📢 Anuncios totales</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.activeAds || 0}</div><div class="stat-label">✅ Anuncios activos</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.verifiedUsers || 0}</div><div class="stat-label">🔒 Usuarios verificados</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.pendingVerifications || 0}</div><div class="stat-label">⏳ Verificaciones pendientes</div></div>
                 </div>
-                <div style="background:#1a1a2e;padding:20px;border-radius:10px;">
-                    <h3>🎯 Resumen rápido</h3>
+                <div style="background:#1a1a2e;padding:20px;border-radius:10px;margin-top:20px;">
+                    <h3><i class="fas fa-info-circle"></i> Resumen rápido</h3>
                     <p>✅ ${data.verifiedUsers || 0} usuarios verificados</p>
                     <p>📢 ${data.activeAds || 0} anuncios activos</p>
-                    <p>⏳ ${data.pendingAds || 0} anuncios pendientes de aprobación</p>
+                    <p>⏳ ${data.pendingVerifications || 0} solicitudes de verificación pendientes</p>
+                    <hr style="margin:15px 0;border-color:#2d2d44;">
+                    <p><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Los vendedores verificados pueden destacar sus anuncios con Boost.</p>
                 </div>
             `;
         } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar estadísticas</p>'; }
     }
     
     async function loadVerificationRequests() {
-        document.getElementById('pageTitle').innerText = 'Solicitudes de Verificación';
+        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-check-circle"></i> Solicitudes de Verificación';
         try {
             const res = await fetch('/api/admin/verification-requests', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -134,13 +142,14 @@
             const data = await res.json();
             
             if (!data.requests || data.requests.length === 0) {
-                document.getElementById('contentArea').innerHTML = '<div style="background:#1a1a2e;padding:20px;border-radius:10px;">No hay solicitudes pendientes</div>';
+                document.getElementById('contentArea').innerHTML = '<div style="background:#1a1a2e;padding:20px;border-radius:10px;">✅ No hay solicitudes de verificación pendientes</div>';
                 return;
             }
             
-            let html = '<table><thead><tr><th>Usuario</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>ID</th><th>Usuario</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
             for (const req of data.requests) {
                 html += `<tr>
+                    <td>${req.id}</td>
                     <td>${req.name || '-'}</td>
                     <td>${req.email}</td>
                     <td>${req.phone || '-'}</td>
@@ -159,48 +168,58 @@
     async function approveVerification(userId) {
         if (!confirm('¿Aprobar la verificación de este usuario?')) return;
         try {
-            await fetch(`/api/admin/verify/${userId}/approve`, {
+            const res = await fetch(`/api/admin/verify/${userId}/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ notes: 'Aprobado por admin' })
+                body: JSON.stringify({ notes: 'Aprobado por administrador' })
             });
-            showToast('Usuario verificado exitosamente');
-            loadVerificationRequests();
-            loadStats();
-        } catch(e) { showToast('Error', true); }
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ Usuario verificado exitosamente');
+                loadVerificationRequests();
+                loadStats();
+            } else {
+                showToast('❌ Error: ' + (data.error || 'Desconocido'), true);
+            }
+        } catch(e) { showToast('Error de conexión', true); }
     }
     
     async function rejectVerification(userId) {
         const reason = prompt('Motivo del rechazo:');
         if (!reason) return;
         try {
-            await fetch(`/api/admin/verify/${userId}/reject`, {
+            const res = await fetch(`/api/admin/verify/${userId}/reject`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ notes: reason })
             });
-            showToast('Solicitud rechazada');
-            loadVerificationRequests();
-        } catch(e) { showToast('Error', true); }
+            const data = await res.json();
+            if (data.success) {
+                showToast('❌ Solicitud rechazada');
+                loadVerificationRequests();
+            } else {
+                showToast('❌ Error: ' + (data.error || 'Desconocido'), true);
+            }
+        } catch(e) { showToast('Error de conexión', true); }
     }
     
     async function loadUsers() {
-        document.getElementById('pageTitle').innerText = 'Usuarios';
+        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-users"></i> Usuarios';
         try {
             const res = await fetch('/api/admin/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             
-            let html = '<table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Plan</th></tr></thead><tbody>';
-            for (const user of data.users) {
+            let html = '<tr><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Rol</th><th>Verificado</th></tr></thead><tbody>';
+            for (const user of data.users || []) {
                 html += `<tr>
                     <td>${user.id}</td>
                     <td>${user.name || '-'}</td>
                     <td>${user.email}</td>
                     <td>${user.user_type === 'seller' ? '💰 Vendedor' : '📦 Comprador'}</td>
+                    <td><span class="badge ${user.role === 'admin' ? 'badge-success' : 'badge-warning'}">${user.role || 'user'}</span></td>
                     <td>${user.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td>
-                    <td>${user.plan_type || 'Gratis'}</td>
                 </tr>`;
             }
             html += '</tbody></table>';
@@ -209,7 +228,7 @@
     }
     
     async function loadAds() {
-        document.getElementById('pageTitle').innerText = 'Anuncios';
+        document.getElementById('pageTitle').innerHTML = '<i class="fas fa-ad"></i> Anuncios';
         try {
             const res = await fetch('/api/admin/ads', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -217,7 +236,7 @@
             const data = await res.json();
             
             let html = '<table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
-            for (const ad of data.ads) {
+            for (const ad of data.ads || []) {
                 html += `<tr>
                     <td>${ad.id}</td>
                     <td>${ad.title}</td>
@@ -233,15 +252,21 @@
     }
     
     async function deleteAd(id) {
-        if (!confirm('¿Eliminar este anuncio?')) return;
+        if (!confirm('¿Eliminar este anuncio permanentemente?')) return;
         try {
-            await fetch(`/api/admin/ads/${id}`, {
+            const res = await fetch(`/api/admin/ads/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            showToast('Anuncio eliminado');
-            loadAds();
-        } catch(e) { showToast('Error', true); }
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ Anuncio eliminado');
+                loadAds();
+                loadStats();
+            } else {
+                showToast('❌ Error al eliminar', true);
+            }
+        } catch(e) { showToast('Error de conexión', true); }
     }
     
     function logout() {
@@ -249,17 +274,18 @@
         token = null;
         document.getElementById('loginPanel').style.display = 'flex';
         document.getElementById('dashboardPanel').style.display = 'none';
+        showToast('Sesión cerrada');
     }
     
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.style.background = isError ? '#f44336' : '#4CAF50';
-        toast.textContent = msg;
+        toast.className = 'toast' + (isError ? ' error' : '');
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
     
+    // Cargar sesión guardada
     const savedToken = localStorage.getItem('adminToken');
     if (savedToken) {
         token = savedToken;
