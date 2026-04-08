@@ -1,13 +1,13 @@
-# En la terminal, dentro del directorio del proyecto
+# Crear archivo .env con puerto 8080
 cat > .env << 'EOF'
 # Servidor
-PORT=3000
+PORT=8080
 NODE_ENV=development
 SITE_NAME="Mi Clasificados Platform"
 SITE_DESCRIPTION="Plataforma de clasificados en línea"
 
-# JWT - ¡IMPORTANTE! Cambia esto por una clave segura
-SESSION_SECRET=mi_clave_super_segura_para_jwt_123456789
+# JWT - Clave secreta
+SESSION_SECRET=mi_clave_super_segura_para_jwt_8080_123456789
 JWT_EXPIRES_IN=7d
 
 # Base de Datos (PostgreSQL)
@@ -29,5 +29,5 @@ MAX_FILES_PER_AD=5
 RATE_LIMIT_MAX_REQUESTS=100
 
 # CORS
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000
 EOF
