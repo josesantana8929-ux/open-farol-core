@@ -67,7 +67,6 @@ const db = new Pool({
 db.on('error', (err) => console.error('❌ DB pool error:', err.message));
 
 async function initDB() {
-    // USERS
     await db.query(`CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, name VARCHAR(100), email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL, phone VARCHAR(20), user_type VARCHAR(20) DEFAULT 'buyer',
@@ -77,7 +76,6 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_login TIMESTAMP, deleted_at TIMESTAMP
     )`);
     
-    // ADS
     await db.query(`CREATE TABLE IF NOT EXISTS ads (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title VARCHAR(200) NOT NULL,
         description TEXT, price DECIMAL(10,2), category VARCHAR(100), ubicacion_sector VARCHAR(100),
@@ -87,13 +85,11 @@ async function initDB() {
         deleted_at TIMESTAMP, deleted_reason TEXT, deleted_by VARCHAR(100)
     )`);
     
-    // AD IMAGES
     await db.query(`CREATE TABLE IF NOT EXISTS ad_images (
         id SERIAL PRIMARY KEY, ad_id INTEGER REFERENCES ads(id), image_url TEXT NOT NULL,
         is_primary BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // VERIFICATION REQUESTS
     await db.query(`CREATE TABLE IF NOT EXISTS verification_requests (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
         id_photo_front TEXT, id_photo_back TEXT, selfie_photo TEXT,
@@ -101,7 +97,6 @@ async function initDB() {
         requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, reviewed_at TIMESTAMP, reviewed_by INTEGER
     )`);
     
-    // OFFERS
     await db.query(`CREATE TABLE IF NOT EXISTS offers (
         id SERIAL PRIMARY KEY, ad_id INTEGER REFERENCES ads(id), buyer_id INTEGER REFERENCES users(id),
         seller_id INTEGER REFERENCES users(id), offered_price DECIMAL(10,2), message TEXT,
@@ -109,20 +104,17 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP
     )`);
     
-    // FAVORITES
     await db.query(`CREATE TABLE IF NOT EXISTS favorites (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), ad_id INTEGER REFERENCES ads(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, ad_id)
     )`);
     
-    // SECTORES
     await db.query(`CREATE TABLE IF NOT EXISTS sectores (
         id SERIAL PRIMARY KEY, nombre VARCHAR(100) UNIQUE NOT NULL, ciudad VARCHAR(50) DEFAULT 'Santo Domingo Este'
     )`);
     const sectores = ['Los Mina', 'Invivienda', 'San Vicente', 'Mendoza', 'Cancino', 'Alma Rosa', 'Villa Francisca', 'Villa Duarte', 'Miami Este', 'Brisas del Este', 'Residencial del Este', 'San Isidro', 'Lucerna', 'Villa Faro', 'Los Trinitarios', 'El Paredón'];
     for (const sector of sectores) await db.query(`INSERT INTO sectores (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING`, [sector]);
     
-    // PLANS
     await db.query(`CREATE TABLE IF NOT EXISTS plans (
         id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL, price DECIMAL(10,2),
         duration_days INTEGER, features JSONB
@@ -132,7 +124,6 @@ async function initDB() {
         ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]')
         ON CONFLICT (name) DO NOTHING`);
     
-    // SOPORTE TICKETS
     await db.query(`CREATE TABLE IF NOT EXISTS support_tickets (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), user_name VARCHAR(100),
         user_email VARCHAR(100), subject VARCHAR(200), message TEXT, status VARCHAR(20) DEFAULT 'pending',
@@ -140,33 +131,28 @@ async function initDB() {
         resolved_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // SOPORTE MENSAJES
     await db.query(`CREATE TABLE IF NOT EXISTS support_messages (
         id SERIAL PRIMARY KEY, ticket_id INTEGER REFERENCES support_tickets(id),
         sender_type VARCHAR(20), message TEXT, is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // NOTIFICACIONES
     await db.query(`CREATE TABLE IF NOT EXISTS support_notifications (
         id SERIAL PRIMARY KEY, type VARCHAR(50), message TEXT, link VARCHAR(255),
         is_read BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // AUDIT LOG
     await db.query(`CREATE TABLE IF NOT EXISTS audit_log (
         id SERIAL PRIMARY KEY, action VARCHAR(50), admin_email VARCHAR(100),
         ad_id INTEGER, ad_title TEXT, seller_email VARCHAR(100), reason TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    // ÍNDICES
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
     
-    // ADMIN POR DEFECTO
     const adminEmail = 'admin@elfarol.com.do';
     const adminExists = await db.query(`SELECT * FROM users WHERE email = $1`, [adminEmail]);
     if (adminExists.rows.length === 0) {
@@ -175,7 +161,7 @@ async function initDB() {
             ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
     }
-    console.log('✅ Base de datos lista - Modo Dios activado');
+    console.log('✅ Base de datos lista');
 }
 
 // ============================================================
@@ -611,30 +597,48 @@ if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 app.use(express.static(publicDir));
 app.use('/uploads', express.static(path.join(publicDir, 'uploads')));
 
-app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(publicDir, 'admin.html')));
-app.get('/admin-support', (req, res) => res.sendFile(path.join(publicDir, 'admin-support.html')));
-app.get('/perfil/comprador', (req, res) => res.sendFile(path.join(publicDir, 'profile-buyer.html')));
-app.get('/perfil/vendedor', (req, res) => res.sendFile(path.join(publicDir, 'profile-seller.html')));
-app.get('/help-faq', (req, res) => res.sendFile(path.join(publicDir, 'help-faq.html')));
-app.get('*', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+// ============================================================
+// RUTAS DEL FRONTEND
+// ============================================================
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin.html'));
+});
+
+app.get('/perfil', (req, res) => {
+    res.sendFile(path.join(publicDir, 'perfil.html'));
+});
+
+app.get('/admin-support', (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin-support.html'));
+});
+
+app.get('/help-faq', (req, res) => {
+    res.sendFile(path.join(publicDir, 'help-faq.html'));
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
 
 // ============================================================
-// INICIO - LA OBRA MAESTRA
+// INICIO
 // ============================================================
 async function start() {
     try {
         await initDB();
         app.listen(PORT, () => {
             console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-            console.log(`║     🚀 EL FAROL - LA OBRA MAESTRA ESTÁ VIVA 🚀                 ║`);
+            console.log(`║     🚀 EL FAROL - SERVIDOR CORRIENDO 🚀                         ║`);
             console.log(`╠════════════════════════════════════════════════════════════════╣`);
             console.log(`║  📡 Puerto: ${PORT}                                                 ║`);
             console.log(`║  🌐 Web: http://localhost:${PORT}                                    ║`);
             console.log(`║  👑 Admin: http://localhost:${PORT}/admin                           ║`);
-            console.log(`║  🆘 Soporte: http://localhost:${PORT}/admin-support                 ║`);
+            console.log(`║  👤 Perfil: http://localhost:${PORT}/perfil                         ║`);
             console.log(`║  🔐 Admin: admin@elfarol.com.do / admin123                         ║`);
-            console.log(`║  ✅ TODO FUNCIONA - SIN ERRORES - SIN ROTURAS                      ║`);
             console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
         });
     } catch (error) {
