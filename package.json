@@ -1,19 +1,24 @@
-[project]
-name = "smartclienterd-ia"
-version = "1.0.0"
-description = "SaaS para generación de mensajes de marketing con IA"
-authors = [{name = "Tu Nombre", email = "tu@email.com"}]
-license = {text = "MIT"}
-
-[project.scripts]
-migrate = "scripts.migrate:main"
-dev = "uvicorn app.main:app --reload --port 8000"
-start = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+{
+  "name": "smartclienterd-ia",
+  "version": "1.0.0",
+  "description": "SaaS para generación de mensajes de marketing con IA",
+  "main": "scripts/helper.js",
+  "scripts": {
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "backup": "node scripts/backup.js"
+  },
+  "keywords": ["saas", "marketing", "ia", "fastapi", "postgresql"],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
