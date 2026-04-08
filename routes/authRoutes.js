@@ -8,6 +8,9 @@ const {
   authMiddleware 
 } = require('../middleware/validators');
 
+// Verificar que authController tiene todas las funciones necesarias
+console.log('🔍 authController funciones disponibles:', Object.keys(authController));
+
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
 router.get('/profile', authMiddleware, authController.getProfile);
