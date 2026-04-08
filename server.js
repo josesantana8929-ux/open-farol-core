@@ -19,20 +19,18 @@ const SITE_NAME = process.env.SITE_NAME || 'El Farol Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // ============================================================
-// CACHÉ EN MEMORIA PARA ALTO RENDIMIENTO
+// CACHÉ EN MEMORIA
 // ============================================================
 const cache = {
     sectores: { data: null, expires: 0 },
     categorias: { data: null, expires: 0 },
     stats: { data: null, expires: 0 }
 };
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = 5 * 60 * 1000;
 
 function getCache(key) {
     const item = cache[key];
-    if (item && item.expires > Date.now()) {
-        return item.data;
-    }
+    if (item && item.expires > Date.now()) return item.data;
     return null;
 }
 
@@ -47,16 +45,15 @@ function clearCache() {
 }
 
 // ============================================================
-// BASE DE DATOS CON POOL OPTIMIZADO
+// BASE DE DATOS
 // ============================================================
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: isProduction ? { rejectUnauthorized: false } : false,
-    max: 20,              // Máximo de conexiones para alto tráfico
-    min: 5,               // Mínimo siempre activas
+    max: 20,
+    min: 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-    statement_timeout: 10000,
 });
 
 db.on('error', (err) => {
@@ -74,16 +71,18 @@ async function initDB() {
             phone VARCHAR(20),
             user_type VARCHAR(20) DEFAULT 'buyer',
             role VARCHAR(20) DEFAULT 'user',
-            verified BOOLEAN DEFAULT FALSE,
-            verification_status VARCHAR(20) DEFAULT 'pending',
-            verified_date TIMESTAMP,
-            plan_type VARCHAR(20) DEFAULT 'free',
-            plan_expires TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP,
             deleted_at TIMESTAMP
         )
     `);
+
+    // Agregar columnas faltantes a users
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT FALSE`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status VARCHAR(20) DEFAULT 'pending'`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_date TIMESTAMP`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type VARCHAR(20) DEFAULT 'free'`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires TIMESTAMP`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP`);
 
     // ADS
     await db.query(`
@@ -97,14 +96,16 @@ async function initDB() {
             ubicacion_sector VARCHAR(100),
             ubicacion_ciudad VARCHAR(50) DEFAULT 'Santo Domingo Este',
             status VARCHAR(20) DEFAULT 'active',
-            views INTEGER DEFAULT 0,
-            boosted_at TIMESTAMP,
-            boosted_expires TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP,
-            deleted_at TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Agregar columnas faltantes a ads
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0`);
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS boosted_at TIMESTAMP`);
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS boosted_expires TIMESTAMP`);
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP`);
+    await db.query(`ALTER TABLE ads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
 
     // VERIFICATION REQUESTS
     await db.query(`
@@ -176,20 +177,14 @@ async function initDB() {
     `);
     await db.query(`INSERT INTO plans (name, price, duration_days, features) VALUES ('pro', 399, 30, '["perfil_tienda","anuncios_destacados"]'), ('premium', 799, 30, '["perfil_tienda","anuncios_destacados","boost_mensual","insignia_premium"]') ON CONFLICT (name) DO NOTHING`);
 
-    // ============================================================
-    // ÍNDICES PARA ALTO RENDIMIENTO
-    // ============================================================
+    // ÍNDICES
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_status ON ads(status) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_boosted ON ads(boosted_expires) WHERE boosted_expires > NOW()`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_category ON ads(category) WHERE deleted_at IS NULL`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_sector ON ads(ubicacion_sector) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_offers_seller ON offers(seller_id, status)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id)`);
 
-    // Crear admin por defecto
+    // Admin por defecto
     const adminEmail = 'admin@elfarol.com.do';
     const adminExists = await db.query(`SELECT * FROM users WHERE email = $1`, [adminEmail]);
     if (adminExists.rows.length === 0) {
@@ -198,7 +193,7 @@ async function initDB() {
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
     }
 
-    console.log('✅ Base de datos inicializada con índices optimizados');
+    console.log('✅ Base de datos inicializada correctamente');
 }
 
 // ============================================================
@@ -219,7 +214,6 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting para API
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
 app.use('/api/', limiter);
 
@@ -311,7 +305,7 @@ app.get('/api/auth/verify/status', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// ANUNCIOS (OPTIMIZADO)
+// ANUNCIOS
 // ============================================================
 app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
@@ -506,7 +500,7 @@ app.get('/api/favorites', verifyToken, async (req, res) => {
 });
 
 // ============================================================
-// DATOS AUXILIARES (CON CACHÉ)
+// DATOS AUXILIARES
 // ============================================================
 app.get('/api/sectores', async (req, res) => {
     let cached = getCache('sectores');
@@ -533,7 +527,7 @@ app.get('/api/plans', async (req, res) => {
 });
 
 // ============================================================
-// ADMIN (CON CACHÉ)
+// ADMIN
 // ============================================================
 const verifyAdmin = async (req, res, next) => {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
@@ -630,7 +624,7 @@ async function start() {
         app.listen(PORT, () => {
             console.log(`\n🚀 ${SITE_NAME} iniciado en http://localhost:${PORT}`);
             console.log(`👑 Admin: admin@elfarol.com.do / admin123`);
-            console.log(`✅ Modo producción - Optimizado para alto rendimiento\n`);
+            console.log(`✅ Base de datos optimizada con índices\n`);
         });
     } catch (error) {
         console.error('❌ Error al iniciar:', error.message);
