@@ -10,6 +10,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 const multer = require('multer');
+const cron = require('node-cron');
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ const SITE_NAME = process.env.SITE_NAME || 'El Farol Clasificados';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // ============================================================
-// CONFIGURACIÓN DE MULTER PARA MULTIMEDIA
+// CONFIGURACIÓN DE MULTER
 // ============================================================
 const uploadDir = path.join(__dirname, 'public/uploads');
 const avatarDir = path.join(__dirname, 'public/uploads/avatars');
@@ -74,6 +75,7 @@ async function initDB() {
         role VARCHAR(20) DEFAULT 'user', verified BOOLEAN DEFAULT FALSE,
         verification_status VARCHAR(20) DEFAULT 'pending', verified_date TIMESTAMP,
         plan_type VARCHAR(20) DEFAULT 'free', plan_expires TIMESTAMP, avatar TEXT,
+        rating DECIMAL(3,2) DEFAULT 0, rating_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_login TIMESTAMP, deleted_at TIMESTAMP
     )`);
     
@@ -158,16 +160,43 @@ async function initDB() {
     )`);
     
     // ============================================================
-    // TABLAS DE PAGOS Y GANANCIAS
+    // TABLAS DE CONTABILIDAD (BOT CONTABLE)
     // ============================================================
+    
+    // Log contable (cada transacción)
+    await db.query(`CREATE TABLE IF NOT EXISTS contabilidad_log (
+        id SERIAL PRIMARY KEY,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        accion VARCHAR(100),
+        usuario_id INTEGER,
+        usuario_email VARCHAR(100),
+        monto DECIMAL(10,2),
+        concepto VARCHAR(200),
+        tipo VARCHAR(50),
+        detalles TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // Resumen diario
+    await db.query(`CREATE TABLE IF NOT EXISTS contabilidad_resumen_diario (
+        id SERIAL PRIMARY KEY,
+        fecha DATE UNIQUE,
+        total_ingresos DECIMAL(10,2) DEFAULT 0,
+        total_egresos DECIMAL(10,2) DEFAULT 0,
+        total_boosts DECIMAL(10,2) DEFAULT 0,
+        total_verificaciones DECIMAL(10,2) DEFAULT 0,
+        total_ventas DECIMAL(10,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // Pagos
     await db.query(`CREATE TABLE IF NOT EXISTS payments (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id),
         amount DECIMAL(10,2), currency VARCHAR(3) DEFAULT 'DOP',
         concept VARCHAR(100), payment_method VARCHAR(50),
-        status VARCHAR(20) DEFAULT 'pending',
-        transaction_id VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        completed_at TIMESTAMP
+        status VARCHAR(20) DEFAULT 'pending', transaction_id VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP
     )`);
     
     await db.query(`CREATE TABLE IF NOT EXISTS earnings (
@@ -179,9 +208,45 @@ async function initDB() {
     await db.query(`CREATE TABLE IF NOT EXISTS seller_wallets (
         id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) UNIQUE,
         paypal_email VARCHAR(100), bank_account VARCHAR(100),
-        total_earned DECIMAL(10,2) DEFAULT 0,
-        pending_balance DECIMAL(10,2) DEFAULT 0,
+        total_earned DECIMAL(10,2) DEFAULT 0, pending_balance DECIMAL(10,2) DEFAULT 0,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // Pedidos / Órdenes
+    await db.query(`CREATE TABLE IF NOT EXISTS orders (
+        id SERIAL PRIMARY KEY, buyer_id INTEGER REFERENCES users(id),
+        seller_id INTEGER REFERENCES users(id), ad_id INTEGER REFERENCES ads(id),
+        amount DECIMAL(10,2), delivery_address TEXT, delivery_sector VARCHAR(100),
+        delivery_phone VARCHAR(20), status VARCHAR(20) DEFAULT 'pending',
+        payment_type VARCHAR(20) DEFAULT 'cod',
+        buyer_confirmed BOOLEAN DEFAULT FALSE, seller_confirmed BOOLEAN DEFAULT FALSE,
+        delivered_at TIMESTAMP, completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP
+    )`);
+    
+    // Disputas
+    await db.query(`CREATE TABLE IF NOT EXISTS disputes (
+        id SERIAL PRIMARY KEY, order_id INTEGER REFERENCES orders(id),
+        buyer_id INTEGER REFERENCES users(id), seller_id INTEGER REFERENCES users(id),
+        reason VARCHAR(50), description TEXT, evidence TEXT,
+        status VARCHAR(20) DEFAULT 'pending', resolution TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, resolved_at TIMESTAMP
+    )`);
+    
+    // Calificaciones
+    await db.query(`CREATE TABLE IF NOT EXISTS ratings (
+        id SERIAL PRIMARY KEY, order_id INTEGER REFERENCES orders(id),
+        reviewer_id INTEGER REFERENCES users(id), reviewed_id INTEGER REFERENCES users(id),
+        rating INTEGER CHECK (rating >= 1 AND rating <= 5), comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // Escrow (fondos retenidos)
+    await db.query(`CREATE TABLE IF NOT EXISTS escrow_funds (
+        id SERIAL PRIMARY KEY, order_id INTEGER REFERENCES orders(id),
+        buyer_id INTEGER REFERENCES users(id), seller_id INTEGER REFERENCES users(id),
+        amount DECIMAL(10,2), status VARCHAR(20) DEFAULT 'held',
+        held_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, released_at TIMESTAMP
     )`);
     
     // ÍNDICES
@@ -189,8 +254,8 @@ async function initDB() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_user_id ON ads(user_id) WHERE deleted_at IS NULL`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_ads_created_at ON ads(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_contabilidad_fecha ON contabilidad_log(fecha)`);
     
     // ADMIN POR DEFECTO
     const adminEmail = 'admin@elfarol.com.do';
@@ -201,7 +266,43 @@ async function initDB() {
             ['Administrador', adminEmail, hashedPassword, 'admin', 'seller', true]);
         console.log('✅ Admin creado: admin@elfarol.com.do / admin123');
     }
-    console.log('✅ Base de datos lista con sistema de pagos');
+    console.log('✅ Base de datos lista con BOT CONTABLE');
+}
+
+// ============================================================
+// BOT CONTABLE AUTOMÁTICO
+// ============================================================
+async function botContableRegistrar(accion, datos) {
+    try {
+        await db.query(`
+            INSERT INTO contabilidad_log (fecha, accion, usuario_id, usuario_email, monto, concepto, tipo, detalles)
+            VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7)
+        `, [accion, datos.usuario_id || null, datos.usuario_email || null, datos.monto || 0, datos.concepto || '', datos.tipo || 'transaccion', JSON.stringify(datos.detalles || {})]);
+        
+        console.log(`🤖 BOT CONTABLE: ${accion} | RD$ ${datos.monto || 0} | ${datos.concepto || ''}`);
+        
+        // Actualizar resumen diario
+        const hoy = new Date().toISOString().split('T')[0];
+        await db.query(`
+            INSERT INTO contabilidad_resumen_diario (fecha, total_ingresos, total_egresos, total_boosts, total_verificaciones, total_ventas)
+            VALUES ($1, 
+                CASE WHEN $2 = 'ingreso' THEN $3 ELSE 0 END,
+                CASE WHEN $2 = 'egreso' THEN $3 ELSE 0 END,
+                CASE WHEN $4 = 'boost' THEN $3 ELSE 0 END,
+                CASE WHEN $4 = 'verificacion' THEN $3 ELSE 0 END,
+                CASE WHEN $4 = 'venta' THEN $3 ELSE 0 END
+            )
+            ON CONFLICT (fecha) DO UPDATE SET
+                total_ingresos = contabilidad_resumen_diario.total_ingresos + CASE WHEN $2 = 'ingreso' THEN $3 ELSE 0 END,
+                total_egresos = contabilidad_resumen_diario.total_egresos + CASE WHEN $2 = 'egreso' THEN $3 ELSE 0 END,
+                total_boosts = contabilidad_resumen_diario.total_boosts + CASE WHEN $4 = 'boost' THEN $3 ELSE 0 END,
+                total_verificaciones = contabilidad_resumen_diario.total_verificaciones + CASE WHEN $4 = 'verificacion' THEN $3 ELSE 0 END,
+                total_ventas = contabilidad_resumen_diario.total_ventas + CASE WHEN $4 = 'venta' THEN $3 ELSE 0 END,
+                updated_at = NOW()
+        `, [hoy, datos.tipo, datos.monto || 0, datos.concepto_type || '']);
+    } catch (error) {
+        console.error('❌ Error en BOT CONTABLE:', error.message);
+    }
 }
 
 // ============================================================
@@ -263,7 +364,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/me', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, plan_expires, avatar FROM users WHERE id = $1`, [req.user.id]);
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, plan_expires, avatar, rating, rating_count FROM users WHERE id = $1`, [req.user.id]);
     res.json(result.rows[0]);
 });
 
@@ -304,7 +405,7 @@ app.get('/api/ads', async (req, res) => {
     const { categoria, sector, search, verified_only, limit = 20, offset = 0 } = req.query;
     const safeLimit = Math.min(parseInt(limit) || 20, 50);
     const safeOffset = parseInt(offset) || 0;
-    let query = `SELECT a.id, a.title, a.description, a.price, a.ubicacion_sector, a.status, a.views, a.created_at, a.boosted_expires, (SELECT image_url FROM ad_images WHERE ad_id = a.id AND is_primary = true LIMIT 1) as primary_image, u.name as user_name, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL AND a.status = 'active'`;
+    let query = `SELECT a.id, a.title, a.description, a.price, a.ubicacion_sector, a.status, a.views, a.created_at, a.boosted_expires, (SELECT image_url FROM ad_images WHERE ad_id = a.id AND is_primary = true LIMIT 1) as primary_image, u.name as user_name, u.verified, u.plan_type, u.rating, u.rating_count FROM ads a JOIN users u ON a.user_id = u.id WHERE a.deleted_at IS NULL AND a.status = 'active'`;
     const params = []; let idx = 1;
     if (categoria) { query += ` AND a.category = $${idx++}`; params.push(categoria); }
     if (sector) { query += ` AND a.ubicacion_sector = $${idx++}`; params.push(sector); }
@@ -313,18 +414,20 @@ app.get('/api/ads', async (req, res) => {
     query += ` ORDER BY CASE WHEN a.boosted_expires > NOW() THEN 1 ELSE 0 END DESC, a.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(safeLimit, safeOffset);
     const result = await db.query(query, params);
-    const adsWithBadges = result.rows.map(ad => ({ ...ad, badges: { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' } }));
+    const adsWithBadges = result.rows.map(ad => ({ ...ad, badges: { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' }, seller_rating: ad.rating, seller_rating_count: ad.rating_count }));
     res.json({ ads: adsWithBadges });
 });
 
 app.get('/api/ads/:id', async (req, res) => {
     const { id } = req.params;
     await db.query(`UPDATE ads SET views = views + 1 WHERE id = $1`, [id]);
-    const result = await db.query(`SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type FROM ads a JOIN users u ON a.user_id = u.id WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
+    const result = await db.query(`SELECT a.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.verified, u.plan_type, u.rating, u.rating_count FROM ads a JOIN users u ON a.user_id = u.id WHERE a.id = $1 AND a.deleted_at IS NULL`, [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
     const ad = result.rows[0];
     const images = await db.query(`SELECT * FROM ad_images WHERE ad_id = $1 ORDER BY is_primary DESC, created_at ASC`, [id]);
     ad.badges = { verified: ad.verified, boosted: ad.boosted_expires && new Date(ad.boosted_expires) > new Date(), pro: ad.plan_type === 'pro', premium: ad.plan_type === 'premium' };
+    ad.seller_rating = ad.rating;
+    ad.seller_rating_count = ad.rating_count;
     ad.images = images.rows;
     res.json({ ad });
 });
@@ -390,7 +493,6 @@ app.post('/api/ads/:id/boost', verifyToken, async (req, res) => {
     const user = await db.query(`SELECT verified FROM users WHERE id = $1`, [req.user.id]);
     if (!user.rows[0]?.verified) return res.status(403).json({ error: 'Debes tener cuenta verificada para usar Boost' });
     
-    // Registrar pago pendiente
     const amount = 199;
     const payment = await db.query(`
         INSERT INTO payments (user_id, amount, concept, payment_method, status, created_at)
@@ -398,15 +500,20 @@ app.post('/api/ads/:id/boost', verifyToken, async (req, res) => {
         RETURNING id
     `, [req.user.id, amount]);
     
-    // Simular pago exitoso (en producción: integrar PayPal/Stripe)
     await db.query(`
         UPDATE payments SET status = 'completed', completed_at = NOW(), transaction_id = $1 WHERE id = $2
     `, ['TXN_' + Date.now(), payment.rows[0].id]);
     
-    // Registrar ganancia
-    await db.query(`
-        INSERT INTO earnings (source, amount, description) VALUES ('boost', $1, 'Usuario ${req.user.id} compró Boost')
-    `, [amount]);
+    // Registrar en el BOT CONTABLE
+    await botContableRegistrar('COMPRA DE BOOST', {
+        usuario_id: req.user.id,
+        usuario_email: req.user.email,
+        monto: amount,
+        concepto: `Boost 24 horas - Anuncio ID: ${id}`,
+        tipo: 'ingreso',
+        concepto_type: 'boost',
+        detalles: { ad_id: id, ad_title: ad.rows[0].title }
+    });
     
     const now = new Date();
     const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -550,8 +657,34 @@ app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
-// ADMIN - GANANCIAS Y PAGOS
+// ADMIN - CONTABILIDAD (BOT CONTABLE)
 // ============================================================
+app.get('/api/admin/contabilidad', verifyToken, verifyAdmin, async (req, res) => {
+    const { periodo = 'mes', limite = 100 } = req.query;
+    
+    let fechaInicio;
+    if (periodo === 'dia') fechaInicio = new Date().toISOString().split('T')[0];
+    else if (periodo === 'semana') fechaInicio = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    else fechaInicio = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const [resumenDiario, ultimosMovimientos, totales] = await Promise.all([
+        db.query(`SELECT * FROM contabilidad_resumen_diario WHERE fecha >= $1 ORDER BY fecha DESC LIMIT 30`, [fechaInicio]),
+        db.query(`SELECT * FROM contabilidad_log ORDER BY fecha DESC LIMIT $1`, [limite]),
+        db.query(`SELECT 
+            COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) as total_ingresos,
+            COALESCE(SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END), 0) as total_egresos,
+            COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END), 0) as balance
+            FROM contabilidad_log WHERE fecha >= $1`, [fechaInicio])
+    ]);
+    
+    res.json({
+        resumen_diario: resumenDiario.rows,
+        ultimos_movimientos: ultimosMovimientos.rows,
+        totales: totales.rows[0],
+        periodo: periodo
+    });
+});
+
 app.get('/api/admin/earnings', verifyToken, verifyAdmin, async (req, res) => {
     const [totalEarnings, monthlyEarnings, boostCount, paymentsByMethod] = await Promise.all([
         db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM earnings`),
@@ -590,77 +723,62 @@ app.get('/api/admin/payments', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
-// SISTEMA DE PAGOS PARA USUARIOS
+// SISTEMA DE PEDIDOS Y PAGO CONTRA ENTREGA
 // ============================================================
-app.post('/api/payments/boost', verifyToken, async (req, res) => {
-    const { payment_method } = req.body;
+app.post('/api/orders', verifyToken, async (req, res) => {
+    const { ad_id, delivery_address, delivery_sector, delivery_phone, payment_type } = req.body;
     
-    if (req.user.user_type !== 'seller') {
-        return res.status(403).json({ error: 'Solo vendedores pueden usar Boost' });
+    if (req.user.user_type !== 'buyer') {
+        return res.status(403).json({ error: 'Solo compradores pueden hacer pedidos' });
     }
     
-    const amount = 199;
-    const payment = await db.query(`
-        INSERT INTO payments (user_id, amount, concept, payment_method, status, created_at)
-        VALUES ($1, $2, 'Boost 24 horas', $3, 'pending', NOW())
-        RETURNING id
-    `, [req.user.id, amount, payment_method || 'pending']);
+    const ad = await db.query(`SELECT * FROM ads WHERE id = $1 AND status = 'active' AND deleted_at IS NULL`, [ad_id]);
+    if (ad.rows.length === 0) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+    }
     
-    res.json({ success: true, payment_id: payment.rows[0].id, amount });
+    if (ad.rows[0].user_id === req.user.id) {
+        return res.status(403).json({ error: 'No puedes comprar tu propio producto' });
+    }
+    
+    const order = await db.query(`
+        INSERT INTO orders (buyer_id, seller_id, ad_id, amount, delivery_address, delivery_sector, delivery_phone, payment_type, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', NOW())
+        RETURNING *
+    `, [req.user.id, ad.rows[0].user_id, ad_id, ad.rows[0].price, delivery_address, delivery_sector, delivery_phone, payment_type || 'cod']);
+    
+    await db.query(`
+        INSERT INTO support_notifications (type, message, link)
+        VALUES ('new_order', 'Nuevo pedido de ${req.user.name} para: ${ad.rows[0].title}', '/vendedor/pedidos')
+    `);
+    
+    res.json({ success: true, order: order.rows[0], message: 'Pedido creado. El pago se hará CONTRA ENTREGA.' });
 });
 
-app.post('/api/payments/confirm/:paymentId', verifyToken, async (req, res) => {
-    const { paymentId } = req.params;
-    const { transaction_id } = req.body;
+app.post('/api/orders/:id/confirm-receipt', verifyToken, async (req, res) => {
+    const { id } = req.params;
     
-    const payment = await db.query(`SELECT * FROM payments WHERE id = $1 AND user_id = $2`, [paymentId, req.user.id]);
-    if (payment.rows.length === 0) {
-        return res.status(404).json({ error: 'Pago no encontrado' });
+    const order = await db.query(`SELECT * FROM orders WHERE id = $1 AND buyer_id = $2`, [id, req.user.id]);
+    if (order.rows.length === 0) {
+        return res.status(404).json({ error: 'Pedido no encontrado' });
     }
     
     await db.query(`
-        UPDATE payments SET status = 'completed', completed_at = NOW(), transaction_id = $1 WHERE id = $2
-    `, [transaction_id || 'TXN_' + Date.now(), paymentId]);
+        UPDATE orders SET status = 'completed', buyer_confirmed = TRUE, completed_at = NOW(), updated_at = NOW() WHERE id = $1
+    `, [id]);
     
-    await db.query(`
-        INSERT INTO earnings (source, amount, description) VALUES ('boost', $1, 'Usuario ${req.user.id} completó pago')
-    `, [payment.rows[0].amount]);
+    // Registrar venta en el BOT CONTABLE
+    await botContableRegistrar('VENTA COMPLETADA', {
+        usuario_id: order.rows[0].seller_id,
+        usuario_email: null,
+        monto: order.rows[0].amount,
+        concepto: `Venta de producto #${order.rows[0].ad_id}`,
+        tipo: 'ingreso',
+        concepto_type: 'venta',
+        detalles: { order_id: id, buyer_id: req.user.id }
+    });
     
-    res.json({ success: true });
-});
-
-app.get('/api/payments/my-payments', verifyToken, async (req, res) => {
-    const result = await db.query(`
-        SELECT * FROM payments WHERE user_id = $1 ORDER BY created_at DESC
-    `, [req.user.id]);
-    res.json({ payments: result.rows });
-});
-
-// ============================================================
-// WALLET DE VENDEDOR (PayPal)
-// ============================================================
-app.post('/api/seller/wallet', verifyToken, async (req, res) => {
-    if (req.user.user_type !== 'seller') {
-        return res.status(403).json({ error: 'Solo vendedores pueden tener wallet' });
-    }
-    
-    const { paypal_email, bank_account } = req.body;
-    
-    await db.query(`
-        INSERT INTO seller_wallets (user_id, paypal_email, bank_account, updated_at)
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (user_id) DO UPDATE SET
-            paypal_email = EXCLUDED.paypal_email,
-            bank_account = EXCLUDED.bank_account,
-            updated_at = NOW()
-    `, [req.user.id, paypal_email || null, bank_account || null]);
-    
-    res.json({ success: true });
-});
-
-app.get('/api/seller/wallet', verifyToken, async (req, res) => {
-    const result = await db.query(`SELECT * FROM seller_wallets WHERE user_id = $1`, [req.user.id]);
-    res.json({ wallet: result.rows[0] || null });
+    res.json({ success: true, message: 'Entrega confirmada. Gracias por confiar en El Farol.' });
 });
 
 // ============================================================
@@ -687,7 +805,7 @@ app.post('/api/admin/verify/:userId/reject', verifyToken, verifyAdmin, async (re
 });
 
 app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
-    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at, avatar FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
+    const result = await db.query(`SELECT id, name, email, phone, user_type, role, verified, plan_type, created_at, avatar, rating, rating_count FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`);
     res.json({ users: result.rows });
 });
 
@@ -766,6 +884,35 @@ app.get('/api/support/stats', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ============================================================
+// CRON JOB - BOT CONTABLE (Resumen diario automático)
+// ============================================================
+cron.schedule('0 0 * * *', async () => {
+    console.log('🤖 BOT CONTABLE: Generando resumen del día...');
+    const hoy = new Date().toISOString().split('T')[0];
+    await db.query(`
+        INSERT INTO contabilidad_resumen_diario (fecha, total_ingresos, total_egresos, total_boosts, total_verificaciones, total_ventas)
+        SELECT 
+            DATE(fecha) as fecha,
+            COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN concepto_type = 'boost' THEN monto ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN concepto_type = 'verificacion' THEN monto ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN concepto_type = 'venta' THEN monto ELSE 0 END), 0)
+        FROM contabilidad_log
+        WHERE DATE(fecha) = $1
+        GROUP BY DATE(fecha)
+        ON CONFLICT (fecha) DO UPDATE SET
+            total_ingresos = EXCLUDED.total_ingresos,
+            total_egresos = EXCLUDED.total_egresos,
+            total_boosts = EXCLUDED.total_boosts,
+            total_verificaciones = EXCLUDED.total_verificaciones,
+            total_ventas = EXCLUDED.total_ventas,
+            updated_at = NOW()
+    `, [hoy]);
+    console.log('🤖 BOT CONTABLE: Resumen del día generado');
+});
+
+// ============================================================
 // SERVIDOR DE ARCHIVOS ESTÁTICOS Y RUTAS
 // ============================================================
 const publicDir = path.join(__dirname, 'public');
@@ -808,13 +955,14 @@ async function start() {
         await initDB();
         app.listen(PORT, () => {
             console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-            console.log(`║     🚀 EL FAROL - SERVIDOR COMPLETO CON PAGOS 🚀              ║`);
+            console.log(`║     🚀 EL FAROL - SERVIDOR COMPLETO CON BOT CONTABLE 🚀        ║`);
             console.log(`╠════════════════════════════════════════════════════════════════╣`);
             console.log(`║  📡 Puerto: ${PORT}                                                 ║`);
             console.log(`║  🌐 Web: http://localhost:${PORT}                                    ║`);
             console.log(`║  👑 Admin: http://localhost:${PORT}/admin                           ║`);
             console.log(`║  👤 Perfil: http://localhost:${PORT}/perfil                         ║`);
-            console.log(`║  💰 Ganancias Admin: /api/admin/earnings                           ║`);
+            console.log(`║  💰 Contabilidad Admin: /api/admin/contabilidad                    ║`);
+            console.log(`║  🤖 BOT CONTABLE: ACTIVO - Registrando cada transacción           ║`);
             console.log(`║  🔐 Admin: admin@elfarol.com.do / admin123                         ║`);
             console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
         });
