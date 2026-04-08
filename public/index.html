@@ -2,676 +2,106 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="description" content="El Farol Clasificados - Compra y Vende en Santo Domingo Este. Encuentra vehículos, inmuebles, empleos y más cerca de ti.">
-    <meta name="keywords" content="clasificados RD, Santo Domingo Este, comprar, vender, vehículos, inmuebles, empleos">
-    <meta name="author" content="El Farol Clasificados">
-    <meta property="og:title" content="El Farol Clasificados - Compra y Vende cerca de ti">
-    <meta property="og:description" content="El marketplace de confianza en Santo Domingo Este">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>El Farol Clasificados - Compra y Vende en Santo Domingo Este</title>
-    
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
-            color: #1a1a2e;
-            line-height: 1.5;
-        }
-        
-        /* ============ HEADER ============ */
-        .header {
-            background: linear-gradient(135deg, #1A237E, #0D1B4A);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.4rem;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .logo span:first-child {
-            color: white;
-        }
-        
-        .logo span:last-child {
-            color: #FFD600;
-        }
-        
-        .nav {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .nav a {
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            font-size: 0.9rem;
-        }
-        
-        .nav a:hover {
-            opacity: 0.8;
-        }
-        
-        .lang-btn {
-            background: #FFD600;
-            color: #1A237E;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.8rem;
-            transition: transform 0.2s;
-        }
-        
-        .lang-btn:hover {
-            transform: scale(1.02);
-        }
-        
-        .btn-outline {
-            border: 1px solid #FFD600;
-            background: transparent;
-            padding: 8px 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            color: white;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .btn-outline:hover {
-            background: #FFD600;
-            color: #1A237E;
-        }
-        
-        .btn-primary {
-            background: #FFD600;
-            color: #1A237E;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background: #FFC107;
-            transform: scale(1.02);
-        }
-        
-        /* ============ HERO / BUSCADOR ============ */
-        .hero {
-            background: linear-gradient(135deg, #1A237E, #0D1B4A);
-            padding: 60px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -20%;
-            width: 140%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,214,0,0.1) 0%, rgba(26,35,126,0) 70%);
-            pointer-events: none;
-        }
-        
-        .hero h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.8rem, 5vw, 2.8rem);
-            margin-bottom: 20px;
-            position: relative;
-        }
-        
-        .hero h1 span {
-            color: #FFD600;
-        }
-        
-        .hero p {
-            font-size: clamp(0.9rem, 4vw, 1.1rem);
-            color: #c9a87b;
-            margin-bottom: 30px;
-        }
-        
-        .search-container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        
-        .search-box {
-            display: flex;
-            gap: 10px;
-            background: white;
-            border-radius: 60px;
-            padding: 5px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .search-box input {
-            flex: 1;
-            padding: 16px 20px;
-            border: none;
-            border-radius: 60px;
-            font-size: 1rem;
-            outline: none;
-        }
-        
-        .search-box button {
-            background: #FFD600;
-            border: none;
-            padding: 0 30px;
-            border-radius: 60px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            color: #1A237E;
-            transition: all 0.2s;
-        }
-        
-        .search-box button:hover {
-            background: #FFC107;
-            transform: scale(1.02);
-        }
-        
-        /* Filtros rápidos */
-        .quick-filters {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 25px;
-        }
-        
-        .filter-chip {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .filter-chip:hover, .filter-chip.active {
-            background: #FFD600;
-            color: #1A237E;
-            border-color: #FFD600;
-        }
-        
-        /* ============ SECCIONES ============ */
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: #FFD600;
-            font-size: 1.8rem;
-        }
-        
-        /* ============ GRID DE ANUNCIOS ============ */
-        .ads-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
-        
-        .ad-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            position: relative;
-        }
-        
-        .ad-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 28px rgba(0,0,0,0.15);
-        }
-        
-        .ad-image {
-            height: 200px;
-            background: linear-gradient(135deg, #e0e0e0, #f5f5f5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: #999;
-            position: relative;
-        }
-        
-        .ad-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 2;
-        }
-        
-        .badge-verified {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .badge-boost {
-            background: #FF9800;
-            color: white;
-            right: 12px;
-            left: auto;
-        }
-        
-        .ad-body {
-            padding: 18px;
-        }
-        
-        .ad-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .ad-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1A237E;
-            margin: 10px 0;
-        }
-        
-        .ad-location {
-            font-size: 0.75rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 8px;
-        }
-        
-        .ad-seller {
-            font-size: 0.7rem;
-            color: #999;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            justify-content: space-between;
-        }
-        
-        .status-sold {
-            background: #f44336;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
-        
-        /* ============ MODALES ============ */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            overflow-y: auto;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 25px;
-            position: relative;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .close {
-            font-size: 28px;
-            cursor: pointer;
-            color: #999;
-            transition: color 0.2s;
-        }
-        
-        .close:hover {
-            color: #f44336;
-        }
-        
-        /* ============ DASHBOARD VENDEDOR ============ */
-        .dashboard {
-            display: none;
-            padding: 20px;
-        }
-        
-        .dashboard-header {
-            background: #1A237E;
-            color: white;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .my-ads {
-            display: grid;
-            gap: 15px;
-        }
-        
-        .my-ad {
-            background: white;
-            border-radius: 16px;
-            padding: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        
-        .ad-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-sold {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-        
-        .btn-delete {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-        
-        .btn-boost {
-            background: #FF9800;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-        
-        /* ============ FORMULARIOS ============ */
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #333;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-family: inherit;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #FFD600;
-            box-shadow: 0 0 0 3px rgba(255,214,0,0.1);
-        }
-        
-        /* ============ FOOTER ============ */
-        .footer {
-            background: #0D1B4A;
-            color: #8e8e93;
-            text-align: center;
-            padding: 40px 20px;
-            margin-top: 40px;
-        }
-        
-        .footer a {
-            color: #FFD600;
-            text-decoration: none;
-        }
-        
-        .footer a:hover {
-            text-decoration: underline;
-        }
-        
-        /* ============ TOAST NOTIFICACIONES ============ */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            z-index: 1100;
-            animation: slideIn 0.3s ease;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .toast.error {
-            background: #f44336;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        /* ============ RESPONSIVE ============ */
-        @media (max-width: 768px) {
-            .header {
-                padding: 12px 15px;
-            }
-            
-            .logo {
-                font-size: 1.1rem;
-            }
-            
-            .nav {
-                gap: 10px;
-            }
-            
-            .btn-outline, .btn-primary {
-                padding: 6px 14px;
-                font-size: 0.75rem;
-            }
-            
-            .hero {
-                padding: 40px 15px;
-            }
-            
-            .search-box {
-                flex-direction: column;
-                background: transparent;
-                gap: 10px;
-            }
-            
-            .search-box input {
-                border-radius: 50px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            
-            .search-box button {
-                padding: 12px;
-                border-radius: 50px;
-            }
-            
-            .quick-filters {
-                gap: 8px;
-            }
-            
-            .filter-chip {
-                padding: 6px 14px;
-                font-size: 0.7rem;
-            }
-            
-            .section-title {
-                font-size: 1.4rem;
-            }
-            
-            .ads-grid {
-                gap: 15px;
-            }
-            
-            .ad-card {
-                border-radius: 16px;
-            }
-            
-            .ad-image {
-                height: 160px;
-            }
-            
-            .ad-price {
-                font-size: 1.1rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .hero h1 {
-                font-size: 1.4rem;
-            }
-            
-            .ad-title {
-                font-size: 0.9rem;
-            }
-            
-            .my-ad {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-        
-        /* Loading spinner */
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #999;
-        }
-        
-        .empty {
-            text-align: center;
-            padding: 60px;
-            color: #999;
-            background: white;
-            border-radius: 20px;
-        }
-        
-        /* Insignias de verificación */
-        .verified-icon {
-            color: #4CAF50;
-            font-size: 0.8rem;
-        }
-        
-        .boost-icon {
-            color: #FF9800;
-            font-size: 0.8rem;
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#1a1a2e;line-height:1.5;}
+        
+        /* Header */
+        .header{background:linear-gradient(135deg,#1A237E,#0D1B4A);color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+        .logo{display:flex;align-items:center;gap:8px;font-size:1.4rem;font-weight:bold;cursor:pointer;}
+        .logo span:first-child{color:white;}
+        .logo span:last-child{color:#FFD600;}
+        .nav{display:flex;gap:15px;align-items:center;flex-wrap:wrap;}
+        .nav a{color:white;text-decoration:none;cursor:pointer;font-size:0.9rem;}
+        .lang-btn{background:#FFD600;color:#1A237E;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-weight:bold;}
+        .btn-outline{border:1px solid #FFD600;background:transparent;padding:8px 18px;border-radius:30px;cursor:pointer;color:white;font-weight:500;}
+        .btn-primary{background:#FFD600;color:#1A237E;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;font-weight:bold;}
+        .btn-primary:hover,.btn-outline:hover{transform:scale(1.02);}
+        
+        /* Hero */
+        .hero{background:linear-gradient(135deg,#1A237E,#0D1B4A);padding:60px 20px;text-align:center;position:relative;}
+        .hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,5vw,2.8rem);margin-bottom:20px;}
+        .hero h1 span{color:#FFD600;}
+        .hero p{font-size:1.1rem;color:#c9a87b;margin-bottom:30px;}
+        .search-box{max-width:700px;margin:0 auto;display:flex;gap:10px;background:white;border-radius:60px;padding:5px;}
+        .search-box input{flex:1;padding:16px 20px;border:none;border-radius:60px;font-size:1rem;outline:none;}
+        .search-box button{background:#FFD600;border:none;padding:0 30px;border-radius:60px;cursor:pointer;font-weight:bold;}
+        .quick-filters{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:25px;}
+        .filter-chip{background:rgba(255,255,255,0.15);padding:8px 20px;border-radius:40px;font-size:0.85rem;cursor:pointer;border:1px solid rgba(255,255,255,0.2);}
+        .filter-chip:hover,.filter-chip.active{background:#FFD600;color:#1A237E;}
+        
+        /* Filtros */
+        .filters-container{background:white;border-radius:20px;padding:20px;margin:20px 20px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;}
+        .filters-container select,.filters-container input{padding:10px;border:1px solid #ddd;border-radius:8px;width:100%;}
+        .verified-filter{display:flex;align-items:center;gap:10px;}
+        
+        /* Grid */
+        .container{max-width:1280px;margin:0 auto;padding:40px 20px;}
+        .section-title{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:30px;display:flex;align-items:center;gap:10px;}
+        .ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:25px;}
+        .ad-card{background:white;border-radius:20px;overflow:hidden;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.08);position:relative;}
+        .ad-card:hover{transform:translateY(-5px);box-shadow:0 12px 28px rgba(0,0,0,0.15);}
+        .ad-image{height:200px;background:linear-gradient(135deg,#e0e0e0,#f5f5f5);display:flex;align-items:center;justify-content:center;font-size:3rem;color:#999;position:relative;}
+        .ad-badge{position:absolute;top:12px;left:12px;padding:5px 12px;border-radius:20px;font-size:0.7rem;font-weight:bold;}
+        .badge-verified{background:#4CAF50;color:white;}
+        .badge-boost{background:#FF9800;color:white;right:12px;left:auto;}
+        .ad-body{padding:18px;}
+        .ad-title{font-size:1rem;font-weight:600;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+        .ad-price{font-size:1.3rem;font-weight:700;color:#1A237E;margin:10px 0;}
+        .ad-location{font-size:0.75rem;color:#666;display:flex;align-items:center;gap:5px;margin-bottom:8px;}
+        .ad-seller{font-size:0.7rem;color:#999;display:flex;justify-content:space-between;}
+        .status-sold{background:#f44336;color:white;padding:3px 10px;border-radius:20px;font-size:0.65rem;}
+        
+        /* Dashboard */
+        .dashboard{display:none;padding:20px;}
+        .dashboard-header{background:#1A237E;color:white;padding:20px;border-radius:16px;margin-bottom:25px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;}
+        .my-ads,.offers-list{display:grid;gap:15px;}
+        .my-ad{background:white;border-radius:16px;padding:18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+        .ad-actions{display:flex;gap:10px;}
+        .btn-sold{background:#4CAF50;color:white;border:none;padding:6px 15px;border-radius:20px;cursor:pointer;}
+        .btn-delete{background:#f44336;color:white;border:none;padding:6px 15px;border-radius:20px;cursor:pointer;}
+        .btn-boost{background:#FF9800;color:white;border:none;padding:6px 15px;border-radius:20px;cursor:pointer;}
+        
+        /* Modales */
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;}
+        .modal-content{background:white;border-radius:24px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;padding:25px;}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid #eee;}
+        .close{font-size:28px;cursor:pointer;color:#999;}
+        .form-group{margin-bottom:18px;}
+        .form-group label{display:block;margin-bottom:6px;font-weight:600;font-size:0.85rem;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:12px;}
+        
+        /* Footer */
+        .footer{background:#0D1B4A;color:#8e8e93;text-align:center;padding:40px 20px;margin-top:40px;}
+        .footer a{color:#FFD600;text-decoration:none;}
+        
+        /* Toast */
+        .toast{position:fixed;bottom:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:12px;z-index:1100;animation:slideIn 0.3s;}
+        .toast.error{background:#f44336;}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+        
+        .loading{text-align:center;padding:60px;color:#999;}
+        .empty{text-align:center;padding:60px;color:#999;background:white;border-radius:20px;}
+        
+        @media(max-width:768px){
+            .hero{padding:40px 15px;}
+            .search-box{flex-direction:column;background:transparent;gap:10px;}
+            .search-box input{border-radius:50px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+            .search-box button{padding:12px;border-radius:50px;}
+            .quick-filters{gap:8px;}
+            .filter-chip{padding:6px 14px;font-size:0.7rem;}
+            .ads-grid{gap:15px;}
+            .my-ad{flex-direction:column;text-align:center;}
         }
     </style>
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
+<!-- HEADER -->
 <div class="header">
     <div class="logo" onclick="showHome()">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;">
@@ -682,687 +112,375 @@
             <path d="M11 31 L21 31" stroke="#1A237E" stroke-width="2"/>
             <circle cx="16" cy="20" r="2.5" fill="#FFD600"/>
         </svg>
-        <span>El</span>
-        <span>Farol</span>
+        <span>El</span><span>Farol</span>
     </div>
     <div class="nav">
-        <a onclick="showHome()"><i class="fas fa-home"></i> <span class="nav-text">Inicio</span></a>
-        <a onclick="showDashboard()" id="navDashboard" style="display:none;"><i class="fas fa-chart-line"></i> <span class="nav-text">Mis Anuncios</span></a>
+        <a onclick="showHome()"><i class="fas fa-home"></i> Inicio</a>
+        <a onclick="showDashboard()" id="navDashboard" style="display:none;"><i class="fas fa-chart-line"></i> Mis Anuncios</a>
         <button class="lang-btn" onclick="toggleLanguage()"><i class="fas fa-globe"></i> <span id="langText">🇺🇸 EN</span></button>
-        <button id="authBtn" class="btn-outline" onclick="showAuthModal()"><i class="fas fa-user"></i> <span id="authBtnText">Ingresar</span></button>
+        <button id="authBtn" class="btn-outline" onclick="showAuthModal()"><i class="fas fa-user"></i> Ingresar</button>
         <button id="postAdBtn" class="btn-primary" onclick="showPostAdModal()" style="display:none;"><i class="fas fa-plus"></i> Publicar</button>
     </div>
 </div>
 
-<!-- ============ HERO / BUSCADOR ============ -->
+<!-- HERO -->
 <div id="heroSection">
     <div class="hero">
         <h1><span>Compra y Vende</span><br>Cerca de Ti</h1>
         <p>El marketplace de confianza en Santo Domingo Este</p>
-        <div class="search-container">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 ¿Qué buscas hoy en El Farol? (ej: iPhone, apartamento, carro...)" onkeypress="if(event.key==='Enter')searchAds()">
-                <button onclick="searchAds()"><i class="fas fa-search"></i> Buscar</button>
-            </div>
-            <div class="quick-filters">
-                <div class="filter-chip" onclick="filterByCategory('Vehículos')">🚗 Vehículos</div>
-                <div class="filter-chip" onclick="filterByCategory('Inmuebles')">🏠 Inmuebles</div>
-                <div class="filter-chip" onclick="filterByCategory('Empleos')">💼 Empleos</div>
-                <div class="filter-chip" onclick="filterByCategory('Electrónica')">📱 Electrónica</div>
-                <div class="filter-chip" onclick="filterByCategory('Hogar')">🛋️ Hogar</div>
-                <div class="filter-chip" onclick="filterByCategory('Servicios')">🔧 Servicios</div>
-            </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 ¿Qué buscas hoy en El Farol?" onkeypress="if(event.key==='Enter')searchAds()">
+            <button onclick="searchAds()"><i class="fas fa-search"></i> Buscar</button>
+        </div>
+        <div class="quick-filters">
+            <div class="filter-chip" onclick="filterByCategory('Vehículos')">🚗 Vehículos</div>
+            <div class="filter-chip" onclick="filterByCategory('Inmuebles')">🏠 Inmuebles</div>
+            <div class="filter-chip" onclick="filterByCategory('Empleos')">💼 Empleos</div>
+            <div class="filter-chip" onclick="filterByCategory('Electrónica')">📱 Electrónica</div>
+            <div class="filter-chip" onclick="filterByCategory('Hogar')">🛋️ Hogar</div>
         </div>
     </div>
 </div>
 
-<!-- ============ FILTROS AVANZADOS ============ -->
-<div class="container" id="filtersSection">
-    <div style="background: white; border-radius: 20px; padding: 20px; margin-bottom: 30px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-            <select id="filterSector" onchange="filterAds()">
-                <option value="">📍 Todos los sectores</option>
-            </select>
-            <select id="filterCategory" onchange="filterAds()">
-                <option value="">📂 Todas las categorías</option>
-            </select>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" id="filterVerified" onchange="filterAds()">
-                <label style="font-size: 0.85rem;">🔒 Solo vendedores verificados</label>
-            </div>
-        </div>
+<!-- FILTROS -->
+<div class="filters-container">
+    <select id="filterSector" onchange="filterAds()"><option value="">📍 Todos los sectores</option></select>
+    <select id="filterCategory" onchange="filterAds()"><option value="">📂 Todas las categorías</option></select>
+    <div class="verified-filter">
+        <input type="checkbox" id="filterVerified" onchange="filterAds()">
+        <label>🔒 Solo vendedores verificados</label>
     </div>
 </div>
 
-<!-- ============ GRID DE ANUNCIOS ============ -->
+<!-- GRID ANUNCIOS -->
 <div class="container">
-    <div class="section-title">
-        <i class="fas fa-fire"></i>
-        <h2>Anuncios Destacados</h2>
-    </div>
-    <div id="adsGrid" class="ads-grid">
-        <div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando anuncios...</div>
-    </div>
+    <div class="section-title"><i class="fas fa-fire"></i><h2>Anuncios Destacados</h2></div>
+    <div id="adsGrid" class="ads-grid"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando anuncios...</div></div>
 </div>
 
-<!-- ============ FOOTER ============ -->
+<!-- FOOTER -->
 <div class="footer">
     <p><strong>El Farol Clasificados</strong> - Compra y Vende cerca de ti</p>
-    <p style="margin-top: 10px; font-size: 0.7rem;">
-        <a href="/">Inicio</a> | 
-        <a href="#" onclick="showDashboard()">Mi cuenta</a> | 
-        <a href="#" onclick="showPostAdModal()">Publicar anuncio</a>
-    </p>
-    <p style="margin-top: 15px; font-size: 0.65rem;">© 2025 El Farol Clasificados - Santo Domingo Este, República Dominicana</p>
+    <p style="margin-top:10px;">© 2025 El Farol - Santo Domingo Este, RD</p>
 </div>
 
-<!-- ============ MODAL ANUNCIO ============ -->
-<div id="adModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Detalle del producto</h2>
-            <span class="close" onclick="closeModal()">&times;</span>
-        </div>
-        <div id="modalBody"></div>
-    </div>
-</div>
-
-<!-- ============ MODAL AUTENTICACIÓN ============ -->
-<div id="authModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="authTitle">Ingresar</h2>
-            <span class="close" onclick="closeAuthModal()">&times;</span>
-        </div>
-        <div id="authBody"></div>
-    </div>
-</div>
-
-<!-- ============ MODAL PUBLICAR ============ -->
-<div id="postAdModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Publicar anuncio</h2>
-            <span class="close" onclick="closePostAdModal()">&times;</span>
-        </div>
-        <div id="postAdBody"></div>
-    </div>
-</div>
+<!-- MODALES -->
+<div id="adModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Detalle del producto</h2><span class="close" onclick="closeModal()">&times;</span></div><div id="modalBody"></div></div></div>
+<div id="authModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="authTitle">Ingresar</h2><span class="close" onclick="closeAuthModal()">&times;</span></div><div id="authBody"></div></div></div>
+<div id="postAdModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Publicar anuncio</h2><span class="close" onclick="closePostAdModal()">&times;</span></div><div id="postAdBody"></div></div></div>
 
 <script>
-    // ============================================================
-    // ESTADO GLOBAL
-    // ============================================================
-    let currentUser = null;
-    let token = null;
-    let currentLang = 'es';
-    let currentCategory = null;
-    let sectoresList = [];
-    
-    const translations = {
-        es: {
-            searchPlaceholder: "🔍 ¿Qué buscas hoy en El Farol?",
-            allSectors: "📍 Todos los sectores",
-            allCategories: "📂 Todas las categorías",
-            verifiedOnly: "🔒 Solo vendedores verificados",
-            login: "Ingresar",
-            postAd: "Publicar",
-            myAds: "Mis Anuncios",
-            featuredAds: "Anuncios Destacados",
-            loading: "Cargando anuncios...",
-            noAds: "No hay anuncios aún. ¡Sé el primero en publicar!"
-        },
-        en: {
-            searchPlaceholder: "🔍 What are you looking for at El Farol?",
-            allSectors: "📍 All sectors",
-            allCategories: "📂 All categories",
-            verifiedOnly: "🔒 Verified sellers only",
-            login: "Login",
-            postAd: "Post Ad",
-            myAds: "My Ads",
-            featuredAds: "Featured Ads",
-            loading: "Loading ads...",
-            noAds: "No ads yet. Be the first to post!"
-        }
-    };
-    
-    function t(key) { return translations[currentLang][key] || translations.es[key]; }
-    
-    function toggleLanguage() {
-        currentLang = currentLang === 'es' ? 'en' : 'es';
-        document.getElementById('langText').innerHTML = currentLang === 'es' ? '🇺🇸 EN' : '🇪🇸 ES';
-        document.getElementById('searchInput').placeholder = t('searchPlaceholder');
-        if (document.querySelector('#filterSector option:first-child')) {
-            document.querySelector('#filterSector option:first-child').textContent = t('allSectors');
-            document.querySelector('#filterCategory option:first-child').textContent = t('allCategories');
-        }
-        document.querySelector('.verified-filter label').innerHTML = t('verifiedOnly');
-        if (currentUser) {
-            document.getElementById('authBtnText').innerHTML = currentUser.name;
-            document.getElementById('postAdBtn').innerHTML = t('postAd');
-        } else {
-            document.getElementById('authBtnText').innerHTML = t('login');
-        }
-        filterAds();
-    }
-    
-    // ============================================================
-    // FORMATO DE PRECIOS
-    // ============================================================
-    function formatPrice(price) {
-        if (!price && price !== 0) return 'Precio no especificado';
-        const num = Number(price);
-        if (isNaN(num)) return 'RD$ 0';
-        return `RD$ ${num.toLocaleString('es-DO')}`;
-    }
-    
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
-    function showAuthModal() { showLogin(); document.getElementById('authModal').style.display = 'flex'; }
-    function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-    
-    function showLogin() {
-        document.getElementById('authTitle').innerHTML = 'Ingresar';
-        document.getElementById('authBody').innerHTML = `
-            <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
-            <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="********"></div>
-            <button class="btn-primary" style="width:100%;" onclick="login()">Ingresar</button>
-            <hr style="margin:20px 0;"><p style="text-align:center">¿No tienes cuenta? <a href="#" onclick="showRegister()">Regístrate</a></p>
-        `;
-    }
-    
-    function showRegister() {
-        document.getElementById('authTitle').innerHTML = 'Registrarse';
-        document.getElementById('authBody').innerHTML = `
-            <div class="form-group"><label>Nombre</label><input type="text" id="regName" placeholder="Tu nombre"></div>
-            <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
-            <div class="form-group"><label>Teléfono</label><input type="tel" id="regPhone" placeholder="809-555-1234"></div>
-            <div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" placeholder="********"></div>
-            <div class="form-group"><label>Tipo de cuenta</label>
-                <select id="regType"><option value="buyer">📦 Solo quiero comprar</option><option value="seller">💰 Quiero vender también</option></select>
-            </div>
-            <button class="btn-primary" style="width:100%;" onclick="register()">Registrarme</button>
-            <hr style="margin:20px 0;"><p style="text-align:center">¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Ingresar</a></p>
-        `;
-    }
-    
-    async function login() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (data.success) {
-                token = data.token;
-                currentUser = data.user;
-                localStorage.setItem('token', token);
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                updateUIForUser();
-                closeAuthModal();
-                showToast(`Bienvenido ${currentUser.name}`);
-                filterAds();
-            } else {
-                showToast(data.error, true);
-            }
-        } catch(e) { showToast('Error de conexión', true); }
-    }
-    
-    async function register() {
-        const data = {
-            name: document.getElementById('regName').value,
-            email: document.getElementById('regEmail').value,
-            phone: document.getElementById('regPhone').value,
-            password: document.getElementById('regPassword').value,
-            user_type: document.getElementById('regType').value
-        };
-        try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await res.json();
-            if (result.success) {
-                token = result.token;
-                currentUser = result.user;
-                localStorage.setItem('token', token);
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                updateUIForUser();
-                closeAuthModal();
-                showToast('Registro exitoso');
-                filterAds();
-            } else {
-                showToast(result.error, true);
-            }
-        } catch(e) { showToast('Error de conexión', true); }
-    }
-    
-    function logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        currentUser = null;
-        token = null;
-        updateUIForUser();
-        showHome();
-        showToast('Sesión cerrada');
-    }
-    
-    function updateUIForUser() {
-        const authBtn = document.getElementById('authBtn');
-        const postAdBtn = document.getElementById('postAdBtn');
-        const navDashboard = document.getElementById('navDashboard');
-        
-        if (currentUser) {
-            authBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
-            authBtn.onclick = () => showUserMenu();
-            if (currentUser.user_type === 'seller' || currentUser.role === 'admin') {
-                postAdBtn.style.display = 'block';
-            }
-            navDashboard.style.display = 'block';
-        } else {
-            authBtn.innerHTML = `<i class="fas fa-user"></i> ${t('login')}`;
-            authBtn.onclick = () => showAuthModal();
-            postAdBtn.style.display = 'none';
-            navDashboard.style.display = 'none';
-        }
-    }
-    
-    function showUserMenu() {
-        const menu = confirm(`Usuario: ${currentUser.name}\n${currentUser.verified ? '✅ Verificado' : '❌ No verificado'}\nPlan: ${currentUser.plan_type || 'Gratis'}\n\n¿Cerrar sesión?`);
-        if (menu) logout();
-    }
-    
-    // ============================================================
-    // ANUNCIOS
-    // ============================================================
-    async function filterAds() {
-        const sector = document.getElementById('filterSector')?.value || '';
-        const category = document.getElementById('filterCategory')?.value || '';
-        const search = document.getElementById('searchInput')?.value || '';
-        const verifiedOnly = document.getElementById('filterVerified')?.checked || false;
-        
-        let url = `/api/ads?${sector ? `sector=${encodeURIComponent(sector)}&` : ''}${category ? `category=${encodeURIComponent(category)}&` : ''}${search ? `search=${encodeURIComponent(search)}&` : ''}${verifiedOnly ? `verified_only=true&` : ''}`;
-        
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            const grid = document.getElementById('adsGrid');
-            
-            if (!data.ads || data.ads.length === 0) {
-                grid.innerHTML = `<div class="empty"><i class="fas fa-search"></i> ${t('noAds')}</div>`;
-                return;
-            }
-            
-            grid.innerHTML = data.ads.map(ad => `
-                <div class="ad-card" onclick="showAdDetail(${ad.id})">
-                    ${ad.badges?.verified ? '<div class="ad-badge badge-verified"><i class="fas fa-check-circle"></i> Verificado</div>' : ''}
-                    ${ad.badges?.boosted ? '<div class="ad-badge badge-boost"><i class="fas fa-fire"></i> Destacado</div>' : ''}
-                    <div class="ad-image">
-                        <i class="fas fa-image"></i>
-                    </div>
-                    <div class="ad-body">
-                        <div class="ad-title">${escapeHtml(ad.title)}</div>
-                        <div class="ad-price">${formatPrice(ad.price)}</div>
-                        <div class="ad-location"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
-                        <div class="ad-seller">
-                            <span><i class="fas fa-user"></i> ${ad.user_name || 'Usuario'}</span>
-                            ${ad.status === 'sold' ? '<span class="status-sold">VENDIDO</span>' : ''}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        } catch(e) {
-            console.error(e);
-            document.getElementById('adsGrid').innerHTML = '<div class="empty">Error al cargar anuncios</div>';
-        }
-    }
-    
-    function searchAds() { filterAds(); }
-    function filterByCategory(category) {
-        const select = document.getElementById('filterCategory');
-        if (select) {
-            select.value = category;
-            filterAds();
-        }
-    }
-    
-    async function showAdDetail(id) {
-        try {
-            const res = await fetch(`/api/ads/${id}`);
-            const data = await res.json();
-            const ad = data.ad;
-            
-            document.getElementById('modalBody').innerHTML = `
-                <div class="ad-image" style="height:250px; margin-bottom:20px;">
-                    <i class="fas fa-image fa-4x"></i>
-                </div>
-                <h2 style="margin-bottom:10px;">${escapeHtml(ad.title)}</h2>
-                <div class="ad-price" style="font-size:2rem;">${formatPrice(ad.price)}</div>
-                <div class="ad-location" style="margin:15px 0;"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
-                <p style="margin:15px 0; line-height:1.6;">${escapeHtml(ad.description || 'Sin descripción')}</p>
-                <div style="margin:20px 0; padding:20px; background:#f5f5f5; border-radius:16px;">
-                    <p><strong><i class="fas fa-user"></i> Contactar al vendedor</strong></p>
-                    <p>${ad.user_name || 'Usuario'}</p>
-                    <p><i class="fas fa-phone"></i> ${ad.user_phone || 'Teléfono no disponible'}</p>
-                    ${ad.badges?.verified ? '<p style="color:#4CAF50;"><i class="fas fa-check-circle"></i> Cuenta verificada</p>' : ''}
-                </div>
-                ${ad.status === 'sold' ? '<div class="status-sold" style="padding:12px;text-align:center;">VENDIDO</div>' : ''}
-                <button class="btn-primary" style="width:100%; margin-top:20px;" onclick="closeModal()">Cerrar</button>
-            `;
-            document.getElementById('adModal').style.display = 'flex';
-        } catch(e) { showToast('Error al cargar detalle', true); }
-    }
-    
-    function closeModal() { document.getElementById('adModal').style.display = 'none'; }
-    
-    // ============================================================
-    // DASHBOARD VENDEDOR
-    // ============================================================
-    async function showDashboard() {
-        if (!currentUser) {
-            showToast('Debes iniciar sesión primero', true);
-            showAuthModal();
-            return;
-        }
-        
-        document.getElementById('heroSection').style.display = 'none';
-        document.getElementById('filtersSection').style.display = 'none';
-        document.getElementById('adsGrid').style.display = 'none';
-        document.querySelector('.footer').style.display = 'none';
-        
-        if (!document.getElementById('dashboardPanel')) {
-            const panel = document.createElement('div');
-            panel.id = 'dashboardPanel';
-            panel.className = 'dashboard';
-            document.body.appendChild(panel);
-        }
-        
-        const panel = document.getElementById('dashboardPanel');
-        panel.style.display = 'block';
-        await loadMyAds();
-    }
-    
-    function showHome() {
-        document.getElementById('heroSection').style.display = 'block';
-        document.getElementById('filtersSection').style.display = 'block';
-        document.getElementById('adsGrid').style.display = 'grid';
-        document.querySelector('.footer').style.display = 'block';
-        const panel = document.getElementById('dashboardPanel');
-        if (panel) panel.style.display = 'none';
-        filterAds();
-    }
-    
-    async function loadMyAds() {
-        if (!token) return;
-        try {
-            const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
-            const data = await res.json();
-            
-            const panel = document.getElementById('dashboardPanel');
-            panel.innerHTML = `
-                <div class="dashboard-header">
-                    <h2><i class="fas fa-chart-line"></i> Mis Anuncios</h2>
-                    <div>
-                        ${!currentUser?.verified ? `<button class="btn-primary" onclick="showVerifyModal()"><i class="fas fa-check-circle"></i> Verificar cuenta</button>` : '<span style="color:#4CAF50;"><i class="fas fa-check-circle"></i> Cuenta verificada</span>'}
-                    </div>
-                </div>
-                <div class="my-ads">
-                    ${data.ads && data.ads.length > 0 ? data.ads.map(ad => `
-                        <div class="my-ad">
-                            <div>
-                                <strong>${escapeHtml(ad.title)}</strong><br>
-                                <small>${formatPrice(ad.price)} | ${ad.ubicacion_sector || 'Santo Domingo Este'} | 👁️ ${ad.views || 0} vistas</small>
-                                ${ad.is_boosted ? '<span style="color:#FF9800;"> 🔥 Destacado</span>' : ''}
-                            </div>
-                            <div class="ad-actions">
-                                ${!ad.is_boosted && currentUser?.verified ? `<button class="btn-boost" onclick="boostAd(${ad.id})"><i class="fas fa-fire"></i> Destacar</button>` : ''}
-                                ${ad.status !== 'sold' ? `<button class="btn-sold" onclick="markAsSold(${ad.id})"><i class="fas fa-check"></i> Vendido</button>` : ''}
-                                <button class="btn-delete" onclick="deleteAd(${ad.id})"><i class="fas fa-trash"></i> Eliminar</button>
-                            </div>
-                        </div>
-                    `).join('') : '<div class="empty"><i class="fas fa-plus-circle"></i> No tienes anuncios aún. ¡Publica tu primero!</div>'}
-                </div>
-                <div style="margin-top:20px; text-align:center;">
-                    <button class="btn-primary" onclick="showPostAdModal()"><i class="fas fa-plus"></i> Publicar nuevo anuncio</button>
-                    <button class="btn-outline" onclick="showHome()" style="margin-left:10px;"><i class="fas fa-arrow-left"></i> Volver al inicio</button>
-                </div>
-            `;
-        } catch(e) { showToast('Error al cargar tus anuncios', true); }
-    }
-    
-    async function boostAd(adId) {
-        if (!confirm('¿Destacar este anuncio por 24 horas? (Costo: RD$199)')) return;
-        try {
-            const res = await fetch(`/api/ads/${adId}/boost`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Anuncio destacado por 24 horas');
-                loadMyAds();
-                filterAds();
-            } else {
-                showToast(data.error, true);
-            }
-        } catch(e) { showToast('Error', true); }
-    }
-    
-    async function markAsSold(id) {
-        if (!confirm('¿Marcar este anuncio como vendido?')) return;
-        try {
-            await fetch(`/api/ads/${id}/sold`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
-            showToast('Anuncio marcado como vendido');
-            loadMyAds();
-            filterAds();
-        } catch(e) { showToast('Error', true); }
-    }
-    
-    async function deleteAd(id) {
-        if (!confirm('¿Eliminar este anuncio?')) return;
-        try {
-            await fetch(`/api/ads/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-            showToast('Anuncio eliminado');
-            loadMyAds();
-            filterAds();
-        } catch(e) { showToast('Error', true); }
-    }
-    
-    // ============================================================
-    // PUBLICAR ANUNCIO
-    // ============================================================
-    function showPostAdModal() {
-        if (!currentUser) {
-            showToast('Debes iniciar sesión para publicar', true);
-            showAuthModal();
-            return;
-        }
-        if (currentUser.user_type !== 'seller') {
-            showToast('Debes ser vendedor para publicar. Cambia tu tipo de cuenta en el perfil.', true);
-            return;
-        }
-        loadSectoresForSelect();
-        document.getElementById('postAdModal').style.display = 'flex';
-    }
-    
-    function closePostAdModal() { document.getElementById('postAdModal').style.display = 'none'; }
-    
-    async function loadSectoresForSelect() {
-        try {
-            const res = await fetch('/api/sectores');
-            const data = await res.json();
-            const options = '<option value="">Selecciona un sector</option>' + (data.sectores || []).map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
-            document.getElementById('postAdBody').innerHTML = `
-                <div class="form-group"><label>Título *</label><input type="text" id="adTitle" placeholder="Ej: iPhone 13 Pro 128GB"></div>
-                <div class="form-group"><label>Descripción</label><textarea id="adDesc" rows="4" placeholder="Describe tu producto en detalle..."></textarea></div>
-                <div class="form-group"><label>Precio (RD$)</label><input type="number" id="adPrice" placeholder="0"></div>
-                <div class="form-group"><label>Categoría</label>
-                    <select id="adCategory">
-                        <option>Vehículos</option><option>Inmuebles</option><option>Empleos</option>
-                        <option>Electrónica</option><option>Hogar</option><option>Moda</option>
-                        <option>Servicios</option><option>Otros</option>
-                    </select>
-                </div>
-                <div class="form-group"><label>Sector *</label><select id="adSector">${options}</select></div>
-                <button class="btn-primary" style="width:100%;" onclick="createAd()"><i class="fas fa-paper-plane"></i> Publicar anuncio</button>
-            `;
-        } catch(e) { showToast('Error al cargar sectores', true); }
-    }
-    
-    async function createAd() {
-        const ad = {
-            title: document.getElementById('adTitle').value,
-            description: document.getElementById('adDesc').value,
-            price: document.getElementById('adPrice').value,
-            category: document.getElementById('adCategory').value,
-            ubicacion_sector: document.getElementById('adSector').value
-        };
-        
-        if (!ad.title || !ad.ubicacion_sector) {
-            showToast('Título y sector requeridos', true);
-            return;
-        }
-        
-        try {
-            const res = await fetch('/api/ads', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(ad)
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Anuncio publicado exitosamente');
-                closePostAdModal();
-                if (document.getElementById('dashboardPanel')?.style.display === 'block') {
-                    loadMyAds();
-                } else {
-                    filterAds();
-                }
-            } else {
-                showToast(data.error, true);
-            }
-        } catch(e) { showToast('Error al publicar', true); }
-    }
-    
-    // ============================================================
-    // VERIFICACIÓN
-    // ============================================================
-    function showVerifyModal() {
-        document.getElementById('postAdBody').innerHTML = `
-            <div style="background:#e8f5e9; padding:15px; border-radius:12px; margin-bottom:20px;">
-                <p><strong>✅ ¿Por qué verificar tu cuenta?</strong></p>
-                <p>• Los compradores confían más en vendedores verificados</p>
-                <p>• Tus anuncios aparecen primero</p>
-                <p>• Acceso a Boost para destacar anuncios</p>
-            </div>
-            <div class="form-group"><label>Foto frontal de cédula</label><input type="file" id="idFront" accept="image/*"></div>
-            <div class="form-group"><label>Foto trasera de cédula</label><input type="file" id="idBack" accept="image/*"></div>
-            <div class="form-group"><label>Selfie con tu cédula</label><input type="file" id="selfie" accept="image/*"></div>
-            <button class="btn-primary" style="width:100%;" onclick="submitVerification()"><i class="fas fa-paper-plane"></i> Solicitar verificación</button>
-        `;
-        document.getElementById('postAdModal').style.display = 'flex';
-    }
-    
-    async function submitVerification() {
-        const frontFile = document.getElementById('idFront').files[0];
-        const backFile = document.getElementById('idBack').files[0];
-        
-        if (!frontFile || !backFile) {
-            showToast('Debes subir ambas fotos de la cédula', true);
-            return;
-        }
-        
-        const toBase64 = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-        
-        try {
-            const id_photo_front = await toBase64(frontFile);
-            const id_photo_back = await toBase64(backFile);
-            let selfie_photo = null;
-            if (document.getElementById('selfie').files[0]) {
-                selfie_photo = await toBase64(document.getElementById('selfie').files[0]);
-            }
-            
-            const res = await fetch('/api/auth/verify/request', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ id_photo_front, id_photo_back, selfie_photo })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('Solicitud enviada. Espera revisión del administrador.');
-                closePostAdModal();
-            } else {
-                showToast(data.error, true);
-            }
-        } catch(e) { showToast('Error al enviar', true); }
-    }
-    
-    // ============================================================
-    // INICIALIZACIÓN
-    // ============================================================
-    async function loadSectores() {
-        try {
-            const res = await fetch('/api/sectores');
-            const data = await res.json();
-            sectoresList = data.sectores || [];
-            const select = document.getElementById('filterSector');
-            if (select) {
-                select.innerHTML = '<option value="">📍 Todos los sectores</option>' + sectoresList.map(s => `<option value="${s.nombre}">${s.nombre}</option>`).join('');
-            }
-        } catch(e) { console.error(e); }
-    }
-    
-    async function loadCategories() {
-        try {
-            const res = await fetch('/api/categorias');
-            const data = await res.json();
-            const select = document.getElementById('filterCategory');
-            if (select) {
-                select.innerHTML = '<option value="">📂 Todas las categorías</option>' + (data.categorias || []).map(c => `<option value="${c.category}">${c.category}</option>`).join('');
-            }
-        } catch(e) { console.error(e); }
-    }
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isError ? ' error' : '');
-        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-    
-    // Cargar datos guardados
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
-        token = savedToken;
-        currentUser = JSON.parse(savedUser);
-        updateUIForUser();
-    }
-    
-    loadSectores();
-    loadCategories();
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let currentUser = null;
+let token = null;
+let currentLang = 'es';
+
+function formatPrice(p) { return `RD$ ${Number(p).toLocaleString('es-DO')}`; }
+function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){return m==='&'?'&amp;':m==='<'?'&lt;':'&gt;';}); }
+
+// Idioma
+function toggleLanguage() {
+    currentLang = currentLang === 'es' ? 'en' : 'es';
+    document.getElementById('langText').innerHTML = currentLang === 'es' ? '🇺🇸 EN' : '🇪🇸 ES';
+    document.getElementById('searchInput').placeholder = currentLang === 'es' ? '🔍 ¿Qué buscas hoy en El Farol?' : '🔍 What are you looking for?';
     filterAds();
+}
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
+function showAuthModal() { showLogin(); document.getElementById('authModal').style.display = 'flex'; }
+function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+
+function showLogin() {
+    document.getElementById('authTitle').innerHTML = 'Ingresar';
+    document.getElementById('authBody').innerHTML = `<div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div><div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="********"></div><button class="btn-primary" style="width:100%;" onclick="login()">Ingresar</button><hr style="margin:20px 0;"><p style="text-align:center">¿No tienes cuenta? <a href="#" onclick="showRegister()">Regístrate</a></p>`;
+}
+
+function showRegister() {
+    document.getElementById('authTitle').innerHTML = 'Registrarse';
+    document.getElementById('authBody').innerHTML = `<div class="form-group"><label>Nombre</label><input type="text" id="regName" placeholder="Tu nombre"></div><div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div><div class="form-group"><label>Teléfono</label><input type="tel" id="regPhone" placeholder="809-555-1234"></div><div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" placeholder="********"></div><div class="form-group"><label>Tipo de cuenta</label><select id="regType"><option value="buyer">📦 Solo quiero comprar</option><option value="seller">💰 Quiero vender también</option></select></div><button class="btn-primary" style="width:100%;" onclick="register()">Registrarme</button><hr style="margin:20px 0;"><p style="text-align:center">¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Ingresar</a></p>`;
+}
+
+async function login() {
+    try {
+        const res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:document.getElementById('loginEmail').value, password:document.getElementById('loginPassword').value }) });
+        const data = await res.json();
+        if(data.success){
+            token=data.token; currentUser=data.user;
+            localStorage.setItem('token',token); localStorage.setItem('user',JSON.stringify(currentUser));
+            updateUI(); closeAuthModal(); showToast(`Bienvenido ${currentUser.name}`); filterAds();
+        } else showToast(data.error,true);
+    } catch(e){ showToast('Error de conexión',true); }
+}
+
+async function register() {
+    try {
+        const res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:document.getElementById('regName').value, email:document.getElementById('regEmail').value, phone:document.getElementById('regPhone').value, password:document.getElementById('regPassword').value, user_type:document.getElementById('regType').value }) });
+        const data = await res.json();
+        if(data.success){
+            token=data.token; currentUser=data.user;
+            localStorage.setItem('token',token); localStorage.setItem('user',JSON.stringify(currentUser));
+            updateUI(); closeAuthModal(); showToast('Registro exitoso'); filterAds();
+        } else showToast(data.error,true);
+    } catch(e){ showToast('Error de conexión',true); }
+}
+
+function logout() { localStorage.clear(); currentUser=null; token=null; updateUI(); showHome(); showToast('Sesión cerrada'); }
+
+function updateUI() {
+    const authBtn = document.getElementById('authBtn');
+    const postAdBtn = document.getElementById('postAdBtn');
+    const navDashboard = document.getElementById('navDashboard');
+    if(currentUser){
+        authBtn.innerHTML = `<i class="fas fa-user"></i> ${currentUser.name}`;
+        authBtn.onclick = () => { if(confirm(`${currentUser.name}\n${currentUser.verified?'✅ Verificado':'❌ No verificado'}\n¿Cerrar sesión?`)) logout(); };
+        if(currentUser.user_type === 'seller' || currentUser.role === 'admin') postAdBtn.style.display = 'block';
+        navDashboard.style.display = 'block';
+    } else {
+        authBtn.innerHTML = `<i class="fas fa-user"></i> Ingresar`;
+        authBtn.onclick = () => showAuthModal();
+        postAdBtn.style.display = 'none';
+        navDashboard.style.display = 'none';
+    }
+}
+
+// ============================================================
+// ANUNCIOS
+// ============================================================
+async function filterAds() {
+    const sector = document.getElementById('filterSector').value;
+    const category = document.getElementById('filterCategory').value;
+    const search = document.getElementById('searchInput').value;
+    const verifiedOnly = document.getElementById('filterVerified').checked;
+    let url = `/api/ads?${sector?`sector=${encodeURIComponent(sector)}&`:''}${category?`category=${encodeURIComponent(category)}&`:''}${search?`search=${encodeURIComponent(search)}&`:''}${verifiedOnly?`verified_only=true`:''}`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const grid = document.getElementById('adsGrid');
+        if(!data.ads?.length){ grid.innerHTML='<div class="empty"><i class="fas fa-search"></i> No hay anuncios aún</div>'; return; }
+        grid.innerHTML = data.ads.map(ad => `
+            <div class="ad-card" onclick="showAdDetail(${ad.id})">
+                ${ad.badges?.verified ? '<div class="ad-badge badge-verified"><i class="fas fa-check-circle"></i> Verificado</div>' : ''}
+                ${ad.badges?.boosted ? '<div class="ad-badge badge-boost"><i class="fas fa-fire"></i> Destacado</div>' : ''}
+                <div class="ad-image"><i class="fas fa-image"></i></div>
+                <div class="ad-body">
+                    <div class="ad-title">${escapeHtml(ad.title)}</div>
+                    <div class="ad-price">${formatPrice(ad.price)}</div>
+                    <div class="ad-location"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
+                    <div class="ad-seller"><span><i class="fas fa-user"></i> ${ad.user_name || 'Usuario'}</span>${ad.status==='sold'?'<span class="status-sold">VENDIDO</span>':''}</div>
+                </div>
+            </div>`).join('');
+    } catch(e){ document.getElementById('adsGrid').innerHTML='<div class="empty">Error al cargar</div>'; }
+}
+
+function searchAds() { filterAds(); }
+function filterByCategory(cat) { document.getElementById('filterCategory').value = cat; filterAds(); }
+
+async function showAdDetail(id) {
+    const res = await fetch(`/api/ads/${id}`);
+    const ad = (await res.json()).ad;
+    document.getElementById('modalBody').innerHTML = `
+        <div class="ad-image" style="height:250px;"><i class="fas fa-image fa-4x"></i></div>
+        <h2>${escapeHtml(ad.title)}</h2>
+        <div class="ad-price" style="font-size:2rem;">${formatPrice(ad.price)}</div>
+        <div class="ad-location"><i class="fas fa-map-marker-alt"></i> ${ad.ubicacion_sector || 'Santo Domingo Este'}</div>
+        <p style="margin:15px 0;">${escapeHtml(ad.description || 'Sin descripción')}</p>
+        <div style="background:#f5f5f5;padding:20px;border-radius:16px;margin:20px 0;">
+            <p><strong><i class="fas fa-user"></i> Contactar al vendedor</strong></p>
+            <p>${ad.user_name || 'Usuario'}</p>
+            <p><i class="fas fa-phone"></i> ${ad.user_phone || 'Teléfono no disponible'}</p>
+            ${ad.badges?.verified ? '<p style="color:#4CAF50;"><i class="fas fa-check-circle"></i> Cuenta verificada</p>' : ''}
+        </div>
+        ${currentUser && currentUser.user_type === 'buyer' ? `
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid #ddd;">
+            <h4><i class="fas fa-hand-holding-usd"></i> Hacer una oferta</h4>
+            <div class="form-group"><label>Tu oferta (RD$)</label><input type="number" id="offerPrice" placeholder="Ej: ${ad.price - 500}"></div>
+            <div class="form-group"><label>Mensaje para el vendedor</label><textarea id="offerMsg" rows="2" placeholder="¿Puedes hacer mejor precio?"></textarea></div>
+            <div class="form-group"><label>Método de pago</label><select id="offerPayment"><option>Efectivo</option><option>Transferencia bancaria</option><option>Yappy</option></select></div>
+            <div class="form-group"><label>Lugar de entrega</label><input type="text" id="offerLocation" placeholder="Ej: Los Mina, cerca del metro"></div>
+            <button class="btn-primary" onclick="makeOffer(${ad.id})"><i class="fas fa-paper-plane"></i> Enviar oferta</button>
+        </div>` : ''}
+        <button class="btn-primary" style="width:100%;margin-top:20px;" onclick="closeModal()">Cerrar</button>
+    `;
+    document.getElementById('adModal').style.display = 'flex';
+}
+
+async function makeOffer(adId) {
+    if(!currentUser){ showToast('Inicia sesión para hacer ofertas',true); showAuthModal(); return; }
+    const data = { offered_price: document.getElementById('offerPrice').value, message: document.getElementById('offerMsg').value, payment_method: document.getElementById('offerPayment').value, delivery_location: document.getElementById('offerLocation').value };
+    if(!data.offered_price){ showToast('Ingresa un precio',true); return; }
+    const res = await fetch(`/api/ads/${adId}/offer`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify(data) });
+    const result = await res.json();
+    if(result.success){ showToast('Oferta enviada al vendedor'); closeModal(); }
+    else showToast(result.error,true);
+}
+
+function closeModal() { document.getElementById('adModal').style.display = 'none'; }
+
+// ============================================================
+// DASHBOARD VENDEDOR
+// ============================================================
+async function showDashboard() {
+    if(!currentUser){ showToast('Inicia sesión primero',true); showAuthModal(); return; }
+    document.getElementById('heroSection').style.display = 'none';
+    document.querySelector('.filters-container').style.display = 'none';
+    document.querySelector('.container').style.display = 'none';
+    document.querySelector('.footer').style.display = 'none';
+    if(!document.getElementById('dashboardPanel')){
+        const panel = document.createElement('div'); panel.id = 'dashboardPanel'; panel.className = 'dashboard';
+        document.body.appendChild(panel);
+    }
+    const panel = document.getElementById('dashboardPanel');
+    panel.style.display = 'block';
+    await loadMyAds();
+    await loadOffers();
+}
+
+function showHome() {
+    document.getElementById('heroSection').style.display = 'block';
+    document.querySelector('.filters-container').style.display = 'grid';
+    document.querySelector('.container').style.display = 'block';
+    document.querySelector('.footer').style.display = 'block';
+    const panel = document.getElementById('dashboardPanel');
+    if(panel) panel.style.display = 'none';
+    filterAds();
+}
+
+async function loadMyAds() {
+    const res = await fetch('/api/ads/my-ads', { headers:{'Authorization':`Bearer ${token}`} });
+    const data = await res.json();
+    const panel = document.getElementById('dashboardPanel');
+    panel.innerHTML = `
+        <div class="dashboard-header"><h2><i class="fas fa-chart-line"></i> Mis Anuncios</h2><div>${!currentUser.verified ? `<button class="btn-primary" onclick="showVerifyModal()"><i class="fas fa-check-circle"></i> Verificar cuenta</button>` : '<span style="color:#4CAF50;"><i class="fas fa-check-circle"></i> Cuenta verificada</span>'}</div></div>
+        <div class="my-ads">${data.ads.length ? data.ads.map(ad => `
+            <div class="my-ad"><div><strong>${escapeHtml(ad.title)}</strong><br><small>${formatPrice(ad.price)} | ${ad.ubicacion_sector || 'SDE'} | 👁️ ${ad.views||0} vistas</small>${ad.is_boosted?'<span style="color:#FF9800;"> 🔥 Destacado</span>':''}</div>
+            <div class="ad-actions">${!ad.is_boosted && currentUser.verified ? `<button class="btn-boost" onclick="boostAd(${ad.id})"><i class="fas fa-fire"></i> Destacar</button>` : ''}${ad.status!=='sold'?`<button class="btn-sold" onclick="markAsSold(${ad.id})"><i class="fas fa-check"></i> Vendido</button>`:''}<button class="btn-delete" onclick="deleteAd(${ad.id})"><i class="fas fa-trash"></i> Eliminar</button></div></div>`).join('') : '<div class="empty">No tienes anuncios aún. ¡Publica tu primero!</div>'}</div>
+        <div style="margin-top:20px;text-align:center;"><button class="btn-primary" onclick="showPostAdModal()"><i class="fas fa-plus"></i> Publicar nuevo anuncio</button><button class="btn-outline" onclick="showHome()" style="margin-left:10px;"><i class="fas fa-arrow-left"></i> Volver al inicio</button></div>
+        <div style="margin-top:30px;"><h3><i class="fas fa-hand-holding-usd"></i> Ofertas recibidas</h3><div id="offersList" class="offers-list"></div></div>
+    `;
+}
+
+async function loadOffers() {
+    if(currentUser.user_type !== 'seller') return;
+    const res = await fetch('/api/offers/received', { headers:{'Authorization':`Bearer ${token}`} });
+    const data = await res.json();
+    const offersDiv = document.getElementById('offersList');
+    if(!offersDiv) return;
+    if(!data.offers?.length){ offersDiv.innerHTML = '<div class="empty">No tienes ofertas pendientes</div>'; return; }
+    offersDiv.innerHTML = data.offers.map(o => `<div class="my-ad"><div><strong>${o.buyer_name}</strong> ofrece <strong>${formatPrice(o.offered_price)}</strong><br><small>Anuncio: ${o.ad_title}</small><br>💬 "${o.message || 'Sin mensaje'}"<br>💰 ${o.payment_method || 'Por definir'} | 📍 ${o.delivery_location || 'Por acordar'}</div><div class="ad-actions"><button class="btn-sold" onclick="respondOffer(${o.id},'accept')">✅ Aceptar</button><button class="btn-boost" onclick="showCounterOffer(${o.id})">🔄 Contraofertar</button><button class="btn-delete" onclick="respondOffer(${o.id},'reject')">❌ Rechazar</button></div></div>`).join('');
+}
+
+async function respondOffer(offerId, action) {
+    const res = await fetch(`/api/offers/${offerId}/${action}`, { method:'PUT', headers:{'Authorization':`Bearer ${token}`} });
+    const data = await res.json();
+    if(data.success){ showToast(`Oferta ${action === 'accept' ? 'aceptada' : 'rechazada'}`); loadOffers(); }
+    else showToast(data.error,true);
+}
+
+async function boostAd(adId) {
+    if(!confirm('¿Destacar este anuncio por 24 horas? (Costo: RD$199)')) return;
+    const res = await fetch(`/api/ads/${adId}/boost`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} });
+    const data = await res.json();
+    if(data.success){ showToast('Anuncio destacado por 24 horas'); loadMyAds(); filterAds(); }
+    else showToast(data.error,true);
+}
+
+async function markAsSold(id) {
+    if(!confirm('¿Marcar como vendido?')) return;
+    await fetch(`/api/ads/${id}/sold`, { method:'PUT', headers:{'Authorization':`Bearer ${token}`} });
+    showToast('Marcado como vendido'); loadMyAds(); filterAds();
+}
+
+async function deleteAd(id) {
+    if(!confirm('¿Eliminar este anuncio?')) return;
+    await fetch(`/api/ads/${id}`, { method:'DELETE', headers:{'Authorization':`Bearer ${token}`} });
+    showToast('Anuncio eliminado'); loadMyAds(); filterAds();
+}
+
+// ============================================================
+// PUBLICAR ANUNCIO
+// ============================================================
+function showPostAdModal() {
+    if(!currentUser){ showToast('Inicia sesión para publicar',true); showAuthModal(); return; }
+    if(currentUser.user_type !== 'seller'){ showToast('Debes ser vendedor para publicar',true); return; }
+    loadSectoresForSelect();
+    document.getElementById('postAdModal').style.display = 'flex';
+}
+
+function closePostAdModal() { document.getElementById('postAdModal').style.display = 'none'; }
+
+async function loadSectoresForSelect() {
+    const res = await fetch('/api/sectores');
+    const data = await res.json();
+    document.getElementById('postAdBody').innerHTML = `
+        <div class="form-group"><label>Título *</label><input type="text" id="adTitle" placeholder="Ej: iPhone 13 Pro"></div>
+        <div class="form-group"><label>Descripción</label><textarea id="adDesc" rows="3"></textarea></div>
+        <div class="form-group"><label>Precio (RD$)</label><input type="number" id="adPrice" placeholder="0"></div>
+        <div class="form-group"><label>Categoría</label><select id="adCategory"><option>Vehículos</option><option>Inmuebles</option><option>Empleos</option><option>Electrónica</option><option>Hogar</option><option>Servicios</option></select></div>
+        <div class="form-group"><label>Sector *</label><select id="adSector">${(data.sectores||[]).map(s=>`<option value="${s.nombre}">${s.nombre}</option>`).join('')}</select></div>
+        <button class="btn-primary" style="width:100%;" onclick="createAd()"><i class="fas fa-paper-plane"></i> Publicar</button>`;
+}
+
+async function createAd() {
+    const ad = { title: document.getElementById('adTitle').value, description: document.getElementById('adDesc').value, price: document.getElementById('adPrice').value, category: document.getElementById('adCategory').value, ubicacion_sector: document.getElementById('adSector').value };
+    if(!ad.title || !ad.ubicacion_sector){ showToast('Título y sector requeridos',true); return; }
+    const res = await fetch('/api/ads', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify(ad) });
+    const data = await res.json();
+    if(data.success){ showToast('Anuncio publicado'); closePostAdModal(); if(document.getElementById('dashboardPanel')?.style.display==='block') loadMyAds(); else filterAds(); }
+    else showToast(data.error,true);
+}
+
+// ============================================================
+// VERIFICACIÓN
+// ============================================================
+function showVerifyModal() {
+    document.getElementById('postAdBody').innerHTML = `
+        <div style="background:#e8f5e9;padding:15px;border-radius:12px;margin-bottom:20px;"><p><strong>✅ ¿Por qué verificar tu cuenta?</strong></p><p>• Los compradores confían más<br>• Tus anuncios aparecen primero<br>• Acceso a Boost</p></div>
+        <div class="form-group"><label>Foto frontal cédula</label><input type="file" id="idFront" accept="image/*"></div>
+        <div class="form-group"><label>Foto trasera cédula</label><input type="file" id="idBack" accept="image/*"></div>
+        <button class="btn-primary" style="width:100%;" onclick="submitVerification()">Solicitar verificación</button>`;
+    document.getElementById('postAdModal').style.display = 'flex';
+}
+
+async function submitVerification() {
+    const front = document.getElementById('idFront').files[0];
+    const back = document.getElementById('idBack').files[0];
+    if(!front || !back){ showToast('Sube ambas fotos de la cédula',true); return; }
+    const toBase64 = (f)=>new Promise((r)=> { const reader=new FileReader(); reader.onload=()=>r(reader.result); reader.readAsDataURL(f); });
+    const res = await fetch('/api/auth/verify/request', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({ id_photo_front:await toBase64(front), id_photo_back:await toBase64(back) }) });
+    const data = await res.json();
+    if(data.success){ showToast('Solicitud enviada. Espera revisión del administrador.'); closePostAdModal(); }
+    else showToast(data.error,true);
+}
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+async function loadSectores() {
+    const res = await fetch('/api/sectores');
+    const data = await res.json();
+    const select = document.getElementById('filterSector');
+    select.innerHTML = '<option value="">📍 Todos los sectores</option>' + (data.sectores||[]).map(s=>`<option value="${s.nombre}">${s.nombre}</option>`).join('');
+}
+
+async function loadCategories() {
+    const res = await fetch('/api/categorias');
+    const data = await res.json();
+    const select = document.getElementById('filterCategory');
+    select.innerHTML = '<option value="">📂 Todas las categorías</option>' + (data.categorias||[]).map(c=>`<option value="${c.category}">${c.category}</option>`).join('');
+}
+
+function showToast(msg,isErr=false) {
+    const t=document.createElement('div'); t.className='toast'+(isErr?' error':''); t.innerHTML=`<i class="fas ${isErr?'fa-exclamation-triangle':'fa-check-circle'}"></i> ${msg}`;
+    document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+}
+
+const savedToken = localStorage.getItem('token'), savedUser = localStorage.getItem('user');
+if(savedToken && savedUser){ token=savedToken; currentUser=JSON.parse(savedUser); updateUI(); }
+loadSectores(); loadCategories(); filterAds();
 </script>
 </body>
 </html>
