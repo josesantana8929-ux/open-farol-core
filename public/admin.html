@@ -1,133 +1,579 @@
-# Conectarte a Railway
-railway bash
-
-# Crear carpeta public si no existe
-mkdir -p public
-
-# Crear admin.html
-cat > public/admin.html << 'EOF'
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>El Farol - Panel Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Farol - Panel de Administración</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-        .login-container { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-        button { width: 100%; padding: 10px; background: #1A237E; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .dashboard { display: none; }
-        .sidebar { width: 250px; background: #1A1A1A; color: white; position: fixed; height: 100%; padding: 20px; }
-        .content { margin-left: 250px; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .btn-delete { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
-        .btn-approve { background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F5F5;
+            color: #212121;
+        }
+
+        /* Login */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .login-box h2 {
+            margin-bottom: 24px;
+            text-align: center;
+            color: #1A237E;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #1A237E;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            font-size: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: #0F1558;
+        }
+
+        .error-message {
+            color: #EF4444;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #1A1A1A;
+            color: white;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .sidebar-logo span {
+            color: #1A237E;
+        }
+
+        .sidebar-user {
+            padding: 24px;
+            border-bottom: 1px solid #333;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: #1A237E;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: #CCC;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: #1A237E;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+        }
+
+        .topbar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #E0E0E0;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 12px;
+            color: #1A237E;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 8px;
+            color: #757575;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #F0F0F0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .status-active {
+            background: #10B98120;
+            color: #10B981;
+        }
+
+        .btn-approve {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .btn-delete {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #757575;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: absolute;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
+
+<!-- Pantalla de Login -->
 <div id="loginPanel" class="login-container">
-    <h2>🔐 El Farol - Admin</h2>
-    <input type="email" id="email" placeholder="Email" value="admin@elfarol.com.do">
-    <input type="password" id="password" placeholder="Contraseña" value="mxl_admin_2026">
-    <button onclick="login()">Ingresar</button>
-    <p id="errorMsg" style="color:red; margin-top:10px;"></p>
+    <div class="login-box">
+        <h2>🔐 El Farol - Admin</h2>
+        <p style="text-align:center;color:#757575;margin-bottom:24px;">Acceso restringido</p>
+        <input type="email" id="adminEmail" placeholder="Correo electrónico" value="admin@elfarol.com.do">
+        <input type="password" id="adminPassword" placeholder="Contraseña" value="mxl_admin_2026">
+        <button class="btn-primary" onclick="login()">Ingresar</button>
+        <div id="errorMsg" class="error-message"></div>
+    </div>
 </div>
+
+<!-- Dashboard (oculto hasta login) -->
 <div id="dashboardPanel" class="dashboard">
-    <div class="sidebar">
-        <h3>EL FAROL Admin</h3>
-        <hr>
-        <button onclick="loadUsers()" style="width:100%; margin:5px 0;">👥 Usuarios</button>
-        <button onclick="loadAds()" style="width:100%; margin:5px 0;">📢 Anuncios</button>
-        <button onclick="logout()" style="width:100%; margin:5px 0; background:#ef4444;">🚪 Salir</button>
-    </div>
-    <div class="content">
-        <h2 id="pageTitle">Dashboard</h2>
-        <div id="contentArea">Bienvenido al panel de administración</div>
+    <div class="admin-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">EL FAROL<span> Admin</span></div>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-avatar">👑</div>
+                <div><strong id="userName">Administrador</strong><br><small>Super Administrador</small></div>
+            </div>
+            <nav>
+                <div class="nav-link" onclick="loadDashboard()">
+                    <span>📊</span> Dashboard
+                </div>
+                <div class="nav-link" onclick="loadUsers()">
+                    <span>👥</span> Usuarios
+                </div>
+                <div class="nav-link" onclick="loadAds()">
+                    <span>📢</span> Anuncios
+                </div>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1 id="pageTitle">Dashboard</h1>
+                <button class="logout-btn" onclick="logout()">🚪 Cerrar sesión</button>
+            </div>
+            <div id="pageContent">
+                <div class="loading">Cargando dashboard...</div>
+            </div>
+        </main>
     </div>
 </div>
+
 <script>
-    let token = null;
+    let adminToken = localStorage.getItem('adminToken');
+    let currentUser = null;
+
+    // Función de login
     async function login() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const email = document.getElementById('adminEmail').value;
+        const password = document.getElementById('adminPassword').value;
+        const errorMsg = document.getElementById('errorMsg');
+        
+        errorMsg.textContent = '';
+        
+        if (!email || !password) {
+            errorMsg.textContent = '❌ Email y contraseña son requeridos';
+            return;
+        }
+        
         try {
-            const res = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            const data = await res.json();
-            if (res.ok && data.user?.role === 'admin') {
-                token = data.token;
-                localStorage.setItem('adminToken', token);
+            
+            const data = await response.json();
+            
+            if (response.ok && data.user && data.user.role === 'admin') {
+                adminToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem('adminToken', adminToken);
+                localStorage.setItem('adminUser', JSON.stringify(currentUser));
+                
+                // Mostrar dashboard
                 document.getElementById('loginPanel').style.display = 'none';
                 document.getElementById('dashboardPanel').style.display = 'block';
-                loadUsers();
+                document.getElementById('userName').textContent = currentUser.name || 'Administrador';
+                
+                // Cargar dashboard
+                loadDashboard();
             } else {
-                document.getElementById('errorMsg').innerText = 'Acceso denegado';
+                errorMsg.textContent = '❌ Acceso denegado. No tienes permisos de administrador.';
             }
-        } catch(e) {
-            document.getElementById('errorMsg').innerText = 'Error de conexión';
+        } catch (error) {
+            errorMsg.textContent = '❌ Error de conexión. Intenta nuevamente.';
         }
     }
-    async function loadUsers() {
-        document.getElementById('pageTitle').innerText = 'Usuarios';
-        document.getElementById('contentArea').innerHTML = 'Cargando...';
-        const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        if (data.users) {
-            let html = '<table><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th></tr>';
-            data.users.forEach(u => { html += `<tr><td>${u.id}</td><td>${u.name || '-'}</td><td>${u.email}</td><td>${u.role}</td></tr>`; });
-            html += '</table>';
-            document.getElementById('contentArea').innerHTML = html;
-        }
-    }
-    async function loadAds() {
-        document.getElementById('pageTitle').innerText = 'Anuncios';
-        document.getElementById('contentArea').innerHTML = 'Cargando...';
-        const res = await fetch('/api/admin/ads', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        if (data.ads) {
-            let html = '<table><tr><th>ID</th><th>Título</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>';
-            data.ads.forEach(a => { 
-                html += `<tr>
-                    <td>${a.id}</td>
-                    <td>${a.title}</td>
-                    <td>$${a.price || 0}</td>
-                    <td>${a.status}</td>
-                    <td>
-                        ${a.status !== 'active' ? `<button class="btn-approve" onclick="approveAd(${a.id})">Aprobar</button>` : ''}
-                        <button class="btn-delete" onclick="deleteAd(${a.id})">Eliminar</button>
-                    </td>
-                </tr>`; 
+    
+    // Cargar Dashboard
+    async function loadDashboard() {
+        document.getElementById('pageTitle').textContent = 'Dashboard';
+        document.getElementById('pageContent').innerHTML = '<div class="loading">Cargando estadísticas...</div>';
+        
+        try {
+            const response = await fetch('/api/admin/stats', {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
             });
-            html += '</table>';
-            document.getElementById('contentArea').innerHTML = html;
+            const stats = await response.json();
+            
+            document.getElementById('pageContent').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>👥 Total Usuarios</h3>
+                        <div class="stat-value">${stats.totalUsers || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📢 Anuncios Activos</h3>
+                        <div class="stat-value">${stats.activeAds || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>💰 Ventas del Mes</h3>
+                        <div class="stat-value">RD$${stats.monthlySales || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>⏳ Pendientes</h3>
+                        <div class="stat-value">${stats.pendingAds || 0}</div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <h3>📋 Usuarios Recientes</h3>
+                    <div id="recentUsers">Cargando...</div>
+                </div>
+            `;
+            
+            // Cargar usuarios recientes
+            const usersRes = await fetch('/api/admin/users?limit=5', {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            const usersData = await usersRes.json();
+            
+            if (usersData.users && usersData.users.length > 0) {
+                let html = '<table><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Registro</th></tr></thead><tbody>';
+                usersData.users.forEach(user => {
+                    html += `<tr>
+                        <td>${user.name || '-'}</td>
+                        <td>${user.email}</td>
+                        <td>${user.phone || '-'}</td>
+                        <td>${new Date(user.created_at).toLocaleDateString('es-DO')}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('recentUsers').innerHTML = html;
+            } else {
+                document.getElementById('recentUsers').innerHTML = '<p>No hay usuarios registrados</p>';
+            }
+        } catch (error) {
+            document.getElementById('pageContent').innerHTML = '<div class="loading">Error cargando datos</div>';
         }
     }
-    async function approveAd(id) {
-        if(!confirm('¿Aprobar este anuncio?')) return;
-        await fetch(`/api/admin/ads/${id}/approve`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
-        loadAds();
+    
+    // Cargar Usuarios
+    async function loadUsers() {
+        document.getElementById('pageTitle').textContent = 'Usuarios';
+        document.getElementById('pageContent').innerHTML = '<div class="loading">Cargando usuarios...</div>';
+        
+        try {
+            const response = await fetch('/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            const data = await response.json();
+            
+            if (data.users && data.users.length > 0) {
+                let html = `
+                    <div class="table-container">
+                        <h3>👥 Todos los Usuarios</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Rol</th>
+                                    <th>Registro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.users.forEach(user => {
+                    html += `<tr>
+                        <td>${user.id}</td>
+                        <td>${user.name || '-'}</td>
+                        <td>${user.email}</td>
+                        <td>${user.phone || '-'}</td>
+                        <td><span class="status-badge status-active">${user.role}</span></td>
+                        <td>${new Date(user.created_at).toLocaleDateString('es-DO')}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            } else {
+                document.getElementById('pageContent').innerHTML = '<div class="loading">No hay usuarios registrados</div>';
+            }
+        } catch (error) {
+            document.getElementById('pageContent').innerHTML = '<div class="loading">Error cargando usuarios</div>';
+        }
     }
-    async function deleteAd(id) {
-        if(!confirm('¿Eliminar este anuncio?')) return;
-        await fetch(`/api/admin/ads/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-        loadAds();
+    
+    // Cargar Anuncios
+    async function loadAds() {
+        document.getElementById('pageTitle').textContent = 'Anuncios';
+        document.getElementById('pageContent').innerHTML = '<div class="loading">Cargando anuncios...</div>';
+        
+        try {
+            const response = await fetch('/api/admin/ads', {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            const data = await response.json();
+            
+            if (data.ads && data.ads.length > 0) {
+                let html = `
+                    <div class="table-container">
+                        <h3>📢 Todos los Anuncios</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Usuario</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.ads.forEach(ad => {
+                    html += `<tr>
+                        <td>${ad.id}</td>
+                        <td>${ad.title}</td>
+                        <td>${ad.user_email || ad.user_id}</td>
+                        <td>$${ad.price || 0}</td>
+                        <td><span class="status-badge ${ad.status === 'active' ? 'status-active' : ''}">${ad.status === 'active' ? 'Activo' : 'Pendiente'}</span></td>
+                        <td>
+                            ${ad.status !== 'active' ? `<button class="btn-approve" onclick="approveAd(${ad.id})">✓ Aprobar</button>` : ''}
+                            <button class="btn-delete" onclick="deleteAd(${ad.id})">🗑 Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div>`;
+                document.getElementById('pageContent').innerHTML = html;
+            } else {
+                document.getElementById('pageContent').innerHTML = '<div class="loading">No hay anuncios publicados</div>';
+            }
+        } catch (error) {
+            document.getElementById('pageContent').innerHTML = '<div class="loading">Error cargando anuncios</div>';
+        }
     }
+    
+    // Aprobar anuncio
+    window.approveAd = async (adId) => {
+        if (!confirm('¿Aprobar este anuncio?')) return;
+        try {
+            const response = await fetch(`/api/admin/ads/${adId}/approve`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            if (response.ok) {
+                alert('✅ Anuncio aprobado exitosamente');
+                loadAds();
+            } else {
+                alert('❌ Error al aprobar');
+            }
+        } catch (error) {
+            alert('❌ Error de conexión');
+        }
+    };
+    
+    // Eliminar anuncio
+    window.deleteAd = async (adId) => {
+        if (!confirm('¿Eliminar este anuncio permanentemente?')) return;
+        try {
+            const response = await fetch(`/api/admin/ads/${adId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            if (response.ok) {
+                alert('✅ Anuncio eliminado');
+                loadAds();
+            } else {
+                alert('❌ Error al eliminar');
+            }
+        } catch (error) {
+            alert('❌ Error de conexión');
+        }
+    };
+    
+    // Cerrar sesión
     function logout() {
         localStorage.removeItem('adminToken');
-        token = null;
-        document.getElementById('loginPanel').style.display = 'block';
+        localStorage.removeItem('adminUser');
+        adminToken = null;
+        currentUser = null;
+        document.getElementById('loginPanel').style.display = 'flex';
         document.getElementById('dashboardPanel').style.display = 'none';
     }
+    
+    // Verificar sesión guardada
     const savedToken = localStorage.getItem('adminToken');
-    if(savedToken) { token = savedToken; document.getElementById('loginPanel').style.display = 'none'; document.getElementById('dashboardPanel').style.display = 'block'; loadUsers(); }
+    const savedUser = localStorage.getItem('adminUser');
+    if (savedToken && savedUser) {
+        adminToken = savedToken;
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('dashboardPanel').style.display = 'block';
+        document.getElementById('userName').textContent = currentUser.name || 'Administrador';
+        loadDashboard();
+    }
 </script>
 </body>
 </html>
-EOF
-
-# Salir
-exit
