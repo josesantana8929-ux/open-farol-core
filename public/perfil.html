@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         
         .header {
             background: #0A1F44;
@@ -170,7 +170,6 @@
 </div>
 
 <div class="container">
-    <!-- PERFIL -->
     <div class="profile-header">
         <div class="avatar"><i class="fas fa-user"></i></div>
         <div class="profile-info">
@@ -182,10 +181,8 @@
         <div id="postAdBtnContainer" style="margin-left: auto;"></div>
     </div>
 
-    <!-- ESTADÍSTICAS -->
     <div class="stats-grid" id="statsGrid"></div>
 
-    <!-- SECCIÓN COMPRADOR -->
     <div id="buyerSection">
         <div class="section-title"><i class="fas fa-hand-holding-usd"></i> Mis Ofertas</div>
         <div class="table-container"><table><thead><tr><th>Producto</th><th>Oferta</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="offersList"></tbody></table></div>
@@ -194,20 +191,18 @@
         <div class="table-container"><table><thead><tr><th>Producto</th><th>Precio</th><th>Vendedor</th><th>Ubicación</th><th>Acciones</th></tr></thead><tbody id="favoritesList"></tbody></table></div>
     </div>
 
-    <!-- SECCIÓN VENDEDOR -->
     <div id="sellerSection" style="display: none;">
         <div class="section-title">
             <span><i class="fas fa-ad"></i> Mis Anuncios</span>
             <button class="btn-primary" onclick="showPostAdModal()" style="padding: 6px 15px; font-size: 0.8rem;"><i class="fas fa-plus"></i> Nuevo</button>
         </div>
-        <div class="table-container"><table><thead><tr><th>Título</th><th>Precio</th><th>Ubicación</th><th>Vistas</th><th>Estado</th><th>Destacado</th><th>Acciones</th></tr></thead><tbody id="myAdsList"></tbody></table></div>
+        <div class="table-container"><tr><thead><tr><th>Título</th><th>Precio</th><th>Ubicación</th><th>Vistas</th><th>Estado</th><th>Destacado</th><th>Acciones</th></tr></thead><tbody id="myAdsList"></tbody></table></div>
         
         <div class="section-title"><i class="fas fa-hand-holding-usd"></i> Ofertas Recibidas</div>
         <div class="table-container"><table><thead><tr><th>Producto</th><th>Comprador</th><th>Oferta</th><th>Mensaje</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="offersReceivedList"></tbody></table></div>
     </div>
 </div>
 
-<!-- MODAL PUBLICAR -->
 <div id="postAdModal" class="modal">
     <div class="modal-content">
         <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
@@ -261,7 +256,6 @@
         }
     }
     
-    // ========== COMPRADOR ==========
     async function loadOffers() {
         const res = await fetch('/api/offers/my-offers', { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
@@ -296,7 +290,6 @@
         `;
     }
     
-    // ========== VENDEDOR ==========
     async function loadMyAds() {
         const res = await fetch('/api/ads/my-ads', { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
@@ -360,7 +353,6 @@
     async function respondOffer(offerId, action) { await fetch(`/api/offers/${offerId}/${action}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadOffersReceived(); }
     function showCounterOffer(offerId) { const price = prompt('Contraoferta (RD$):'); if (price) { const msg = prompt('Mensaje:'); fetch(`/api/offers/${offerId}/counter`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ counter_price: price, message: msg }) }).then(() => { showToast('Contraoferta enviada'); loadOffersReceived(); }); } }
     
-    // ========== PUBLICAR ANUNCIO ==========
     function showPostAdModal() {
         loadSectoresForSelect();
         document.getElementById('postAdModal').style.display = 'flex';
