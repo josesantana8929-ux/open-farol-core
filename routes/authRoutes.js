@@ -1,20 +1,56 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
 const bcrypt = require('bcryptjs');
-const { generateToken } = require('../utils/jwtUtils');
-const { 
-  registerValidation, 
-  loginValidation, 
-  profileUpdateValidation 
-} = require('../middleware/validators');
+const db = require('../db');
+const { generateToken, verifyToken } = require('../utils/jwtUtils');
 
-// ============ FUNCIONES DE AUTENTICACIÓN DIRECTAS EN EL ROUTER ============
+// Middleware de autenticación
+const authMiddleware = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
+  }
+  
+  const { valid, decoded, error } = verifyToken(token);
+  
+  if (!valid) {
+    return res.status(401).json({ error: error || 'Token inválido' });
+  }
+  
+  req.user = decoded;
+  next();
+};
 
-// Registrar usuario
-const register = async (req, res) => {
+// ============ VALIDACIÓN SIMPLE ============
+const validateRegister = (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+  if (!email.includes('@')) {
+    return res.status(400).json({ error: 'Email inválido' });
+  }
+  next();
+};
+
+const validateLogin = (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+  }
+  next();
+};
+
+// ============ RUTAS ============
+
+// Registro
+router.post('/register', validateRegister, async (req, res) => {
   try {
-    const { email, password, name, phone, location } = req.body;
+    const { email, password, name, phone } = req.body;
     
     const existingUser = await db.query(
       'SELECT id FROM users WHERE email = $1',
@@ -28,10 +64,10 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await db.query(
-      `INSERT INTO users (email, password_hash, name, phone, location, role, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
-       RETURNING id, email, name, phone, location, role, created_at`,
-      [email.toLowerCase(), hashedPassword, name || null, phone || null, location || null, 'user']
+      `INSERT INTO users (email, password_hash, name, phone, role, created_at)
+       VALUES ($1, $2, $3, $4, 'user', NOW())
+       RETURNING id, email, name, phone, role, created_at`,
+      [email.toLowerCase(), hashedPassword, name || null, phone || null]
     );
     
     const user = result.rows[0];
@@ -40,30 +76,21 @@ const register = async (req, res) => {
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
       token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        location: user.location,
-        role: user.role,
-        createdAt: user.created_at,
-      },
+      user,
     });
   } catch (error) {
-    console.error('❌ Error en registro:', error);
+    console.error('Error en registro:', error);
     res.status(500).json({ error: 'Error al registrar usuario' });
   }
-};
+});
 
-// Iniciar sesión
-const login = async (req, res) => {
+// Login
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
     
     const result = await db.query(
-      `SELECT id, email, password_hash, name, phone, location, role, 
-              last_login, created_at
+      `SELECT id, email, password_hash, name, phone, role, created_at
        FROM users 
        WHERE email = $1 AND deleted_at IS NULL`,
       [email.toLowerCase()]
@@ -80,10 +107,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
     
-    await db.query(
-      'UPDATE users SET last_login = NOW() WHERE id = $1',
-      [user.id]
-    );
+    await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
     
     const token = generateToken(user.id, user.email);
     
@@ -95,48 +119,23 @@ const login = async (req, res) => {
         email: user.email,
         name: user.name,
         phone: user.phone,
-        location: user.location,
         role: user.role,
-        lastLogin: user.last_login,
         createdAt: user.created_at,
       },
     });
   } catch (error) {
-    console.error('❌ Error en login:', error);
+    console.error('Error en login:', error);
     res.status(500).json({ error: 'Error al iniciar sesión' });
   }
-};
-
-// Middleware de autenticación
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Token no proporcionado' });
-  }
-  
-  const { verifyToken } = require('../utils/jwtUtils');
-  const { valid, decoded, error } = verifyToken(token);
-  
-  if (!valid) {
-    return res.status(401).json({ error: error || 'Token inválido' });
-  }
-  
-  req.user = decoded;
-  next();
-};
+});
 
 // Obtener perfil
-const getProfile = async (req, res) => {
+router.get('/profile', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
-    
     const result = await db.query(
-      `SELECT id, email, name, phone, location, role, 
-              last_login, created_at, updated_at
-       FROM users 
-       WHERE id = $1 AND deleted_at IS NULL`,
-      [userId]
+      `SELECT id, email, name, phone, role, created_at, updated_at
+       FROM users WHERE id = $1 AND deleted_at IS NULL`,
+      [req.user.id]
     );
     
     if (result.rows.length === 0) {
@@ -145,74 +144,50 @@ const getProfile = async (req, res) => {
     
     res.json({ user: result.rows[0] });
   } catch (error) {
-    console.error('❌ Error obteniendo perfil:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Error al obtener perfil' });
   }
-};
+});
 
 // Actualizar perfil
-const updateProfile = async (req, res) => {
+router.put('/profile', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { name, phone, location } = req.body;
-    
+    const { name, phone } = req.body;
     const updates = [];
     const values = [];
-    let valueIndex = 1;
+    let idx = 1;
     
-    if (name !== undefined) {
-      updates.push(`name = $${valueIndex++}`);
-      values.push(name);
-    }
-    
-    if (phone !== undefined) {
-      updates.push(`phone = $${valueIndex++}`);
-      values.push(phone);
-    }
-    
-    if (location !== undefined) {
-      updates.push(`location = $${valueIndex++}`);
-      values.push(location);
-    }
+    if (name) { updates.push(`name = $${idx++}`); values.push(name); }
+    if (phone) { updates.push(`phone = $${idx++}`); values.push(phone); }
     
     if (updates.length === 0) {
       return res.status(400).json({ error: 'No hay datos para actualizar' });
     }
     
     updates.push(`updated_at = NOW()`);
-    values.push(userId);
+    values.push(req.user.id);
     
-    const query = `
-      UPDATE users 
-      SET ${updates.join(', ')} 
-      WHERE id = $${valueIndex} AND deleted_at IS NULL
-      RETURNING id, email, name, phone, location, role, created_at, updated_at
-    `;
+    const result = await db.query(
+      `UPDATE users SET ${updates.join(', ')} 
+       WHERE id = $${idx} AND deleted_at IS NULL
+       RETURNING id, email, name, phone, role, created_at, updated_at`,
+      values
+    );
     
-    const result = await db.query(query, values);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    
-    res.json({
-      message: 'Perfil actualizado exitosamente',
-      user: result.rows[0],
-    });
+    res.json({ message: 'Perfil actualizado', user: result.rows[0] });
   } catch (error) {
-    console.error('❌ Error actualizando perfil:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Error al actualizar perfil' });
   }
-};
+});
 
 // Cambiar contraseña
-const changePassword = async (req, res) => {
+router.post('/change-password', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
     const { currentPassword, newPassword } = req.body;
     
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Se requieren contraseña actual y nueva' });
+      return res.status(400).json({ error: 'Se requieren ambas contraseñas' });
     }
     
     if (newPassword.length < 6) {
@@ -220,39 +195,25 @@ const changePassword = async (req, res) => {
     }
     
     const result = await db.query(
-      'SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL',
-      [userId]
+      'SELECT password_hash FROM users WHERE id = $1',
+      [req.user.id]
     );
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
+    const isValid = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
     
-    const isValidPassword = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
-    
-    if (!isValidPassword) {
+    if (!isValid) {
       return res.status(401).json({ error: 'Contraseña actual incorrecta' });
     }
     
-    const newHashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    await db.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [newHashedPassword, userId]
-    );
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', 
+      [newHash, req.user.id]);
     
     res.json({ message: 'Contraseña actualizada exitosamente' });
   } catch (error) {
-    console.error('❌ Error cambiando contraseña:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Error al cambiar contraseña' });
   }
-};
-
-// ============ DEFINIR RUTAS ============
-router.post('/register', registerValidation, register);
-router.post('/login', loginValidation, login);
-router.get('/profile', authMiddleware, getProfile);
-router.put('/profile', authMiddleware, profileUpdateValidation, updateProfile);
-router.post('/change-password', authMiddleware, changePassword);
+});
 
 module.exports = router;
