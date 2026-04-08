@@ -27,97 +27,103 @@ if (!fs.existsSync(publicDir)) {
 const adminFile = path.join(publicDir, 'admin.html');
 if (!fs.existsSync(adminFile)) {
     console.log('📝 Creando admin.html...');
-    fs.writeFileSync(adminFile, `<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"><title>MXL Clasificados - Admin</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#f5f5f5}
-.login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1A1A1A,#2A2A2A)}
-.login-box{background:white;padding:40px;border-radius:16px;width:400px}
-.login-box h2{color:#1A237E;margin-bottom:24px;text-align:center}
-input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
-.btn-primary{width:100%;background:#1A237E;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer}
-.dashboard{display:none}
-.sidebar{width:250px;background:#1A1A1A;color:white;position:fixed;height:100%;padding:20px}
-.main-content{margin-left:250px;padding:20px}
-.topbar{background:white;padding:15px 20px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between}
-table{width:100%;background:white;border-collapse:collapse}
-th,td{padding:10px;text-align:left;border-bottom:1px solid #ddd}
-.btn-delete{background:#ef4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer}
-.logout-btn{background:#ef4444;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer}
-</style>
-</head>
-<body>
-<div id="loginPanel" class="login-container">
-<div class="login-box">
-<h2>🔐 MXL Clasificados - Admin</h2>
-<input type="email" id="adminEmail" placeholder="Email" value="admin@mxl.com.do">
-<input type="password" id="adminPassword" placeholder="Contraseña" value="mxl_admin_2026">
-<button class="btn-primary" onclick="login()">Ingresar</button>
-<div id="errorMsg" style="color:red;margin-top:10px"></div>
-</div>
-</div>
-<div id="dashboardPanel" class="dashboard">
-<div class="sidebar"><h3>MXL Admin</h3><hr><br><button onclick="loadUsers()" style="width:100%;margin:5px 0;padding:10px;">👥 Usuarios</button><button onclick="loadAds()" style="width:100%;margin:5px 0;padding:10px;">📢 Anuncios</button><button onclick="logout()" style="width:100%;margin:5px 0;padding:10px;background:#ef4444;">🚪 Salir</button></div>
-<div class="main-content"><div class="topbar"><h1 id="pageTitle">Dashboard</h1></div><div id="contentArea">Bienvenido al panel</div></div>
-</div>
-<script>
-let token=null;
-async function login(){const email=document.getElementById('adminEmail').value;const password=document.getElementById('adminPassword').value;try{const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const data=await res.json();if(res.ok&&data.user?.role==='admin'){token=data.token;localStorage.setItem('adminToken',token);document.getElementById('loginPanel').style.display='none';document.getElementById('dashboardPanel').style.display='block';loadUsers();}else{document.getElementById('errorMsg').innerText='Acceso denegado';}}catch(e){document.getElementById('errorMsg').innerText='Error de conexión';}}
-async function loadUsers(){document.getElementById('pageTitle').innerText='Usuarios';document.getElementById('contentArea').innerHTML='Cargando...';const res=await fetch('/api/admin/users',{headers:{'Authorization':`Bearer ${token}`}});const data=await res.json();if(data.users){let html='<table><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th></tr>';data.users.forEach(u=>{html+=`<tr><td>${u.id}</td><td>${u.name||'-'}</td><td>${u.email}</td><td>${u.role}</td></tr>`;});html+='</table>';document.getElementById('contentArea').innerHTML=html;}}
-async function loadAds(){document.getElementById('pageTitle').innerText='Anuncios';document.getElementById('contentArea').innerHTML='Cargando...';const res=await fetch('/api/admin/ads',{headers:{'Authorization':`Bearer ${token}`}});const data=await res.json();if(data.ads){let html='<table><tr><th>ID</th><th>Título</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>';data.ads.forEach(a=>{html+=`<tr><td>${a.id}</td><td>${a.title}</td><td>$${a.price||0}</td><td>${a.status}</td><td><button class="btn-delete" onclick="deleteAd(${a.id})">Eliminar</button></td></tr>`;});html+='</table>';document.getElementById('contentArea').innerHTML=html;}}
-async function deleteAd(id){if(!confirm('¿Eliminar este anuncio?'))return;await fetch(`/api/admin/ads/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});loadAds();}
-function logout(){localStorage.removeItem('adminToken');token=null;document.getElementById('loginPanel').style.display='flex';document.getElementById('dashboardPanel').style.display='none';}
-const savedToken=localStorage.getItem('adminToken');if(savedToken){token=savedToken;document.getElementById('loginPanel').style.display='none';document.getElementById('dashboardPanel').style.display='block';loadUsers();}
-</script>
-</body>
-</html>`);
+    const adminHtml = '<!DOCTYPE html>\n' +
+    '<html lang="es">\n' +
+    '<head><meta charset="UTF-8"><title>MXL Clasificados - Admin</title>\n' +
+    '<style>\n' +
+    '*{margin:0;padding:0;box-sizing:border-box}\n' +
+    'body{font-family:Arial,sans-serif;background:#f5f5f5}\n' +
+    '.login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1A1A1A,#2A2A2A)}\n' +
+    '.login-box{background:white;padding:40px;border-radius:16px;width:400px}\n' +
+    '.login-box h2{color:#1A237E;margin-bottom:24px;text-align:center}\n' +
+    'input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}\n' +
+    '.btn-primary{width:100%;background:#1A237E;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer}\n' +
+    '.dashboard{display:none}\n' +
+    '.sidebar{width:250px;background:#1A1A1A;color:white;position:fixed;height:100%;padding:20px}\n' +
+    '.main-content{margin-left:250px;padding:20px}\n' +
+    '.topbar{background:white;padding:15px 20px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between}\n' +
+    'table{width:100%;background:white;border-collapse:collapse}\n' +
+    'th,td{padding:10px;text-align:left;border-bottom:1px solid #ddd}\n' +
+    '.btn-delete{background:#ef4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer}\n' +
+    '.logout-btn{background:#ef4444;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer}\n' +
+    '</style>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<div id="loginPanel" class="login-container">\n' +
+    '<div class="login-box">\n' +
+    '<h2>🔐 MXL Clasificados - Admin</h2>\n' +
+    '<input type="email" id="adminEmail" placeholder="Email" value="admin@mxl.com.do">\n' +
+    '<input type="password" id="adminPassword" placeholder="Contraseña" value="mxl_admin_2026">\n' +
+    '<button class="btn-primary" onclick="login()">Ingresar</button>\n' +
+    '<div id="errorMsg" style="color:red;margin-top:10px"></div>\n' +
+    '</div>\n' +
+    '</div>\n' +
+    '<div id="dashboardPanel" class="dashboard">\n' +
+    '<div class="sidebar"><h3>MXL Admin</h3><hr><br><button onclick="loadUsers()" style="width:100%;margin:5px 0;padding:10px;">👥 Usuarios</button><button onclick="loadAds()" style="width:100%;margin:5px 0;padding:10px;">📢 Anuncios</button><button onclick="logout()" style="width:100%;margin:5px 0;padding:10px;background:#ef4444;">🚪 Salir</button></div>\n' +
+    '<div class="main-content"><div class="topbar"><h1 id="pageTitle">Dashboard</h1></div><div id="contentArea">Bienvenido al panel</div></div>\n' +
+    '</div>\n' +
+    '<script>\n' +
+    'let token=null;\n' +
+    'async function login(){const email=document.getElementById("adminEmail").value;const password=document.getElementById("adminPassword").value;try{const res=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});const data=await res.json();if(res.ok&&data.user?.role==="admin"){token=data.token;localStorage.setItem("adminToken",token);document.getElementById("loginPanel").style.display="none";document.getElementById("dashboardPanel").style.display="block";loadUsers();}else{document.getElementById("errorMsg").innerText="Acceso denegado";}}catch(e){document.getElementById("errorMsg").innerText="Error de conexión";}}\n' +
+    'async function loadUsers(){document.getElementById("pageTitle").innerText="Usuarios";document.getElementById("contentArea").innerHTML="Cargando...";const res=await fetch("/api/admin/users",{headers:{"Authorization":`Bearer ${token}`}});const data=await res.json();if(data.users){let html="<table><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th></tr>";data.users.forEach(u=>{html+=`<tr><td>${u.id}</td><td>${u.name||"-"}</td><td>${u.email}</td><td>${u.role}</td></tr>`;});html+="</table>";document.getElementById("contentArea").innerHTML=html;}}\n' +
+    'async function loadAds(){document.getElementById("pageTitle").innerText="Anuncios";document.getElementById("contentArea").innerHTML="Cargando...";const res=await fetch("/api/admin/ads",{headers:{"Authorization":`Bearer ${token}`}});const data=await res.json();if(data.ads){let html="<table><tr><th>ID</th><th>Título</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>";data.ads.forEach(a=>{html+=`<tr><td>${a.id}</td><td>${a.title}</td><td>$${a.price||0}</td><td>${a.status}</td><td><button class="btn-delete" onclick="deleteAd(${a.id})">Eliminar</button></td></tr>`;});html+="</table>";document.getElementById("contentArea").innerHTML=html;}}\n' +
+    'async function deleteAd(id){if(!confirm("¿Eliminar este anuncio?"))return;await fetch(`/api/admin/ads/${id}`,{method:"DELETE",headers:{"Authorization":`Bearer ${token}`}});loadAds();}\n' +
+    'function logout(){localStorage.removeItem("adminToken");token=null;document.getElementById("loginPanel").style.display="flex";document.getElementById("dashboardPanel").style.display="none";}\n' +
+    'const savedToken=localStorage.getItem("adminToken");if(savedToken){token=savedToken;document.getElementById("loginPanel").style.display="none";document.getElementById("dashboardPanel").style.display="block";loadUsers();}\n' +
+    '</script>\n' +
+    '</body>\n' +
+    '</html>';
+    fs.writeFileSync(adminFile, adminHtml);
 }
 
 // Crear archivo 404.html si no existe
 const notFoundFile = path.join(publicDir, '404.html');
 if (!fs.existsSync(notFoundFile)) {
     console.log('📝 Creando 404.html...');
-    fs.writeFileSync(notFoundFile, `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>404 - MXL Clasificados</title>
-<style>
-body{font-family:Arial;text-align:center;padding:50px;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;color:white}
-h1{font-size:120px;margin:0}
-a{color:white;text-decoration:none;border:2px solid white;padding:10px 20px;border-radius:8px;display:inline-block;margin-top:20px}
-</style>
-</head>
-<body>
-<h1>404</h1>
-<p>Página no encontrada</p>
-<a href="/">Volver al inicio</a>
-</body>
-</html>`);
+    const notFoundHtml = '<!DOCTYPE html>\n' +
+    '<html>\n' +
+    '<head><meta charset="UTF-8"><title>404 - MXL Clasificados</title>\n' +
+    '<style>\n' +
+    'body{font-family:Arial;text-align:center;padding:50px;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;color:white}\n' +
+    'h1{font-size:120px;margin:0}\n' +
+    'a{color:white;text-decoration:none;border:2px solid white;padding:10px 20px;border-radius:8px;display:inline-block;margin-top:20px}\n' +
+    '</style>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<h1>404</h1>\n' +
+    '<p>Página no encontrada</p>\n' +
+    '<a href="/">Volver al inicio</a>\n' +
+    '</body>\n' +
+    '</html>';
+    fs.writeFileSync(notFoundFile, notFoundHtml);
 }
 
 // Crear archivo index.html si no existe
 const indexFile = path.join(publicDir, 'index.html');
 if (!fs.existsSync(indexFile)) {
     console.log('📝 Creando index.html...');
-    fs.writeFileSync(indexFile, `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>MXL Clasificados</title>
-<style>
-body{font-family:Arial;text-align:center;padding:50px;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;color:white}
-h1{font-size:3rem}
-.btn{background:white;color:#1A237E;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:20px}
-</style>
-</head>
-<body>
-<h1>🚀 MXL Clasificados</h1>
-<p>Mercado de confianza en República Dominicana</p>
-<a href="/admin" class="btn">Panel Admin</a>
-</body>
-</html>`);
+    const indexHtml = '<!DOCTYPE html>\n' +
+    '<html>\n' +
+    '<head><meta charset="UTF-8"><title>MXL Clasificados</title>\n' +
+    '<style>\n' +
+    'body{font-family:Arial;text-align:center;padding:50px;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;color:white}\n' +
+    'h1{font-size:3rem}\n' +
+    '.btn{background:white;color:#1A237E;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:20px}\n' +
+    '</style>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<h1>🚀 MXL Clasificados</h1>\n' +
+    '<p>Mercado de confianza en República Dominicana</p>\n' +
+    '<a href="/admin" class="btn">Panel Admin</a>\n' +
+    '</body>\n' +
+    '</html>';
+    fs.writeFileSync(indexFile, indexHtml);
 }
 
 console.log(`✅ Carpeta public lista en: ${publicDir}`);
+console.log(`   - admin.html: ${fs.existsSync(adminFile) ? '✅' : '❌'}`);
+console.log(`   - index.html: ${fs.existsSync(indexFile) ? '✅' : '❌'}`);
+console.log(`   - 404.html: ${fs.existsSync(notFoundFile) ? '✅' : '❌'}`);
 
 // Configuración
 const PORT = process.env.PORT || 8080;
@@ -386,22 +392,6 @@ app.get('/app', (req, res) => {
     res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// Ruta para verificar configuración (solo desarrollo)
-if (!isProduction) {
-    app.get('/debug/config', (req, res) => {
-        res.json({
-            siteName: SITE_NAME,
-            nodeEnv: process.env.NODE_ENV,
-            dbConfigured: !!process.env.DATABASE_URL,
-            sessionSecretConfigured: !!process.env.SESSION_SECRET,
-            publicPath: publicDir,
-            files: fs.readdirSync(publicDir),
-            uptime: process.uptime(),
-            memory: process.memoryUsage()
-        });
-    });
-}
-
 // ============ MANEJO DE ERRORES ============
 
 // 404 handler para API
@@ -415,21 +405,7 @@ app.use('/api/*', (req, res) => {
 // 404 handler para archivos estáticos
 app.use((req, res) => {
     if (!req.path.startsWith('/api') && req.path !== '/health' && req.path !== '/ping') {
-        res.status(404).sendFile(path.join(publicDir, '404.html'), (err) => {
-            if (err) {
-                res.status(404).send(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head><title>404 - MXL Clasificados</title></head>
-                    <body style="text-align:center;padding:50px;">
-                        <h1>404</h1>
-                        <p>Página no encontrada</p>
-                        <a href="/">Volver al inicio</a>
-                    </body>
-                    </html>
-                `);
-            }
-        });
+        res.status(404).sendFile(path.join(publicDir, '404.html'));
     } else {
         res.status(404).json({ error: 'Ruta no encontrada' });
     }
@@ -471,18 +447,20 @@ let consecutiveFails = 0;
 const MAX_CONSECUTIVE_FAILS = 3;
 
 function startSelfPing() {
-    // Obtener la URL base (en Railway usa la URL de la app)
     const selfUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
         : `http://localhost:${PORT}`;
     
     console.log(`🔄 Iniciando Self-Ping cada 10 minutos a: ${selfUrl}/ping`);
     
-    // Función para hacer ping a sí mismo
     const ping = () => {
+        const protocol = process.env.RAILWAY_PUBLIC_DOMAIN ? 'https' : 'http';
+        const host = process.env.RAILWAY_PUBLIC_DOMAIN || 'localhost';
+        const port = process.env.RAILWAY_PUBLIC_DOMAIN ? 443 : PORT;
+        
         const options = {
-            hostname: process.env.RAILWAY_PUBLIC_DOMAIN ? process.env.RAILWAY_PUBLIC_DOMAIN : 'localhost',
-            port: process.env.RAILWAY_PUBLIC_DOMAIN ? 443 : PORT,
+            hostname: host,
+            port: port,
             path: '/ping',
             method: 'GET',
             ...(process.env.RAILWAY_PUBLIC_DOMAIN && { protocol: 'https:' })
@@ -494,21 +472,20 @@ function startSelfPing() {
             res.on('end', () => {
                 if (res.statusCode === 200) {
                     consecutiveFails = 0;
-                    const timestamp = new Date().toISOString();
-                    console.log(`💓 Self-Ping exitoso [${timestamp}] - Status: ${res.statusCode}`);
+                    console.log(`💓 Self-Ping exitoso - ${new Date().toISOString()}`);
                 } else {
                     consecutiveFails++;
-                    console.warn(`⚠️ Self-Ping respondió con status: ${res.statusCode} (Fallo ${consecutiveFails}/${MAX_CONSECUTIVE_FAILS})`);
+                    console.warn(`⚠️ Self-Ping status: ${res.statusCode} (Fallo ${consecutiveFails})`);
                 }
             });
         });
         
         req.on('error', (error) => {
             consecutiveFails++;
-            console.error(`❌ Self-Ping falló: ${error.message} (Fallo ${consecutiveFails}/${MAX_CONSECUTIVE_FAILS})`);
+            console.error(`❌ Self-Ping falló: ${error.message} (Fallo ${consecutiveFails})`);
             
             if (consecutiveFails >= MAX_CONSECUTIVE_FAILS) {
-                console.error('🚨 Demasiados fallos consecutivos en Self-Ping. Verificando estado del servidor...');
+                console.error('🚨 Demasiados fallos en Self-Ping!');
                 consecutiveFails = 0;
             }
         });
@@ -516,10 +493,7 @@ function startSelfPing() {
         req.end();
     };
     
-    // Ejecutar ping inmediatamente al iniciar
     setTimeout(ping, 5000);
-    
-    // Configurar intervalo cada 10 minutos (600,000 ms)
     pingInterval = setInterval(ping, 10 * 60 * 1000);
 }
 
@@ -527,7 +501,6 @@ function startSelfPing() {
 function startMemoryMonitoring() {
     console.log('📊 Iniciando monitoreo de memoria...');
     
-    // Monitorear cada 5 minutos
     setInterval(() => {
         const memoryUsage = process.memoryUsage();
         const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
@@ -536,26 +509,10 @@ function startMemoryMonitoring() {
         
         console.log(`📊 Memoria: Heap: ${heapUsedMB}/${heapTotalMB}MB | RSS: ${rssMB}MB`);
         
-        // Advertencia si la memoria está alta (> 80% del límite)
         if (heapUsedMB > heapTotalMB * 0.8) {
             console.warn(`⚠️ ALERTA: Uso de memoria alto: ${heapUsedMB}/${heapTotalMB}MB`);
         }
     }, 5 * 60 * 1000);
-}
-
-// ============ MANEJAR SEÑALES DE CIERRE ============
-function handleShutdown(signal) {
-    console.log(`\n🛑 Recibida señal ${signal}`);
-    console.log(`📊 Estadísticas finales - Uptime: ${Math.floor(process.uptime())}s`);
-    console.log(`📊 Memoria final: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
-    
-    if (pingInterval) {
-        clearInterval(pingInterval);
-        console.log('⏹️ Self-Ping detenido');
-    }
-    
-    console.log('👋 Servidor cerrando...');
-    process.exit(0);
 }
 
 // ============ INICIAR SERVIDOR ============
@@ -584,41 +541,28 @@ const startServer = async () => {
 ╚══════════════════════════════════════════════════════════════════════════╝
             `);
             
-            if (!dbConnected && !isProduction) {
-                console.warn('\n⚠️  Modo desarrollo: Base de datos no conectada');
-                console.warn('   Algunas funciones pueden no estar disponibles\n');
-            }
-            
-            // Iniciar Self-Ping para mantener el servidor activo
             startSelfPing();
-            
-            // Iniciar monitoreo de memoria
             startMemoryMonitoring();
         });
         
-        // Graceful shutdown
-        process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-        process.on('SIGINT', () => handleShutdown('SIGINT'));
-        
-        process.on('uncaughtException', (error) => {
-            console.error('❌ Excepción no capturada:', error);
-            console.error('Stack:', error.stack);
-            handleShutdown('uncaughtException');
+        process.on('SIGTERM', () => {
+            console.log('🛑 Cerrando servidor...');
+            if (pingInterval) clearInterval(pingInterval);
+            server.close(() => process.exit(0));
         });
         
-        process.on('unhandledRejection', (reason, promise) => {
-            console.error('❌ Promesa rechazada no manejada:', reason);
-            handleShutdown('unhandledRejection');
+        process.on('SIGINT', () => {
+            console.log('🛑 Cerrando servidor...');
+            if (pingInterval) clearInterval(pingInterval);
+            server.close(() => process.exit(0));
         });
         
     } catch (error) {
-        console.error('❌ Error fatal al iniciar el servidor:', error.message);
-        console.error(error.stack);
+        console.error('❌ Error fatal:', error.message);
         if (isProduction) process.exit(1);
     }
 };
 
-// Iniciar servidor solo si es el archivo principal
 if (require.main === module) {
     startServer();
 }
