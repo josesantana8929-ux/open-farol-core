@@ -3,73 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EL FAROL ADMIN</title>
-    <!-- Usamos estilos directos para que no dependa de enlaces externos si fallan -->
-    <style>
-        body { background-color: #001f3f; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-h-screen; margin: 0; height: 100vh; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 350px; text-align: center; }
-        .logo { font-size: 40px; margin-bottom: 10px; }
-        h1 { color: #001f3f; margin-bottom: 5px; font-size: 24px; }
-        p { color: #666; font-size: 14px; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #001f3f; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #003366; }
-        #message { color: red; font-size: 13px; margin-top: 15px; display: none; }
-    </style>
+    <title>Dashboard - El Farol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100">
+    <nav class="bg-[#001f3f] text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">🏮 Panel de Control MXL</h1>
+            <button onclick="logout()" class="bg-red-600 px-4 py-1 rounded text-sm">Cerrar Sesión</button>
+        </div>
+    </nav>
 
-    <div class="login-card">
-        <div class="logo">🏮</div>
-        <h1>EL FAROL ADMIN</h1>
-        <p>Panel de administración</p>
+    <div class="container mx-auto p-6">
+        <!-- Estadísticas Rápidas -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-600">
+                <p class="text-gray-500 text-sm">Total Usuarios</p>
+                <h2 id="totalUsers" class="text-3xl font-bold">...</h2>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-600">
+                <p class="text-gray-500 text-sm">Anuncios Activos</p>
+                <h2 id="totalAds" class="text-3xl font-bold">...</h2>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-600">
+                <p class="text-gray-500 text-sm">Verificaciones Pendientes</p>
+                <h2 id="pendingVerif" class="text-3xl font-bold">...</h2>
+            </div>
+        </div>
 
-        <form id="loginForm">
-            <input type="email" id="email" placeholder="Correo electrónico" required>
-            <input type="password" id="password" placeholder="Contraseña" required>
-            <button type="submit" id="btnAcceder">ACCEDER AL PANEL</button>
-        </form>
-        
-        <div id="message"></div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-bold mb-4">Acciones del Administrador</h3>
+            <div class="flex flex-wrap gap-4">
+                <button class="bg-[#001f3f] text-white px-6 py-2 rounded">Gestionar Usuarios</button>
+                <button class="bg-[#001f3f] text-white px-6 py-2 rounded">Revisar Anuncios</button>
+                <button class="bg-orange-600 text-white px-6 py-2 rounded">Ver Solicitudes ID</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('message');
-            const btn = document.getElementById('btnAcceder');
+        // Verificar si eres admin
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = '/admin';
 
-            btn.innerText = "CARGANDO...";
-            btn.disabled = true;
-
+        async function loadStats() {
             try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                const res = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const data = await res.json();
+                document.getElementById('totalUsers').innerText = data.totalUsers || 0;
+                document.getElementById('totalAds').innerText = data.totalAds || 0;
+                document.getElementById('pendingVerif').innerText = data.pendingVerifications || 0;
+            } catch (e) { console.error("Error cargando stats"); }
+        }
 
-                const data = await response.json();
+        function logout() {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin';
+        }
 
-                if (data.success && data.user.role === 'admin') {
-                    localStorage.setItem('adminToken', data.token);
-                    alert('¡Acceso concedido, mxl!');
-                    window.location.href = '/admin-dashboard'; 
-                } else {
-                    msg.innerText = "Error: " + (data.error || "No eres administrador");
-                    msg.style.display = "block";
-                    btn.innerText = "ACCEDER AL PANEL";
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                msg.innerText = "Error de conexión con el servidor";
-                msg.style.display = "block";
-                btn.innerText = "ACCEDER AL PANEL";
-                btn.disabled = false;
-            }
-        });
+        loadStats();
     </script>
 </body>
 </html>
