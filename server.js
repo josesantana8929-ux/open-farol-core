@@ -7,11 +7,15 @@ const dotenv = require('dotenv');
 const path = require('path');
 const db = require('./db');
 
+// Importar rutas
+const authRoutes = require('./routes/authRoutes');
+const adRoutes = require('./routes/adRoutes');
+
 // Cargar variables de entorno
 dotenv.config();
 
 // Validar configuración crítica
-const requiredEnvVars = ['SITE_NAME'];
+const requiredEnvVars = ['SITE_NAME', 'SESSION_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -38,7 +42,8 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://via.placeholder.com"],
+      connectSrc: ["'self'", "https://api.cloudinary.com"],
     },
   },
 }));
@@ -62,7 +67,18 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Aplicar rate limit a rutas de API
 app.use('/api/', limiter);
+
+// Rate limit más estricto para autenticación
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // 5 intentos
+  message: 'Demasiados intentos de inicio de sesión, por favor intenta más tarde',
+});
+
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Parseo de JSON y URL encoded con límites
 app.use(express.json({ limit: '10mb' }));
@@ -80,10 +96,21 @@ if (!isProduction) {
 app.use((req, res, next) => {
   res.setHeader('X-Powered-By', SITE_NAME);
   res.setHeader('X-Site-Name', SITE_NAME);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
   next();
 });
 
-// ============ RUTAS ============
+// ============ RUTAS DE LA API ============
+
+// Rutas de autenticación
+app.use('/api/auth', authRoutes);
+
+// Rutas de anuncios
+app.use('/api/ads', adRoutes);
+
+// ============ RUTAS PÚBLICAS ============
 
 // Ruta de health check (para Railway, Hostinger, etc)
 app.get('/health', async (req, res) => {
@@ -100,6 +127,7 @@ app.get('/health', async (req, res) => {
       database: dbStatus ? 'connected' : 'disconnected',
       memory: process.memoryUsage(),
       version: process.version,
+      nodeEnv: process.env.NODE_ENV,
     };
     
     res.status(200).json(healthInfo);
@@ -123,21 +151,28 @@ app.get('/', (req, res) => {
     status: 'operational',
     endpoints: {
       health: '/health',
-      api: '/api',
+      api: {
+        auth: '/api/auth',
+        ads: '/api/ads',
+      },
     },
+    documentation: '/api/docs',
   });
 });
 
-// Ruta simple para verificar configuración
-app.get('/config-check', (req, res) => {
-  res.json({
-    siteName: SITE_NAME,
-    nodeEnv: process.env.NODE_ENV,
-    dbConfigured: !!process.env.DATABASE_URL || (!!process.env.DB_HOST && !!process.env.DB_USER),
-    cloudinaryConfigured: !!process.env.CLOUDINARY_URL || 
-      (!!process.env.CLOUDINARY_CLOUD_NAME && !!process.env.CLOUDINARY_API_KEY),
+// Ruta simple para verificar configuración (solo desarrollo)
+if (!isProduction) {
+  app.get('/config-check', (req, res) => {
+    res.json({
+      siteName: SITE_NAME,
+      nodeEnv: process.env.NODE_ENV,
+      dbConfigured: !!process.env.DATABASE_URL || (!!process.env.DB_HOST && !!process.env.DB_USER),
+      cloudinaryConfigured: !!process.env.CLOUDINARY_URL || 
+        (!!process.env.CLOUDINARY_CLOUD_NAME && !!process.env.CLOUDINARY_API_KEY),
+      jwtConfigured: !!process.env.SESSION_SECRET,
+    });
   });
-});
+}
 
 // ============ MANEJO DE ERRORES ============
 
@@ -153,6 +188,43 @@ app.use((req, res) => {
 // Error handler global
 app.use((err, req, res, next) => {
   console.error('❌ Error no capturado:', err.stack);
+  
+  // Errores específicos de multer
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      error: 'Archivo demasiado grande',
+      message: `El tamaño máximo permitido es ${parseInt(process.env.MAX_FILE_SIZE) / 1024 / 1024}MB`,
+    });
+  }
+  
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({
+      error: 'Demasiados archivos',
+      message: 'Máximo 5 imágenes por anuncio',
+    });
+  }
+  
+  if (err.message === 'Tipo de archivo no permitido') {
+    return res.status(400).json({
+      error: 'Tipo de archivo no permitido',
+      message: `Formatos permitidos: ${process.env.ALLOWED_FILE_TYPES || 'image/jpeg, image/png, image/webp'}`,
+    });
+  }
+  
+  // Error de JWT
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      error: 'Token inválido',
+      message: 'Por favor, inicia sesión nuevamente',
+    });
+  }
+  
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      error: 'Token expirado',
+      message: 'Tu sesión ha expirado, por favor inicia sesión nuevamente',
+    });
+  }
   
   const status = err.status || 500;
   const message = isProduction && status === 500 
@@ -185,31 +257,80 @@ const startServer = async () => {
     // Iniciar servidor
     const server = app.listen(PORT, () => {
       console.log(`
-╔══════════════════════════════════════════════════════╗
-║  🚀 ${SITE_NAME} - Servidor Iniciado                ║
-╠══════════════════════════════════════════════════════╣
-║  📡 Puerto: ${PORT}                                  ║
-║  🌍 Entorno: ${process.env.NODE_ENV || 'development'} ║
-║  🗄️  Base de Datos: ${dbConnected ? 'Conectada ✅' : 'Desconectada ⚠️'} ║
-║  📊 Health Check: http://localhost:${PORT}/health    ║
-║  🖥️  Servidor: ${isProduction ? 'Producción' : 'Desarrollo'}   ║
-╚══════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════╗
+║                    🚀 ${SITE_NAME} - Servidor Iniciado                    ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  📡 Puerto: ${PORT}                                                       ║
+║  🌍 Entorno: ${(process.env.NODE_ENV || 'development').padEnd(30)}║
+║  🗄️  Base de Datos: ${dbConnected ? 'Conectada ✅' : 'Desconectada ⚠️'}                                         ║
+║  📊 Health Check: http://localhost:${PORT}/health                                    ║
+║  🔐 Auth API: http://localhost:${PORT}/api/auth                                     ║
+║  📦 Ads API: http://localhost:${PORT}/api/ads                                       ║
+║  🖥️  Servidor: ${isProduction ? 'Producción 🏭' : 'Desarrollo 💻'}                                                 ║
+╚══════════════════════════════════════════════════════════════════════╝
       `);
+      
+      // Mostrar endpoints disponibles en desarrollo
+      if (!isProduction) {
+        console.log(`
+📋 Endpoints disponibles:
+
+  Autenticación:
+  POST   /api/auth/register  - Registrar usuario
+  POST   /api/auth/login     - Iniciar sesión
+  GET    /api/auth/profile   - Ver perfil (requiere token)
+  PUT    /api/auth/profile   - Actualizar perfil (requiere token)
+
+  Anuncios:
+  GET    /api/ads            - Listar anuncios (con filtros)
+  GET    /api/ads/:id        - Ver anuncio específico
+  POST   /api/ads            - Crear anuncio (requiere token + imágenes)
+  GET    /api/ads/user/my-ads - Mis anuncios (requiere token)
+  DELETE /api/ads/:id        - Eliminar anuncio (requiere token)
+
+  Sistema:
+  GET    /health             - Estado del servidor
+  GET    /config-check       - Ver configuración (solo desarrollo)
+        `);
+      }
     });
     
     // Graceful shutdown
-    const gracefulShutdown = async () => {
-      console.log('\n🛑 Recibida señal de terminación, cerrando servidor...');
+    const gracefulShutdown = async (signal) => {
+      console.log(`\n🛑 Recibida señal ${signal}, cerrando servidor...`);
+      
       server.close(async () => {
         console.log('📦 Cerrando conexiones de base de datos...');
-        await db.pool.end();
+        try {
+          await db.pool.end();
+          console.log('✅ Conexiones de base de datos cerradas');
+        } catch (err) {
+          console.error('❌ Error cerrando conexiones:', err);
+        }
         console.log('✅ Servidor cerrado correctamente');
         process.exit(0);
       });
+      
+      // Forzar cierre después de 10 segundos
+      setTimeout(() => {
+        console.error('⚠️  Timeout cerrando conexiones, forzando salida');
+        process.exit(1);
+      }, 10000);
     };
     
-    process.on('SIGTERM', gracefulShutdown);
-    process.on('SIGINT', gracefulShutdown);
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    
+    // Manejar excepciones no capturadas
+    process.on('uncaughtException', (error) => {
+      console.error('❌ Excepción no capturada:', error);
+      gracefulShutdown('uncaughtException');
+    });
+    
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('❌ Promesa rechazada no manejada:', reason);
+      gracefulShutdown('unhandledRejection');
+    });
     
   } catch (error) {
     console.error('❌ Error fatal al iniciar el servidor:', error);
