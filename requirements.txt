@@ -1,0 +1,177 @@
+-- ============================================
+-- SmartClienteRD IA - Esquema de Base de Datos
+-- PostgreSQL 15+
+-- ============================================
+
+-- Habilitar extensión para UUID (opcional)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
+-- 1. TABLA: PLANES (de suscripción)
+-- ============================================
+CREATE TABLE IF NOT EXISTS plans (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,  -- 'Free', 'Pro', 'Business'
+    description TEXT,
+    price DECIMAL(10, 2) DEFAULT 0,
+    monthly_messages INT NOT NULL,      -- Límite de mensajes por mes
+    max_clients INT NOT NULL,           -- Máximo de clientes por cuenta
+    custom_prompts BOOLEAN DEFAULT FALSE,
+    priority_support BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 2. TABLA: USUARIOS
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    business_name VARCHAR(255),
+    phone VARCHAR(50),
+    plan_id INT DEFAULT 1 REFERENCES plans(id),
+    messages_used_this_month INT DEFAULT 0,
+    last_reset_date DATE DEFAULT CURRENT_DATE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 3. TABLA: CLIENTES
+-- ============================================
+CREATE TABLE IF NOT EXISTS clients (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    email VARCHAR(255),
+    address TEXT,
+    notes TEXT,
+    tags TEXT[],                       -- Array de etiquetas
+    last_contact TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 4. TABLA: MENSAJES GENERADOS
+-- ============================================
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id INT REFERENCES clients(id) ON DELETE SET NULL,
+    message_type VARCHAR(50) NOT NULL,  -- 'promotion', 'followup', 'recovery', etc.
+    tone VARCHAR(50),                   -- 'formal', 'friendly', 'urgent', etc.
+    length VARCHAR(20),                 -- 'short', 'medium', 'long'
+    country_style VARCHAR(50),          -- 'dominican', 'mexican', 'neutral', etc.
+    custom_instructions TEXT,
+    generated_text TEXT NOT NULL,
+    prompt_used TEXT,                   -- Prompt enviado a la IA
+    was_sent BOOLEAN DEFAULT FALSE,
+    sent_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 5. TABLA: CONFIGURACIONES DE IA
+-- ============================================
+CREATE TABLE IF NOT EXISTS ai_settings (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    default_message_type VARCHAR(50),
+    default_tone VARCHAR(50),
+    default_length VARCHAR(20),
+    default_country_style VARCHAR(50),
+    temperature DECIMAL(3, 2) DEFAULT 0.7,  -- Creatividad (0.0 - 1.0)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 6. TABLA: REGISTROS DE USO
+-- ============================================
+CREATE TABLE IF NOT EXISTS usage_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(50) NOT NULL,        -- 'generate_message', 'export_clients', etc.
+    message_id INT REFERENCES messages(id) ON DELETE SET NULL,
+    tokens_used INT,
+    cost_estimate DECIMAL(10, 6),
+    ip_address INET,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- 7. TABLA: PAGOS (para futuro)
+-- ============================================
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'DOP',
+    payment_method VARCHAR(50),         -- 'card', 'paypal', 'transfer'
+    transaction_id VARCHAR(255) UNIQUE,
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'success', 'failed'
+    metadata JSONB,                     -- Datos adicionales del pago
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- ÍNDICES PARA OPTIMIZACIÓN
+-- ============================================
+
+-- Usuarios
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_plan_id ON users(plan_id);
+
+-- Clientes
+CREATE INDEX IF NOT EXISTS idx_clients_user_id ON clients(user_id);
+CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
+CREATE INDEX IF NOT EXISTS idx_clients_tags ON clients USING GIN(tags);
+
+-- Mensajes
+CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_client_id ON messages(client_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_message_type ON messages(message_type);
+
+-- Registros de uso
+CREATE INDEX IF NOT EXISTS idx_usage_logs_user_id ON usage_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_usage_logs_created_at ON usage_logs(created_at);
+
+-- ============================================
+-- DATOS INICIALES (Planes por defecto)
+-- ============================================
+
+INSERT INTO plans (name, description, price, monthly_messages, max_clients, custom_prompts, priority_support)
+VALUES 
+    ('Free', 'Plan gratuito para empezar', 0, 50, 50, FALSE, FALSE),
+    ('Pro', 'Plan profesional para negocios', 499, 500, 500, TRUE, FALSE),
+    ('Business', 'Plan empresarial sin límites', 999, 999999, 999999, TRUE, TRUE)
+ON CONFLICT (name) DO NOTHING;
+
+-- ============================================
+-- ACTUALIZACIÓN AUTOMÁTICA DE TIMESTAMPS
+-- ============================================
+
+-- Función para actualizar updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Triggers para actualizar updated_at automáticamente
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ai_settings_updated_at BEFORE UPDATE ON ai_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
