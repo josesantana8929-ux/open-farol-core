@@ -1,47 +1,272 @@
-# 1. Asegurarnos que la carpeta existe
-mkdir -p /app/public
-
-# 2. Crear el archivo admin.html LIMPIO de nuevo
-cat > /app/public/admin.html << 'EOF'
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>El Farol - Panel Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Farol - Panel de Administración</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background: #2a2a2a; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 350px; text-align: center; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 6px; border: none; }
-        button { width: 95%; padding: 12px; background: #1A237E; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        #error { color: #ff5252; margin-top: 10px; font-size: 14px; }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#1a1a2e;color:#fff;}
+        
+        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0d1b4a);}
+        .login-box{background:white;padding:40px;border-radius:16px;width:400px;color:#333;}
+        .login-box h2{color:#1A237E;margin-bottom:24px;text-align:center;}
+        input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+        .btn-primary{width:100%;background:#1A237E;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
+        .btn-primary:hover{background:#0D1B4A;}
+        
+        .dashboard{display:none;}
+        .sidebar{width:260px;background:#0f0f1a;position:fixed;height:100%;padding:20px;}
+        .sidebar h3{color:#FFD600;margin-bottom:20px;}
+        .sidebar button{width:100%;margin:8px 0;padding:12px;background:#1a1a2e;border:1px solid #2d2d44;color:white;border-radius:8px;cursor:pointer;text-align:left;}
+        .sidebar button:hover{background:#FFD600;color:#1A237E;}
+        .main-content{margin-left:260px;padding:20px;}
+        .topbar{background:#1a1a2e;padding:15px 20px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:20px;}
+        .stat-card{background:#1a1a2e;padding:20px;border-radius:10px;text-align:center;}
+        .stat-number{font-size:2rem;font-weight:bold;color:#FFD600;}
+        .stat-label{color:#c9a87b;margin-top:5px;}
+        table{width:100%;background:#1a1a2e;border-collapse:collapse;border-radius:10px;overflow:hidden;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid #2d2d44;}
+        th{background:#0f0f1a;color:#FFD600;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:bold;}
+        .badge-success{background:#4CAF50;color:white;}
+        .badge-warning{background:#FF9800;color:white;}
+        .badge-danger{background:#f44336;color:white;}
+        .btn-approve{background:#4CAF50;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;}
+        .btn-reject{background:#f44336;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;margin-left:5px;}
+        .logout-btn{background:#f44336;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;}
+        .toast{position:fixed;bottom:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:1000;}
     </style>
 </head>
 <body>
+
+<div id="loginPanel" class="login-container">
     <div class="login-box">
-        <h2>🏮 El Farol Admin</h2>
-        <input type="email" id="email" placeholder="Email" value="admin@elfarol.com.do">
-        <input type="password" id="password" placeholder="Contraseña">
-        <button onclick="login()">INGRESAR</button>
-        <div id="error"></div>
+        <h2>🔐 El Farol - Admin</h2>
+        <input type="email" id="adminEmail" placeholder="Email" value="admin@elfarol.com.do">
+        <input type="password" id="adminPassword" placeholder="Contraseña" value="admin123">
+        <button class="btn-primary" onclick="login()">Ingresar</button>
+        <div id="errorMsg" style="color:red;margin-top:10px"></div>
     </div>
-    <script>
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+</div>
+
+<div id="dashboardPanel" class="dashboard">
+    <div class="sidebar">
+        <h3>🏮 El Farol Admin</h3>
+        <hr style="margin:10px 0;border-color:#2d2d44;">
+        <button onclick="loadStats()">📊 Dashboard</button>
+        <button onclick="loadVerificationRequests()">✅ Verificaciones</button>
+        <button onclick="loadUsers()">👥 Usuarios</button>
+        <button onclick="loadAds()">📢 Anuncios</button>
+        <button onclick="logout()" style="background:#f44336;">🚪 Salir</button>
+    </div>
+    <div class="main-content">
+        <div class="topbar">
+            <h1 id="pageTitle">Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Salir</button>
+        </div>
+        <div id="contentArea"></div>
+    </div>
+</div>
+
+<script>
+    let token = null;
+    
+    async function login() {
+        const email = document.getElementById('adminEmail').value;
+        const password = document.getElementById('adminPassword').value;
+        
+        try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
             const data = await res.json();
-            if (res.ok && data.user.role === 'admin') {
-                localStorage.setItem('adminToken', data.token);
-                window.location.reload(); 
+            
+            if (res.ok && data.user?.role === 'admin') {
+                token = data.token;
+                localStorage.setItem('adminToken', token);
+                document.getElementById('loginPanel').style.display = 'none';
+                document.getElementById('dashboardPanel').style.display = 'block';
+                loadStats();
             } else {
-                document.getElementById('error').innerText = 'Acceso denegado o datos incorrectos';
+                document.getElementById('errorMsg').innerText = 'Acceso denegado';
             }
+        } catch(e) {
+            document.getElementById('errorMsg').innerText = 'Error de conexión';
         }
-    </script>
+    }
+    
+    async function loadStats() {
+        document.getElementById('pageTitle').innerText = 'Dashboard';
+        try {
+            const res = await fetch('/api/admin/stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            document.getElementById('contentArea').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number">${data.totalUsers || 0}</div><div class="stat-label">Usuarios</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.totalAds || 0}</div><div class="stat-label">Anuncios totales</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.activeAds || 0}</div><div class="stat-label">Activos</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.verifiedUsers || 0}</div><div class="stat-label">Verificados</div></div>
+                    <div class="stat-card"><div class="stat-number">${data.pendingAds || 0}</div><div class="stat-label">Pendientes</div></div>
+                </div>
+                <div style="background:#1a1a2e;padding:20px;border-radius:10px;">
+                    <h3>🎯 Resumen rápido</h3>
+                    <p>✅ ${data.verifiedUsers || 0} usuarios verificados</p>
+                    <p>📢 ${data.activeAds || 0} anuncios activos</p>
+                    <p>⏳ ${data.pendingAds || 0} anuncios pendientes de aprobación</p>
+                </div>
+            `;
+        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar estadísticas</p>'; }
+    }
+    
+    async function loadVerificationRequests() {
+        document.getElementById('pageTitle').innerText = 'Solicitudes de Verificación';
+        try {
+            const res = await fetch('/api/admin/verification-requests', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            if (!data.requests || data.requests.length === 0) {
+                document.getElementById('contentArea').innerHTML = '<div style="background:#1a1a2e;padding:20px;border-radius:10px;">No hay solicitudes pendientes</div>';
+                return;
+            }
+            
+            let html = '<table><thead><tr><th>Usuario</th><th>Email</th><th>Teléfono</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            for (const req of data.requests) {
+                html += `<tr>
+                    <td>${req.name || '-'}</td>
+                    <td>${req.email}</td>
+                    <td>${req.phone || '-'}</td>
+                    <td>${new Date(req.requested_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-approve" onclick="approveVerification(${req.user_id})">✅ Aprobar</button>
+                        <button class="btn-reject" onclick="rejectVerification(${req.user_id})">❌ Rechazar</button>
+                    </td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('contentArea').innerHTML = html;
+        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar solicitudes</p>'; }
+    }
+    
+    async function approveVerification(userId) {
+        if (!confirm('¿Aprobar la verificación de este usuario?')) return;
+        try {
+            await fetch(`/api/admin/verify/${userId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ notes: 'Aprobado por admin' })
+            });
+            showToast('Usuario verificado exitosamente');
+            loadVerificationRequests();
+            loadStats();
+        } catch(e) { showToast('Error', true); }
+    }
+    
+    async function rejectVerification(userId) {
+        const reason = prompt('Motivo del rechazo:');
+        if (!reason) return;
+        try {
+            await fetch(`/api/admin/verify/${userId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ notes: reason })
+            });
+            showToast('Solicitud rechazada');
+            loadVerificationRequests();
+        } catch(e) { showToast('Error', true); }
+    }
+    
+    async function loadUsers() {
+        document.getElementById('pageTitle').innerText = 'Usuarios';
+        try {
+            const res = await fetch('/api/admin/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            let html = '<table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Tipo</th><th>Verificado</th><th>Plan</th></tr></thead><tbody>';
+            for (const user of data.users) {
+                html += `<tr>
+                    <td>${user.id}</td>
+                    <td>${user.name || '-'}</td>
+                    <td>${user.email}</td>
+                    <td>${user.user_type === 'seller' ? '💰 Vendedor' : '📦 Comprador'}</td>
+                    <td>${user.verified ? '<span class="badge badge-success">✅ Verificado</span>' : '<span class="badge badge-warning">⏳ Pendiente</span>'}</td>
+                    <td>${user.plan_type || 'Gratis'}</td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('contentArea').innerHTML = html;
+        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar usuarios</p>'; }
+    }
+    
+    async function loadAds() {
+        document.getElementById('pageTitle').innerText = 'Anuncios';
+        try {
+            const res = await fetch('/api/admin/ads', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            let html = '<table><thead><tr><th>ID</th><th>Título</th><th>Precio</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+            for (const ad of data.ads) {
+                html += `<tr>
+                    <td>${ad.id}</td>
+                    <td>${ad.title}</td>
+                    <td>RD$ ${Number(ad.price).toLocaleString()}</td>
+                    <td>${ad.user_name || ad.user_email}</td>
+                    <td><span class="badge ${ad.status === 'active' ? 'badge-success' : 'badge-warning'}">${ad.status}</span></td>
+                    <td><button class="btn-reject" onclick="deleteAd(${ad.id})">🗑️ Eliminar</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('contentArea').innerHTML = html;
+        } catch(e) { document.getElementById('contentArea').innerHTML = '<p>Error al cargar anuncios</p>'; }
+    }
+    
+    async function deleteAd(id) {
+        if (!confirm('¿Eliminar este anuncio?')) return;
+        try {
+            await fetch(`/api/admin/ads/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            showToast('Anuncio eliminado');
+            loadAds();
+        } catch(e) { showToast('Error', true); }
+    }
+    
+    function logout() {
+        localStorage.removeItem('adminToken');
+        token = null;
+        document.getElementById('loginPanel').style.display = 'flex';
+        document.getElementById('dashboardPanel').style.display = 'none';
+    }
+    
+    function showToast(msg, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.background = isError ? '#f44336' : '#4CAF50';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    const savedToken = localStorage.getItem('adminToken');
+    if (savedToken) {
+        token = savedToken;
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('dashboardPanel').style.display = 'block';
+        loadStats();
+    }
+</script>
 </body>
 </html>
-EOF
