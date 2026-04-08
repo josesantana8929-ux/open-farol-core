@@ -1,11 +1,11 @@
 # === Framework Principal ===
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
 
-# === Base de Datos ===
-asyncpg==0.29.0
-sqlalchemy==2.0.23
-alembic==1.12.1
+# === Base de Datos (usar psycopg2 en lugar de asyncpg) ===
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.35
+alembic==1.13.0
 
 # === Variables de Entorno ===
 python-dotenv==1.0.0
@@ -13,22 +13,20 @@ python-dotenv==1.0.0
 # === Autenticación y Seguridad ===
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-bcrypt==4.1.2
+python-multipart==0.0.9
+bcrypt==4.2.0
 
 # === Validación ===
-pydantic==2.5.0
-pydantic-settings==2.1.0
-email-validator==2.1.0
+pydantic==2.9.0
+pydantic-settings==2.5.0
+email-validator==2.1.1
 
 # === IA ===
-openai==1.6.1
+openai==1.40.0
 
 # === Utilidades ===
-httpx==0.25.1
-python-dateutil==2.8.2
-ujson==5.9.0
+httpx==0.27.0
+python-dateutil==2.9.0
 
-# === Middleware (CORREGIDO) ===
-cors==1.0.1              # ← Cambiado de 0.0.2 a 1.0.1
+# === Middleware ===
 slowapi==0.1.9
