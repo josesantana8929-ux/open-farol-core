@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Centro de Ayuda - El Farol Clasificados</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+        
+        .header {
+            background: #0A1F44;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .logo span { color: #FFD600; }
+        .btn-back { background: #FFD600; color: #0A1F44; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        
+        .help-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .help-header h1 { color: #0A1F44; margin-bottom: 10px; }
+        .help-header p { color: #666; }
+        
+        .search-box {
+            background: white;
+            border-radius: 50px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .search-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+        }
+        .search-box button {
+            background: #0A1F44;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        
+        .faq-category {
+            margin-bottom: 30px;
+        }
+        .faq-category h2 {
+            font-size: 1.2rem;
+            color: #0A1F44;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .faq-question {
+            padding: 15px 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .faq-question:hover { background: #f5f5f5; }
+        .faq-answer {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+        }
+        .faq-item.active .faq-answer {
+            padding: 15px 18px;
+            max-height: 500px;
+        }
+        .faq-item.active .faq-question i:last-child {
+            transform: rotate(180deg);
+        }
+        
+        .tip-box {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #2E7D32;
+        }
+        .warning-box {
+            background: #ffebee;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #C62828;
+        }
+        
+        .contact-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .contact-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .contact-btn:hover { transform: translateY(-2px); }
+        .btn-whatsapp { background: #25D366; color: white; }
+        .btn-ticket { background: #0A1F44; color: white; }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.7rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .contact-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo" onclick="window.location.href='/'">EL <span>FAROL</span></div>
+    <button class="btn-back" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i> Volver</button>
+</div>
+
+<div class="container">
+    <div class="help-header">
+        <h1><i class="fas fa-headset"></i> Centro de Ayuda</h1>
+        <p>¿Necesitas ayuda? Encuentra respuestas rápidas o contáctanos</p>
+    </div>
+
+    <div class="search-box">
+        <i class="fas fa-search" style="color:#999;"></i>
+        <input type="text" id="searchFaq" placeholder="Buscar ayuda...">
+        <button onclick="searchFaq()">Buscar</button>
+    </div>
+
+    <!-- FAQ POR CATEGORÍAS -->
+    <div class="faq-category">
+        <h2><i class="fas fa-key"></i> Cuenta y Acceso</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                ¿Cómo recuperar mi contraseña?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Para recuperar tu contraseña:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Ve a la pantalla de <strong>Inicio de Sesión</strong></li>
+                    <li>Haz clic en <strong>"¿Olvidaste tu contraseña?"</strong></li>
+                    <li>Ingresa tu correo electrónico registrado</li>
+                    <li>Recibirás un enlace para crear una nueva contraseña</li>
+                    <li>Si no recibes el correo, revisa tu carpeta de spam</li>
+                </ol>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Usa una contraseña segura de al menos 8 caracteres con números y símbolos.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                ¿Cómo cambio mi contraseña?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Para cambiar tu contraseña estando logueado:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Ve a <strong>"Mi Cuenta"</strong> → <strong>"Configuración"</strong></li>
+                    <li>Selecciona <strong>"Cambiar contraseña"</strong></li>
+                    <li>Ingresa tu contraseña actual y la nueva</li>
+                    <li>Confirma los cambios</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-category">
+        <h2><i class="fas fa-camera"></i> Publicar y Multimedia</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                ¿Cómo subir fotos a mi anuncio?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Para subir fotos a tu anuncio:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Al crear o editar un anuncio, busca la sección <strong>"Imágenes"</strong></li>
+                    <li>Haz clic en <strong>"Seleccionar archivo"</strong></li>
+                    <li>Selecciona las fotos desde tu galería o cámara</li>
+                    <li>Puedes subir <strong>hasta 10 fotos</strong> por anuncio</li>
+                    <li>La primera foto será la principal</li>
+                </ol>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Los anuncios con fotos reciben <strong>80% más visitas</strong>. Usa fotos claras y con buena iluminación.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                                ¿Qué formatos de imagen aceptan?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Aceptamos los siguientes formatos de imagen:</p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>✅ JPG / JPEG</li>
+                    <li>✅ PNG</li>
+                    <li>✅ GIF</li>
+                    <li>✅ WEBP</li>
+                </ul>
+                <p>Tamaño máximo por imagen: <strong>5MB</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-category">
+        <h2><i class="fas fa-fire"></i> Destacar Anuncios (Boost)</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                ¿Cómo destacar mi anuncio (Boost)?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Para destacar tu anuncio y obtener más visitas:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Ve a <strong>"Mis Anuncios"</strong> en tu panel de vendedor</li>
+                    <li>Busca el anuncio que quieres destacar</li>
+                    <li>Haz clic en el botón <strong>🔥 Destacar</strong></li>
+                    <li>Confirma la operación (costo: <strong>RD$199 por 24 horas</strong>)</li>
+                    <li>Tu anuncio aparecerá en los primeros resultados</li>
+                </ol>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Destaca tus anuncios los fines de semana cuando hay más compradores activos.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-category">
+        <h2><i class="fas fa-id-card"></i> Verificación de Cuenta</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                ¿Cómo ser un "Vendedor Verificado"?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Para obtener la insignia de <strong>Vendedor Verificado</strong>:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Ve a <strong>"Mi Cuenta"</strong> → <strong>"Verificar cuenta"</strong></li>
+                    <li>Sube una foto <strong>frontal</strong> de tu cédula</li>
+                    <li>Sube una foto <strong>trasera</strong> de tu cédula</li>
+                    <li>Opcional: Sube un <strong>selfie</strong> con tu cédula</li>
+                    <li>Espera la revisión del administrador (24-48 horas)</li>
+                </ol>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> <strong>Beneficios:</strong> Los vendedores verificados <strong>venden 5 veces más</strong> y pueden usar Boost.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-category">
+        <h2><i class="fas fa-shield-alt"></i> Seguridad</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">
+                Consejos de seguridad para encuentros en San Vicente
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p><strong>✅ RECOMENDACIONES SEGURAS:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>📍 <strong>Lugares recomendados:</strong> Metro de San Vicente, Parque Los Mina, Plaza Lama</li>
+                    <li>👥 <strong>Siempre ve acompañado</strong> de un familiar o amigo</li>
+                    <li>📱 <strong>Comparte tu ubicación</strong> en tiempo real</li>
+                    <li>💰 <strong>Paga en efectivo</strong> solo después de ver el producto</li>
+                    <li>🕐 <strong>Horarios seguros:</strong> Prefiere horarios diurnos (10am - 4pm)</li>
+                    <li>🚫 <strong>Desconfía de:</strong> Precios demasiado bajos, pagos por adelantado</li>
+                </ul>
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>NUNCA</strong> entregues dinero sin ver el producto primero.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                                ¿Qué hago si fui víctima de una estafa?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                <p>Si fuiste víctima de una estafa:</p>
+                <ol style="margin-left: 20px; margin-top: 8px;">
+                    <li>Guarda todas las conversaciones y comprobantes</li>
+                    <li>Reporta el anuncio usando el botón <strong>"Reportar"</strong></li>
+                    <li>Contacta a nuestro soporte por <strong>WhatsApp</strong> o <strong>ticket</strong></li>
+                    <li>Presenta una denuncia ante la <strong>Policía Nacional</strong> (PNC)</li>
+                </ol>
+                <div class="warning-box">
+                    <i class="fas fa-phone-alt"></i> <strong>Emergencias:</strong> 911 • Policía San Vicente: 809-123-4567
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de contacto -->
+    <div class="contact-buttons">
+        <a href="https://wa.me/18091234567?text=Hola%2C%20necesito%20ayuda%20en%20El%20Farol" class="contact-btn btn-whatsapp" target="_blank">
+            <i class="fab fa-whatsapp fa-lg"></i> WhatsApp
+        </a>
+        <a href="/support" class="contact-btn btn-ticket">
+            <i class="fas fa-ticket-alt"></i> Abrir Ticket
+        </a>
+    </div>
+
+    <div class="footer">
+        <p>El Farol Clasificados - Santo Domingo Este, RD</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </div>
+</div>
+
+<script>
+    // FAQ toggle
+    document.querySelectorAll('.faq-item').forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question.addEventListener('click', () => {
+            item.classList.toggle('active');
+        });
+    });
+    
+    // Buscar en FAQ
+    function searchFaq() {
+        const searchTerm = document.getElementById('searchFaq').value.toLowerCase();
+        const faqItems = document.querySelectorAll('.faq-item');
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question').innerText.toLowerCase();
+            const answer = item.querySelector('.faq-answer')?.innerText.toLowerCase() || '';
+            
+            if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                item.style.display = 'block';
+                if (searchTerm) item.classList.add('active');
+            } else {
+                item.style.display = searchTerm ? 'none' : 'block';
+            }
+        });
+    }
+    
+    // Abrir FAQ específica desde URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const faqId = urlParams.get('faq');
+    if (faqId) {
+        const faqElement = document.getElementById(faqId);
+        if (faqElement) faqElement.classList.add('active');
+    }
+</script>
+</body>
+</html>
