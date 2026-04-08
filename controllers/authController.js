@@ -1,105 +1,112 @@
-const db = require('../db');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const db = require('../db');
+const { generateToken } = require('../utils/jwtUtils');
 
-// Registro de usuario
+const SALT_ROUNDS = 10;
+
 const register = async (req, res) => {
-  const { name, email, phone, password } = req.body;
-  
   try {
-    // Verificar si el email ya existe
-    const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    const { email, password, name, phone, location } = req.body;
+    
+    const existingUser = await db.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+    
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
     
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     
-    // Insertar usuario
     const result = await db.query(
-      `INSERT INTO users (name, email, phone, password_hash) 
-       VALUES ($1, $2, $3, $4) RETURNING id, name, email, phone`,
-      [name, email, phone, hashedPassword]
+      `INSERT INTO users (email, password_hash, name, phone, location, role, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       RETURNING id, email, name, phone, location, role, created_at`,
+      [email.toLowerCase(), hashedPassword, name || null, phone || null, location || null, 'user']
     );
     
     const user = result.rows[0];
-    
-    // Generar token
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'secreto-temporal',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user.id, user.email);
     
     res.status(201).json({
-      success: true,
+      message: 'Usuario registrado exitosamente',
       token,
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
-        phone: user.phone
-      }
+        name: user.name,
+        phone: user.phone,
+        location: user.location,
+        role: user.role,
+        createdAt: user.created_at,
+      },
     });
-    
   } catch (error) {
-    console.error('Error en register:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en registro:', error);
+    res.status(500).json({ error: 'Error al registrar usuario' });
   }
 };
 
-// Login de usuario
 const login = async (req, res) => {
-  const { email, password } = req.body;
-  
   try {
+    const { email, password } = req.body;
+    
     const result = await db.query(
-      'SELECT id, name, email, phone, password_hash FROM users WHERE email = $1',
-      [email]
+      `SELECT id, email, password_hash, name, phone, location, role, 
+              last_login, created_at
+       FROM users 
+       WHERE email = $1 AND deleted_at IS NULL`,
+      [email.toLowerCase()]
     );
     
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+      return res.status(401).json({ error: 'Credenciales inválidas' });
     }
     
     const user = result.rows[0];
-    const validPassword = await bcrypt.compare(password, user.password_hash);
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
     
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
     }
     
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'secreto-temporal',
-      { expiresIn: '7d' }
+    await db.query(
+      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      [user.id]
     );
     
+    const token = generateToken(user.id, user.email);
+    
     res.json({
-      success: true,
+      message: 'Inicio de sesión exitoso',
       token,
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
-        phone: user.phone
-      }
+        name: user.name,
+        phone: user.phone,
+        location: user.location,
+        role: user.role,
+        lastLogin: user.last_login,
+        createdAt: user.created_at,
+      },
     });
-    
   } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error en login:', error);
+    res.status(500).json({ error: 'Error al iniciar sesión' });
   }
 };
 
-// Obtener perfil
 const getProfile = async (req, res) => {
-  const userId = req.user.id;
-  
   try {
+    const userId = req.user.id;
+    
     const result = await db.query(
-      'SELECT id, name, email, phone, created_at FROM users WHERE id = $1',
+      `SELECT id, email, name, phone, location, role, 
+              last_login, created_at, updated_at
+       FROM users 
+       WHERE id = $1 AND deleted_at IS NULL`,
       [userId]
     );
     
@@ -107,55 +114,106 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     
-    res.json({ success: true, user: result.rows[0] });
-    
+    res.json({ user: result.rows[0] });
   } catch (error) {
-    console.error('Error en getProfile:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error obteniendo perfil:', error);
+    res.status(500).json({ error: 'Error al obtener perfil' });
   }
 };
 
-// Actualizar perfil
 const updateProfile = async (req, res) => {
-  const userId = req.user.id;
-  const { name, phone } = req.body;
-  
   try {
-    const updates = [];
-    const params = [];
-    let paramIndex = 1;
+    const userId = req.user.id;
+    const { name, phone, location } = req.body;
     
-    if (name) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
+    const updates = [];
+    const values = [];
+    let valueIndex = 1;
+    
+    if (name !== undefined) {
+      updates.push(`name = $${valueIndex++}`);
+      values.push(name);
     }
     
-    if (phone) {
-      updates.push(`phone = $${paramIndex}`);
-      params.push(phone);
-      paramIndex++;
+    if (phone !== undefined) {
+      updates.push(`phone = $${valueIndex++}`);
+      values.push(phone);
+    }
+    
+    if (location !== undefined) {
+      updates.push(`location = $${valueIndex++}`);
+      values.push(location);
     }
     
     if (updates.length === 0) {
-      return res.status(400).json({ error: 'No hay campos para actualizar' });
+      return res.status(400).json({ error: 'No hay datos para actualizar' });
     }
     
-    params.push(userId);
+    updates.push(`updated_at = NOW()`);
+    values.push(userId);
+    
+    const query = `
+      UPDATE users 
+      SET ${updates.join(', ')} 
+      WHERE id = $${valueIndex} AND deleted_at IS NULL
+      RETURNING id, email, name, phone, location, role, created_at, updated_at
+    `;
+    
+    const result = await db.query(query, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    res.json({
+      message: 'Perfil actualizado exitosamente',
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error('❌ Error actualizando perfil:', error);
+    res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Se requieren contraseña actual y nueva' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+    
     const result = await db.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, name, email, phone`,
-      params
+      'SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL',
+      [userId]
     );
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     
-    res.json({ success: true, user: result.rows[0] });
+    const isValidPassword = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
     
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    }
+    
+    const newHashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    
+    await db.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [newHashedPassword, userId]
+    );
+    
+    res.json({ message: 'Contraseña actualizada exitosamente' });
   } catch (error) {
-    console.error('Error en updateProfile:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error cambiando contraseña:', error);
+    res.status(500).json({ error: 'Error al cambiar contraseña' });
   }
 };
 
@@ -163,5 +221,6 @@ module.exports = {
   register,
   login,
   getProfile,
-  updateProfile
+  updateProfile,
+  changePassword,
 };
