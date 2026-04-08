@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="El Farol - La mejor plataforma de clasificados en línea. Compra y vende de forma segura.">
-    <meta name="keywords" content="clasificados, ventas, compras, marketplace, El Farol">
+    <meta name="description" content="El Farol - Mercado de Confianza. La plataforma líder en clasificados profesionales para vehículos, inmuebles y empleos verificados en República Dominicana.">
+    <meta name="keywords" content="clasificados RD, venta de carros, alquiler de apartamentos, empleos, El Farol">
     <meta name="author" content="El Farol">
-    <title>El Farol | Clasificados - Próximamente</title>
+    <meta property="og:title" content="El Farol - Mercado de Confianza">
+    <meta property="og:description" content="Encuentra vehículos, inmuebles y empleos verificados en República Dominicana.">
+    <title>El Farol | Mercado de Confianza - Clasificados Profesionales RD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,195 +18,409 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #fff;
-            overflow-x: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FFFFFF;
+            color: #212121;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Tipografía profesional */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-
+        /* Contenedor principal */
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            z-index: 1;
+            padding: 0 32px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            animation: fadeInUp 0.8s ease-out;
+        /* ============ HEADER CORPORATIVO ============ */
+        .navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.98);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px 32px;
         }
 
         .logo {
-            font-size: 4rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #fff, #f0f0f0);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            text-decoration: none;
+            color: #1A237E;
         }
 
         .logo span {
-            background: linear-gradient(135deg, #ffd89b, #c7e9fb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            color: #212121;
+            font-weight: 400;
         }
 
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            font-weight: 700;
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            align-items: center;
         }
 
-        .subtitle {
-            font-size: 1.3rem;
-            opacity: 0.95;
-            margin-bottom: 30px;
+        .nav-links a {
+            text-decoration: none;
+            color: #424242;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
         }
 
-        .countdown-container {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            margin: 30px 0;
+        .nav-links a:hover {
+            color: #1A237E;
+        }
+
+        .btn-outline {
+            border: 1.5px solid #1A237E;
+            background: transparent;
+            padding: 10px 24px;
+            border-radius: 6px;
+            color: #1A237E;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline:hover {
+            background: #1A237E;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #1A237E;
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #0F1558;
+            transform: translateY(-1px);
+        }
+
+        /* ============ HERO SECTION ============ */
+        .hero {
+            background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+            padding: 80px 0;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
             text-align: center;
-            animation: fadeInUp 1s ease-out 0.2s both;
         }
 
-        .countdown-title {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+        .hero-badge {
+            display: inline-block;
+            background: #1A237E10;
+            color: #1A237E;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
         }
 
-        .countdown {
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            color: #212121;
+        }
+
+        .hero h1 span {
+            color: #1A237E;
+        }
+
+        .hero-description {
+            font-size: 1.25rem;
+            color: #616161;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-stats {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
+            gap: 48px;
+            margin-top: 48px;
+            padding-top: 48px;
+            border-top: 1px solid #E0E0E0;
         }
 
-        .countdown-item {
+        .stat-item {
             text-align: center;
-            min-width: 100px;
         }
 
-        .countdown-number {
-            font-size: 3rem;
-            font-weight: bold;
-            background: rgba(255,255,255,0.2);
-            padding: 15px 20px;
-            border-radius: 15px;
-            display: inline-block;
-            min-width: 100px;
-            backdrop-filter: blur(5px);
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1A237E;
         }
 
-        .countdown-label {
-            margin-top: 10px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .stat-label {
+            font-size: 0.85rem;
+            color: #757575;
+            margin-top: 8px;
         }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin: 50px 0;
-            width: 100%;
-            animation: fadeInUp 1s ease-out 0.4s both;
+        /* ============ CATEGORÍAS ============ */
+        .categories {
+            padding: 80px 0;
+            background: #FFFFFF;
         }
 
-        .feature-card {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 20px;
+        .section-title {
             text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
+            margin-bottom: 48px;
         }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            background: rgba(255,255,255,0.15);
+        .section-title h2 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            color: #212121;
         }
 
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: inline-block;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-        }
-
-        .feature-card p {
+        .section-title p {
+            color: #757575;
             font-size: 1rem;
-            opacity: 0.9;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .category-card {
+            background: #F8F9FA;
+            padding: 32px 24px;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .category-card:hover {
+            border-color: #1A237E;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+
+        .category-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .category-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #212121;
+        }
+
+        .category-card p {
+            font-size: 0.85rem;
+            color: #757575;
+        }
+
+        /* ============ ANUNCIOS DESTACADOS ============ */
+        .featured-ads {
+            padding: 80px 0;
+            background: #F8F9FA;
+        }
+
+        .ads-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .ad-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+            border: 1px solid #E0E0E0;
+        }
+
+        .ad-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+        }
+
+        .ad-image {
+            width: 100%;
+            height: 220px;
+            background-size: cover;
+            background-position: center;
+            background-color: #F5F5F5;
+        }
+
+        .ad-content {
+            padding: 20px;
+        }
+
+        .ad-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #212121;
+        }
+
+        .ad-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1A237E;
+            margin-bottom: 8px;
+        }
+
+        .ad-location {
+            font-size: 0.85rem;
+            color: #757575;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ============ CÓMO FUNCIONA ============ */
+        .how-it-works {
+            padding: 80px 0;
+            background: #FFFFFF;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+            text-align: center;
+        }
+
+        .step {
+            position: relative;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: #1A237E;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
+
+        .step h3 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            color: #757575;
+            font-size: 0.9rem;
+        }
+
+        /* ============ FOOTER ============ */
+        .footer {
+            background: #212121;
+            color: #FFFFFF;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .footer-logo span {
+            color: #1A237E;
+        }
+
+        .footer-description {
+            color: #B0BEC5;
+            font-size: 0.85rem;
             line-height: 1.6;
         }
 
-        /* Botón de registro con ID correcto */
-        #registerBtn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        .footer h4 {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #B0BEC5;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
             color: white;
-            border: none;
-            padding: 18px 45px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 20px 0;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            animation: fadeInUp 1s ease-out 0.6s both;
         }
 
-        #registerBtn:hover {
-            animation: pulse 0.5s ease;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #424242;
+            color: #B0BEC5;
+            font-size: 0.8rem;
         }
 
-        /* Modal */
+        /* ============ MODAL ============ */
         .modal {
             display: none;
             position: fixed;
@@ -212,248 +429,382 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
+            z-index: 2000;
             justify-content: center;
             align-items: center;
         }
 
         .modal-content {
             background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
+            border-radius: 16px;
+            max-width: 480px;
             width: 90%;
+            padding: 40px;
             position: relative;
-            color: #333;
-            animation: fadeInUp 0.3s ease;
         }
 
         .modal-content h2 {
-            color: #667eea;
-            margin-bottom: 20px;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #212121;
         }
 
         .modal-content p {
-            margin-bottom: 20px;
-            line-height: 1.6;
+            color: #757575;
+            margin-bottom: 24px;
         }
 
         .modal-content input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
+            padding: 14px;
+            margin: 8px 0;
+            border: 1px solid #E0E0E0;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-family: inherit;
         }
 
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .modal-btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .modal-btn-secondary {
-            background: #f0f0f0;
-            color: #333;
+        .modal-content input:focus {
+            outline: none;
+            border-color: #1A237E;
         }
 
         .close-modal {
             position: absolute;
-            top: 15px;
-            right: 20px;
+            top: 20px;
+            right: 24px;
             font-size: 1.5rem;
             cursor: pointer;
             color: #999;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-            padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            width: 100%;
-            animation: fadeInUp 1s ease-out 0.8s both;
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
         }
 
-        .social-links {
-            margin-bottom: 15px;
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
-        .social-links a {
-            color: white;
-            margin: 0 10px;
-            text-decoration: none;
-            font-size: 1.2rem;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-
-        .social-links a:hover {
-            opacity: 1;
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            .logo { font-size: 2.5rem; }
-            .countdown-number { font-size: 1.5rem; min-width: 60px; padding: 10px 15px; }
-            .countdown-item { min-width: 60px; }
-            .features { grid-template-columns: 1fr; gap: 20px; }
-            #registerBtn { padding: 14px 35px; font-size: 1rem; }
+            .container {
+                padding: 0 20px;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .categories-grid,
+            .ads-grid,
+            .steps-grid,
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .hero-stats {
+                flex-direction: column;
+                gap: 20px;
+            }
         }
     </style>
 </head>
 <body>
+
+<!-- Navbar Corporativo -->
+<nav class="navbar">
+    <div class="navbar-content">
+        <a href="/" class="logo">EL FAROL<span> Clasificados</span></a>
+        <div class="nav-links">
+            <a href="#">Comprar</a>
+            <a href="#">Vender</a>
+            <a href="#">Inmuebles</a>
+            <a href="#">Vehículos</a>
+            <a href="#">Empleos</a>
+            <button class="btn-outline" id="loginBtn">Iniciar Sesión</button>
+            <button class="btn-primary" id="registerBtn">Publicar Anuncio</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero">
     <div class="container">
-        <div class="header">
-            <div class="logo">
-                El Farol <span>Clasificados</span>
-            </div>
-            <h1>Próximamente</h1>
-            <p class="subtitle">La nueva forma de comprar y vender en tu comunidad</p>
-        </div>
-
-        <div class="countdown-container">
-            <div class="countdown-title">🌟 Lanzamiento en</div>
-            <div class="countdown" id="countdown">
-                <div class="countdown-item">
-                    <div class="countdown-number" id="days">00</div>
-                    <div class="countdown-label">Días</div>
+        <div class="hero-content">
+            <span class="hero-badge">Mercado de Confianza</span>
+            <h1>Encuentra <span>Vehículos, Inmuebles</span> y Empleos Verificados</h1>
+            <p class="hero-description">La plataforma líder en República Dominicana con más de 10,000 anuncios verificados mensualmente.</p>
+            <button class="btn-primary" id="heroRegisterBtn" style="padding: 14px 36px; font-size: 1rem;">Comenzar ahora →</button>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">10k+</div>
+                    <div class="stat-label">Anuncios activos</div>
                 </div>
-                <div class="countdown-item">
-                    <div class="countdown-number" id="hours">00</div>
-                    <div class="countdown-label">Horas</div>
+                <div class="stat-item">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Tasa de éxito</div>
                 </div>
-                <div class="countdown-item">
-                    <div class="countdown-number" id="minutes">00</div>
-                    <div class="countdown-label">Minutos</div>
-                </div>
-                <div class="countdown-item">
-                    <div class="countdown-number" id="seconds">00</div>
-                    <div class="countdown-label">Segundos</div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Soporte al cliente</div>
                 </div>
             </div>
-        </div>
-
-        <div class="features">
-            <div class="feature-card">
-                <div class="feature-icon">🛒</div>
-                <h3>Compra Segura</h3>
-                <p>Transacciones protegidas y verificación de vendedores</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📱</div>
-                <h3>Multiplataforma</h3>
-                <p>Disponible en web, iOS y Android</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Rápido y Fácil</h3>
-                <p>Publica tu anuncio en menos de 1 minuto</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Privacidad Total</h3>
-                <p>Tus datos siempre protegidos</p>
-            </div>
-        </div>
-
-        <!-- Botón con ID correcto -->
-        <button id="registerBtn">
-            📝 Regístrate para la lista de espera
-        </button>
-
-        <div class="footer">
-            <div class="social-links">
-                <a href="#" target="_blank">📘 Facebook</a>
-                <a href="#" target="_blank">📸 Instagram</a>
-                <a href="#" target="_blank">🐦 Twitter</a>
-                <a href="#" target="_blank">💼 LinkedIn</a>
-            </div>
-            <p>&copy; 2024 El Farol Clasificados. Todos los derechos reservados.</p>
-            <p style="font-size: 0.8rem; margin-top: 10px;">
-                <a href="/api/auth" style="color: white; text-decoration: none;">API</a> | 
-                <a href="/health" style="color: white; text-decoration: none;">Estado</a>
-            </p>
         </div>
     </div>
+</section>
 
-    <!-- Modal de Registro con IDs correctos -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>📝 Crear Cuenta</h2>
-            <p>Regístrate para ser el primero en enterarte del lanzamiento.</p>
-            <form id="registerForm">
-                <input type="text" id="regName" placeholder="Nombre completo" required>
-                <input type="email" id="regEmail" placeholder="Correo electrónico" required>
-                <input type="password" id="regPassword" placeholder="Contraseña (mínimo 6 caracteres)" required>
-                <input type="tel" id="regPhone" placeholder="Teléfono (opcional)">
-                <div class="modal-buttons">
-                    <button type="submit" class="modal-btn modal-btn-primary">Registrarme</button>
-                    <button type="button" id="cancelRegister" class="modal-btn modal-btn-secondary">Cancelar</button>
-                </div>
-            </form>
-            <p style="font-size: 0.8rem; margin-top: 15px; color: #666;">
-                Al registrarte aceptas nuestros <a href="#" style="color:#667eea;">Términos y Condiciones</a>
-            </p>
+<!-- Categorías -->
+<section class="categories">
+    <div class="container">
+        <div class="section-title">
+            <h2>Categorías destacadas</h2>
+            <p>Miles de productos y servicios verificados</p>
+        </div>
+        <div class="categories-grid">
+            <div class="category-card">
+                <div class="category-icon">🚗</div>
+                <h3>Vehículos</h3>
+                <p>Más de 2,500 autos disponibles</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🏠</div>
+                <h3>Inmuebles</h3>
+                <p>Casas, apartamentos y terrenos</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">💼</div>
+                <h3>Empleos</h3>
+                <p>Las mejores oportunidades laborales</p>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">📱</div>
+                <h3>Tecnología</h3>
+                <p>Electrónica y gadgets</p>
+            </div>
         </div>
     </div>
+</section>
 
-    <!-- Script de contador -->
-    <script>
-        function startCountdown() {
-            const targetDate = new Date();
-            targetDate.setDate(targetDate.getDate() + 30);
-            targetDate.setHours(0, 0, 0, 0);
+<!-- Anuncios Destacados -->
+<section class="featured-ads">
+    <div class="container">
+        <div class="section-title">
+            <h2>Anuncios destacados</h2>
+            <p>Lo más visto en El Farol esta semana</p>
+        </div>
+        <div class="ads-grid">
+            <div class="ad-card">
+                <div class="ad-image" style="background-image: url('https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop'); background-size: cover;"></div>
+                <div class="ad-content">
+                    <h3 class="ad-title">Honda CR-V 2022</h3>
+                    <div class="ad-price">$28,500 USD</div>
+                    <div class="ad-location">📍 Santo Domingo Este</div>
+                </div>
+            </div>
+            <div class="ad-card">
+                <div class="ad-image" style="background-image: url('https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=250&fit=crop'); background-size: cover;"></div>
+                <div class="ad-content">
+                    <h3 class="ad-title">Apartamento en Arroyo Hondo</h3>
+                    <div class="ad-price">$185,000 USD</div>
+                    <div class="ad-location">📍 Santo Domingo</div>
+                </div>
+            </div>
+            <div class="ad-card">
+                <div class="ad-image" style="background-image: url('https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=400&h=250&fit=crop'); background-size: cover;"></div>
+                <div class="ad-content">
+                    <h3 class="ad-title">Desarrollador Full Stack</h3>
+                    <div class="ad-price">$75,000 RD/mes</div>
+                    <div class="ad-location">📍 Remoto / Santo Domingo</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-            function updateCountdown() {
-                const now = new Date();
-                const diff = targetDate - now;
+<!-- Cómo funciona -->
+<section class="how-it-works">
+    <div class="container">
+        <div class="section-title">
+            <h2>Cómo funciona</h2>
+            <p>Publica tu anuncio en minutos</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Crea tu cuenta</h3>
+                <p>Regístrate gratis y accede a todas las funciones</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Publica tu anuncio</h3>
+                <p>Sube fotos y detalles de tu producto o servicio</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Conecta con compradores</h3>
+                <p>Recibe ofertas y cierra tu venta de forma segura</p>
+            </div>
+        </div>
+    </div>
+</section>
 
-                if (diff <= 0) {
-                    document.getElementById('days').textContent = '00';
-                    document.getElementById('hours').textContent = '00';
-                    document.getElementById('minutes').textContent = '00';
-                    document.getElementById('seconds').textContent = '00';
-                    return;
-                }
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">EL FAROL<span> Clasificados</span></div>
+                <p class="footer-description">Mercado de confianza en República Dominicana desde 2024.</p>
+            </div>
+            <div>
+                <h4>Plataforma</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Vehículos</a></li>
+                    <li><a href="#">Inmuebles</a></li>
+                    <li><a href="#">Empleos</a></li>
+                    <li><a href="#">Servicios</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Empresa</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Sobre nosotros</a></li>
+                    <li><a href="#">Términos y condiciones</a></li>
+                    <li><a href="#">Privacidad</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contacto</h4>
+                <ul class="footer-links">
+                    <li><a href="#">soporte@elfarol.com.do</a></li>
+                    <li><a href="#">+1 (809) 123-4567</a></li>
+                    <li><a href="#">Santo Domingo, RD</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 El Farol Clasificados. Todos los derechos reservados. República Dominicana.</p>
+        </div>
+    </div>
+</footer>
 
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+<!-- Modal Registro -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Crear cuenta</h2>
+        <p>Comienza a publicar y vender hoy mismo</p>
+        <form id="registerForm">
+            <input type="text" id="regName" placeholder="Nombre completo" required>
+            <input type="email" id="regEmail" placeholder="Correo electrónico" required>
+            <input type="password" id="regPassword" placeholder="Contraseña (mínimo 6 caracteres)" required>
+            <input type="tel" id="regPhone" placeholder="Teléfono (opcional)">
+            <div class="modal-buttons">
+                <button type="submit" class="btn-primary" style="width:100%">Registrarse</button>
+                <button type="button" id="cancelRegister" class="btn-outline" style="width:100%">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                document.getElementById('days').textContent = days.toString().padStart(2, '0');
-                document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
-                document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
-                document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+<script>
+    // Modal functionality
+    const modal = document.getElementById('registerModal');
+    const registerBtns = document.querySelectorAll('#registerBtn, #heroRegisterBtn');
+    const closeBtn = document.querySelector('.close-modal');
+    const cancelBtn = document.getElementById('cancelRegister');
+    const loginBtn = document.getElementById('loginBtn');
+
+    function openModal() {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    registerBtns.forEach(btn => {
+        if (btn) btn.addEventListener('click', openModal);
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (loginBtn) loginBtn.addEventListener('click', () => alert('Inicio de sesión disponible próximamente'));
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // Form submission
+    const form = document.getElementById('registerForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const phone = document.getElementById('regPhone').value;
+
+            if (!email || !password) {
+                alert('Por favor completa los campos requeridos');
+                return;
             }
 
-            updateCountdown();
-            setInterval(updateCountdown, 1000);
-        }
+            if (password.length < 6) {
+                alert('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
 
-        startCountdown();
-    </script>
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Registrando...';
+            submitBtn.disabled = true;
 
-    <!-- Script principal (DEBE IR AL FINAL) -->
-    <script src="js/main.js"></script>
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, phone })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ ¡Registro exitoso! Bienvenido a El Farol');
+                    if (data.token) localStorage.setItem('token', data.token);
+                    form.reset();
+                    closeModal();
+                } else {
+                    alert(`❌ ${data.error || 'Error al registrarse'}`);
+                }
+            } catch (error) {
+                alert('❌ Error de conexión. Intenta nuevamente.');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    }
+</script>
+
+<!-- Cargar main.js si existe -->
+<script src="js/main.js"></script>
 </body>
 </html>
